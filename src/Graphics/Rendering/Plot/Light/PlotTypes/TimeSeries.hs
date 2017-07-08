@@ -1,5 +1,6 @@
 module Graphics.Rendering.Plot.Light.PlotTypes.TimeSeries where
 
+import GHC.Real
 import Data.Fixed (Pico)
 import Data.Time
 import qualified Data.Text as T
@@ -26,10 +27,25 @@ fromTick (Tick d t) = fromIntegral (toModifiedJulianDay d) + timeOfDayToDayFract
 data TsPoint a =
   Tsp {
     _tick :: Tick,
-    _value :: a
+    _val :: a
     } deriving (Eq, Show)
 
 
+-- | Transform the time coordinate of a timeseries point 
+mapToViewbox :: FigureData (Ratio Integer) d
+                   -> Tick      -- | Lower bound
+                   -> Tick      -- | Upper bound
+                   -> TsPoint a -- | A point in the timeseries
+                   -> LabeledPoint (Ratio Integer) Tick a
+mapToViewbox fd tmin tmax p = LabeledPoint t' (_tick p) (_val p)
+  where
+    t' = toViewboxRange fd tmin tmax p
+  
+
+toViewboxRange ::
+  FigureData Rational d -> Tick -> Tick -> TsPoint a -> Rational
+toViewboxRange fd tmin tmax p =
+  affine (_xmin fd) (_xmax fd) (fromTick tmin) (fromTick tmax) (fromTick $ _tick p)
 
 
 

@@ -51,7 +51,7 @@ data P2 a = P2 a a
 
 -- | Given a point `x` in a range [x1min, x1max], map it by affine transformation onto the interval [x2min, x2max]
 affine :: Fractional t => t -> t -> t -> t -> t -> t
-affine x1min x1max x2min x2max x = (x - x1min)*d2/d1 + x2min where
+affine x2min x2max x1min x1max x = (x - x1min)*d2/d1 + x2min where
   d1 = x1max - x1min
   d2 = x2max - x2min
 
