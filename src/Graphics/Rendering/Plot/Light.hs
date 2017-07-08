@@ -3,7 +3,6 @@ module Graphics.Rendering.Plot.Light where
 
 -- import Data.Foldable
 import qualified Data.Text as T
-import qualified Data.Vector as V
 
 import Text.Blaze.Svg
 import Text.Blaze.Svg11 ((!), mkPath, rotate, translate, l, m)
