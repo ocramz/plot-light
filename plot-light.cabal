@@ -23,7 +23,9 @@ library
                        Graphics.Rendering.Plot.Light.Internal
                        Graphics.Rendering.Plot.Light.IO.Text
                        Graphics.Rendering.Plot.Light.PlotTypes.Heatmap
+                       Graphics.Rendering.Plot.Light.PlotTypes.TimeSeries
   build-depends:       base >= 4.7 && < 5
+                     , time
                      , vector
                      , attoparsec
                      , scientific
