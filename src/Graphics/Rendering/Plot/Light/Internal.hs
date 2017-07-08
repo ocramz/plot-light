@@ -2,8 +2,10 @@
 module Graphics.Rendering.Plot.Light.Internal where
 
 
+import Control.Arrow ((&&&), (***))
+
 -- import Data.Foldable
--- import qualified Data.Text as T
+import qualified Data.Text as T
 -- import qualified Data.Vector as V
 
 import Text.Blaze.Svg
@@ -30,6 +32,32 @@ data FigureData a d =
       }
 
 
+-- | A LabeledPoint carries the information of where a point should be plotted, what label should it carry (e.g. for labelling the axes) and its function value 
+data LabeledPoint c l a =
+  LabeledPoint { _coord :: c, _label :: l, _value :: a }
+
+data P1 a = P1 a
+data P2 a = P2 a a
+
+
+
+-- axis f1 figd = undefined
+--   where
+--     d = f1 <$> _figData figd -- pick out data
+--     numd = length d
+--     mm = maximum d
+--     m = minimum d
+
+
+-- | Given a point `x` in a range [x1min, x1max], map it by affine transformation onto the interval [x2min, x2max]
+affine :: Fractional t => t -> t -> t -> t -> t -> t
+affine x1min x1max x2min x2max x = (x - x1min)*d2/d1 + x2min where
+  d1 = x1max - x1min
+  d2 = x2max - x2min
+
+
+
+-- | Header for a Figure
 figure :: FigureData Int d -> Svg -> Svg
 figure fd =
   S.docTypeSvg
@@ -39,6 +67,7 @@ figure fd =
   ! A.viewbox (vis [_xmin fd, _ymin fd, _xmax fd, _ymax fd])
 
 
+-- | A filled rectangle, centered at (x0, y0)
 rectCentered
   :: Double -> Double -> Double -> Double -> C.Colour Double -> Svg
 rectCentered x0 y0 wid hei col = S.g ! A.transform (translate x0c y0c) $ 
