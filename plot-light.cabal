@@ -19,8 +19,14 @@ library
   ghc-options:         -Wall
   hs-source-dirs:      src
   exposed-modules:     Lib
+  other-modules:       Graphics.Rendering.Plot.Light
+                       Graphics.Rendering.Plot.Light.Internal
+                       Graphics.Rendering.Plot.Light.IO.Text
+                       Graphics.Rendering.Plot.Light.PlotTypes.Heatmap
   build-depends:       base >= 4.7 && < 5
                      , vector
+                     , attoparsec
+                     , scientific
                      , text
                      -- , blaze-markup
                      , colour
