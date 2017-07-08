@@ -9,6 +9,8 @@ import Control.Applicative ((<|>))
 import Data.Time (Day, TimeOfDay)
 import qualified Attoparsec.Time as AT
 
+import Data.TimeSeries.Forex
+
 
 
 space, comma :: A.Parser Char
@@ -36,19 +38,10 @@ gridNum sep = A.sepBy (rowNums sep) A.endOfLine
 
 -- * Forex dataset
 
-data FxRow a  = FxRow {
-    date :: Day
-  , timeOfDay :: TimeOfDay
-  , rateOpen :: a
-  , rateHigh :: a
-  , rateLow :: a
-  , rateClose :: a
-               } deriving (Eq, Show)
-
-parseFxDataset :: AP.Parser Text [FxRow Scientific]
+parseFxDataset :: AP.Parser Text [TsPoint (FxRow Scientific)]
 parseFxDataset = A.sepBy parseFxRow A.endOfLine
 
-parseFxRow :: AP.Parser Text (FxRow Scientific)
+parseFxRow :: AP.Parser Text (TsPoint (FxRow Scientific))
 parseFxRow = do
   (d, t) <- parseDateTime
   _ <- comma
@@ -59,7 +52,7 @@ parseFxRow = do
   lo <- A.scientific
   _ <- comma
   close <- A.scientific
-  pure $ FxRow d t open hi lo close
+  pure $ Tsp (Tick d t) (FxRow open hi lo close)
 
 parseDateTime :: AP.Parser Text (Day, TimeOfDay)
 parseDateTime = do

@@ -6,10 +6,9 @@ import Data.Time
 import qualified Data.Text as T
 
 import Graphics.Rendering.Plot.Light.Internal
+import Data.TimeSeries.Forex
 
--- | An instant, defined by date (Day) and TimeOfDay
-data Tick = Tick Day TimeOfDay
-  deriving (Eq, Show, Ord)
+
 
 -- | Create a Tick from valid (year, month, day, hour, minute, second)
 mkTick :: Integer -> Int -> Int -> Int -> Int -> Pico -> Maybe Tick
@@ -23,12 +22,7 @@ mkTick yy mm dd hr mi se = do
 fromTick :: Tick -> Rational
 fromTick (Tick d t) = fromIntegral (toModifiedJulianDay d) + timeOfDayToDayFraction t
 
--- | A point in a time series
-data TsPoint a =
-  Tsp {
-    _tick :: Tick,
-    _val :: a
-    } deriving (Eq, Show)
+
 
 
 -- | Transform the time coordinate of a timeseries point 
