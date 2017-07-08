@@ -30,7 +30,6 @@ library
                      , attoparsec
                      , scientific
                      , text
-                     -- , blaze-markup
                      , colour
                      , palette
                      , blaze-svg
