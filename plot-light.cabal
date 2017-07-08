@@ -22,6 +22,9 @@ library
   build-depends:       base >= 4.7 && < 5
                      , vector
                      , text
+                     -- , blaze-markup
+                     , colour
+                     , palette
                      , blaze-svg
 
 -- executable plot-light
