@@ -21,3 +21,9 @@ rowNums = A.sepBy A.scientific
 
 rowNumSpace :: AP.Parser Text [Scientific]
 rowNumSpace = rowNums space
+
+
+
+-- | parse a grid of numbers, separated by `sep`
+gridNum :: AP.Parser Text s -> AP.Parser Text [[Scientific]]
+gridNum sep = A.sepBy (rowNums sep) A.endOfLine
