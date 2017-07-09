@@ -24,7 +24,7 @@ fromTick :: Tick -> Rational
 fromTick (Tick d t) = fromIntegral (toModifiedJulianDay d) + timeOfDayToDayFraction t
 
 
--- | Transform the time coordinate of a timeseries point 
+-- | Compute the plotting coordinates of a timeseries point
 mapPointToViewbox :: (Fractional t, Fractional a) =>
                            (px -> Rational)    -- | From the FigureData type
                            -> (Rational -> t)  -- | To the time axis type
@@ -39,8 +39,31 @@ mapPointToViewbox :: (Fractional t, Fractional a) =>
 mapPointToViewbox ff fx fy figdat xmin xmax ymin ymax p = LabeledPoint t' (_tick p) p' 
   where
     t' = affine (fx . ff $ _xmin figdat) (fx . ff $ _xmax figdat) (fx $ fromTick xmin) (fx $ fromTick xmax) (fx . fromTick $ _tick p)
-    p' = affine (fy . ff $ _ymin figdat) (fy . ff $ _ymax figdat) ymin ymax (fy $ _val p)
+    p' = withAffine (1 -) (fy . ff $ _ymin figdat) (fy . ff $ _ymax figdat) ymin ymax (fy $ _val p)
 
+
+-- | Preprocess the dataset for plotting 
+-- 1. Remap the figure data to fit within the FigData ranges, expressed in pixels
+-- 2. Flip the data along the y axis since the origin in SVG is the top-left corner of the screen
+remapData :: (Integral i, Fractional a, Fractional t, Functor f) =>
+                   FigureData i
+                   -> Tick
+                   -> Tick
+                   -> a
+                   -> a
+                   -> f (TsPoint Rational)
+                   -> f (LabeledPoint t Tick a)
+remapData figdat xmin xmax ymin ymax ts = mapf <$> ts
+  where
+   mapf = mapPointToViewbox fromIntegral fromRational fromRational figdat xmin xmax ymin ymax 
+    
+
+
+tspToTuple :: (a -> b) -> TsPoint a -> (Float, b)
+tspToTuple f tsp = (tickToFloat tsp, f $ _val tsp)
+  
+tickToFloat :: TsPoint a -> Float
+tickToFloat = fromRational . fromTick . _tick
 
 
 

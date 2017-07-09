@@ -25,6 +25,8 @@ xPlot = 400
 yPlot = 300
 fnameOut = "data/forex_plot.svg"
 
+figData = mkFigureData 10 10 xPlot yPlot
+
 main = do
   d <- T.readFile fname
   let pd = A.parseOnly parseFxDataset d
@@ -40,8 +42,4 @@ main = do
 toFloat :: Scientific -> Float
 toFloat x = toRealFloat x :: Float
 
-tspToTuple :: (a -> b) -> TsPoint a -> (Float, b)
-tspToTuple f tsp = (tickToFloat tsp, f $ _val tsp) where
-  
-tickToFloat :: TsPoint a -> Float
-tickToFloat = fromRational . fromTick . _tick
+
