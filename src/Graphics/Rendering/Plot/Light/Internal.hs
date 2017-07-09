@@ -9,7 +9,7 @@ import qualified Data.Text as T
 
 import Text.Blaze.Svg
 import Text.Blaze.Svg11  ((!))
-import qualified Text.Blaze.Svg11 as S
+import qualified Text.Blaze.Svg11 as S hiding (style)
 import qualified Text.Blaze.Svg11.Attributes as S
 import Text.Blaze.Svg.Renderer.String (renderSvg)
 
@@ -60,6 +60,22 @@ line :: Double -> Double -> Double -> Double -> Double -> C.Colour Double -> Svg
 line x1 y1 x2 y2 sw col = S.line ! S.x1 (vd x1) ! S.y1 (vd y1) ! S.x2 (vd x2)  ! S.y2 (vd y2) ! S.stroke (colourAttr col )! S.strokeWidth (vd sw)
 
 
+
+
+-- <polyline points="40 140 80 100 120 140" stroke="black" stroke-width="20"
+--       stroke-linecap="round" fill="none" stroke-linejoin="round"/>
+
+-- <polyline points="20,20 40,25 60,40 80,120 120,140 200,180"
+-- style="fill:none;stroke:black;stroke-width:3" />
+
+polyline :: (Show a1, Show a) => [(a1, a)] -> Double -> C.Colour Double -> Svg
+polyline lis sw col = S.polyline ! S.points (S.toValue $ unwords $ map showP2 lis) ! S.fill (S.toValue ("none" :: String)) ! S.stroke (colourAttr col )! S.strokeWidth (vd sw)
+
+showP2 :: (Show a, Show a1) => (a1, a) -> [Char]
+showP2 (x, y) = show x ++ "," ++ show y 
+
+
+  
 -- * Helpers
 
 
