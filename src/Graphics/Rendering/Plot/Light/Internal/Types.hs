@@ -1,4 +1,4 @@
-module Graphics.Rendering.Plot.Light.Internal.Types where
+module Graphics.Rendering.Plot.Light.Internal.Types (FigureData(..), Point(..), LabeledPoint(..)) where
 
 
 data FigureData a =
@@ -11,9 +11,18 @@ data FigureData a =
   , _ymax :: a
       } deriving (Eq, Show)
 
--- | A LabeledPoint carries the information of where a point should be plotted, what label should it carry (e.g. for labelling the axes) and its function value 
-data LabeledPoint c l a =
-  LabeledPoint { _coord :: c, _label :: l, _value :: a }
 
-data P1 a = P1 a
-data P2 a = P2 a a
+-- | A `Point` defines a point in R2
+data Point c a = Point { _px :: c, _py :: c, _p :: a} deriving (Eq, Show)
+
+-- | A `LabeledPoint` carries the information of where a point should be plotted, what label should it carry (e.g. for labelling the axes) and its function value 
+data LabeledPoint c l a =
+  LabeledPoint { _lp :: Point c a, _lplabel :: l } deriving (Eq, Show)
+
+-- data P1 a = P1 a
+-- data P2 a = P2 a a
+
+
+
+
+

@@ -30,6 +30,7 @@ library
                        Graphics.Rendering.Plot.Light.PlotTypes.TimeSeries.Candlestick                       
   other-modules:       Data.TimeSeries.Forex
                        Graphics.Rendering.Plot.Light.Internal.Types
+                       Graphics.Rendering.Plot.Light.Internal.Geometry
   build-depends:       base >= 4.7 && < 5
                      , time
                      , attoparsec-time                     
@@ -48,8 +49,11 @@ executable plot-light
   main-is:             Main.hs
   build-depends:       base
                      , plot-light
-                     , attoparsec
-                     , text
+                     -- , attoparsec
+                     -- , text
+                     -- , colour
+                     -- , blaze-svg
+                     -- , scientific
 
 test-suite spec
   default-language:    Haskell2010
