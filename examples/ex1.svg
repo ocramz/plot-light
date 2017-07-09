@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
     "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="300" height="300" viewBox="0 0 300 300">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="300" height="300" viewBox="-30 -30 300 300">
 <g transform="translate(0 0)">
 <!-- <rect width="1" height="2" fill="#d223ff" /> -->
 <!-- <line x1="0" x2="1" y1="0" y2="1" stroke="#00f8ff" stroke-width="1" /> -->
@@ -12,13 +12,16 @@
 <!-- <polyline points="1,1 2,1 2,2 3,4" fill="none" stroke="#ff0000" stroke-width="0.05" stroke-linejoin="round" /> -->
 
 
-<!-- <line x1="0.0" y1="0.0" x2="250.0" y2="0.0" stroke="#ff0000" stroke-width="2.0" /><line x1="10.0" y1="0.0" x2="10.0" y2="20.0" stroke="#ff0000" stroke-width="2.0" /><line x1="30.0" y1="0.0" x2="30.0" y2="20.0" stroke="#ff0000" stroke-width="2.0" /><line x1="50.0" y1="0.0" x2="50.0" y2="20.0" stroke="#ff0000" stroke-width="2.0" /> -->
+<line x1="0.0" y1="0.0" x2="250.0" y2="0.0" stroke="#ff0000" stroke-width="2.0" />
 
 <!-- <g transform="translate(100,0) rotate(-45)"><text x="0" y="0" fill="red">I love SVG</text> </g> -->
 <!-- <text x="0" y="0" fill="blue" transform="translate(90,0) rotate(-35)">I love SVG</text> -->
 
-<line x1="50.0" y1="10.0" x2="250.0" y2="10.0" stroke="#ff0000" stroke-width="2.0" /><line x1="50.0" y1="5.0" x2="50.0" y2="15.0" stroke="#ff0000" stroke-width="2.0" /><line x1="60.0" y1="5.0" x2="60.0" y2="15.0" stroke="#ff0000" stroke-width="2.0" /><line x1="70.0" y1="5.0" x2="70.0" y2="15.0" stroke="#ff0000" stroke-width="2.0" />
+<!-- <line x1="50.0" y1="10.0" x2="250.0" y2="10.0" stroke="#ff0000" stroke-width="2.0" /><line x1="50.0" y1="5.0" x2="50.0" y2="15.0" stroke="#ff0000" stroke-width="2.0" /><line x1="60.0" y1="5.0" x2="60.0" y2="15.0" stroke="#ff0000" stroke-width="2.0" /><line x1="70.0" y1="5.0" x2="70.0" y2="15.0" stroke="#ff0000" stroke-width="2.0" /> -->
 
+<!-- <text transform="rotate(30)" fill="#ff0000">hullo!</text> -->
+<!-- <text transform="translate(20 0)rotate(-30)" fill="#ff0000">hullo!</text> -->
+<text x="-30" y="0" transform="translate(0 20)rotate(-30)" fill="#ff0000">hullo!</text>
   <!--  <text x="250" y="150"  -->
   <!--        font-family="Verdana" font-size="55" fill="blue" > -->
   <!--    Hello, out there -->

@@ -22,7 +22,6 @@ import Data.TimeSeries.Forex
 
 -- * Helpers
 
-
 -- | Create a Tick from valid (year, month, day, hour, minute, second)
 mkTick :: Integer -> Int -> Int -> Int -> Int -> Pico -> Maybe Tick
 mkTick yy mm dd hr mi se = do

@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Graphics.Rendering.Plot.Light.Internal where
 
+import Data.Monoid ((<>))
 import Control.Arrow ((&&&), (***))
 import Control.Monad (forM, forM_)
 import Data.Semigroup (Min(..), Max(..))
@@ -12,8 +13,8 @@ import qualified Data.Text as T
 
 import Text.Blaze.Svg
 import Text.Blaze.Svg11  ((!))
-import qualified Text.Blaze.Svg11 as S hiding (style, rotate)
-import qualified Text.Blaze.Svg11.Attributes as S
+import qualified Text.Blaze.Svg11 as S hiding (style)
+import qualified Text.Blaze.Svg11.Attributes as SA hiding (rotate)
 import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 import qualified Data.Colour as C
@@ -37,17 +38,17 @@ mkFigureData xmin ymin xlen ylen =
 figure :: FigureData Int -> Svg -> Svg
 figure fd =
   S.docTypeSvg
-  ! S.version "1.1"
-  ! S.width (vi $ _width fd)
-  ! S.height (vi $ _height fd)
-  ! S.viewbox (vis [_xmin fd, _ymin fd, _xmax fd, _ymax fd])
+  ! SA.version "1.1"
+  ! SA.width (vi $ _width fd)
+  ! SA.height (vi $ _height fd)
+  ! SA.viewbox (vis [_xmin fd, _ymin fd, _xmax fd, _ymax fd])
 
 
 -- | A filled rectangle, centered at (x0, y0)
 rectCentered
   :: Double -> Double -> Double -> Double -> C.Colour Double -> Svg
-rectCentered x0 y0 wid hei col = S.g ! S.transform (S.translate x0c y0c) $ 
-  S.rect ! S.width (vd wid) ! S.height (vd hei) ! S.fill (colourAttr col) where
+rectCentered x0 y0 wid hei col = S.g ! SA.transform (S.translate x0c y0c) $ 
+  S.rect ! SA.width (vd wid) ! SA.height (vd hei) ! SA.fill (colourAttr col) where
    x0c = x0 - (wid / 2)
    y0c = y0 - (hei / 2)   
 
@@ -60,7 +61,7 @@ rectCentered x0 y0 wid hei col = S.g ! S.transform (S.translate x0c y0c) $
 -- 
 -- <line x1="0.0" y1="0.0" x2="1.0" y2="1.0" stroke="#8a2be2" stroke-width="0.1" />
 line :: Double -> Double -> Double -> Double -> Double -> C.Colour Double -> Svg
-line x1 y1 x2 y2 sw col = S.line ! S.x1 (vd x1) ! S.y1 (vd y1) ! S.x2 (vd x2)  ! S.y2 (vd y2) ! S.stroke (colourAttr col )! S.strokeWidth (vd sw)
+line x1 y1 x2 y2 sw col = S.line ! SA.x1 (vd x1) ! SA.y1 (vd y1) ! SA.x2 (vd x2)  ! SA.y2 (vd y2) ! SA.stroke (colourAttr col )! SA.strokeWidth (vd sw)
 
 tick :: Axis -> Double -> Double -> C.Colour Double -> Point Double -> Svg
 tick ax len sw col (Point x y) = line x1 y1 x2 y2 sw col where
@@ -113,11 +114,16 @@ axis ax len sw col tickLenFrac p@(Point x y) ps = do
 
 -- * text
 
-textGen te (Point x y) rot = S.text_ $ S.text te ! S.customAttribute "transform" ts
-  where
-    ts = S.toValue $ unwords [transls, rots]
-    transls = "translate("++show x ++"," ++ show y ++ ")"
-    rots = "rotate(" ++ show rot ++")"
+-- | `text` renders text onto the SVG canvas. It is also possible to rotate and move the text, however the order of these modifier matters.
+-- NB1: `x` and `y` determine the position of the bottom-left corner of the text box. If a nonzero rotation is applied, the whole text box will move in a circle of radius || x^2 + y^2 ||
+-- NB2: rotate and translate are applied in this order
+--
+-- > putStrLn $ renderSvg $ text "hullo!" (Point (-30) 0) (-45) 0 20 C.red
+-- <text x="-30" y="0" transform="translate(0 20)rotate(-45)" fill="#ff0000">hullo!</text>
+text :: (Show a, Show a1, S.ToValue a2) =>
+              T.Text -> Point a2 -> a1 -> a -> a -> C.Colour Double -> Svg
+text te (Point x y) rot dx dy col = 
+  S.text_ (S.toMarkup te) ! SA.x (S.toValue x) ! SA.y (S.toValue y) ! SA.transform (S.translate dx dy <> S.rotate rot) ! SA.fill (colourAttr col)
 
 
 
@@ -131,7 +137,7 @@ textGen te (Point x y) rot = S.text_ $ S.text te ! S.customAttribute "transform"
 --
 -- <polyline points="1,1 2,1 2,2 3,4" fill="none" stroke="#ff0000" stroke-width="0.1" />
 polyline :: (Show a1, Show a) => [(a1, a)] -> Double -> C.Colour Double -> Svg
-polyline lis sw col = S.polyline ! S.points (S.toValue $ unwords $ map showP2 lis) ! S.fill none ! S.stroke (colourAttr col )! S.strokeWidth (vd sw) ! S.strokeLinejoin (S.toValue ("round" :: String))
+polyline lis sw col = S.polyline ! SA.points (S.toValue $ unwords $ map showP2 lis) ! SA.fill none ! SA.stroke (colourAttr col )! SA.strokeWidth (vd sw) ! SA.strokeLinejoin (S.toValue ("round" :: String))
 
 showP2 :: (Show a, Show a1) => (a1, a) -> String
 showP2 (x, y) = show x ++ "," ++ show y 
