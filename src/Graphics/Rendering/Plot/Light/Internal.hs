@@ -42,10 +42,13 @@ asf f r1 r2 = (m, me, mm) where
 
 
 -- | Remap the figure data to fit within [0, xPlot], [0, yPlot]
--- mkFigureData :: (Fractional a, Ord a) => a -> a -> [(a, a)] -> ([(a, a)], FigureData a)
-mkFigureData xPlot yPlot fy dat = (dat', FigData xPlot yPlot 0 xPlot 0 yPlot) where
+-- It also flips the data along the y axis since the origin in SVG is the top-left corner of the screen
+-- mkFigureData ::
+--   (Fractional a, Ord a) => a -> a -> (b -> a) -> [(a, b)] -> ([(a, a)], FigureData a)
+mkFigureData xPlot yPlot fconv dat = (dat', FigData xPlot yPlot 0 xPlot 0 yPlot) where
   (x_, y0_) = unzip dat
-  y_ = map fy y0_
+  -- x_ = map fconv x0_
+  y_ = map fconv y0_
   (xmax, xmin) = (maximum &&& minimum) x_
   xd = xmax - xmin
   (ymax, ymin) = (maximum &&& minimum) y_
@@ -57,13 +60,13 @@ mkFigureData xPlot yPlot fy dat = (dat', FigData xPlot yPlot 0 xPlot 0 yPlot) wh
 
 
 -- | Header for a Figure
-figure :: FigureData Double -> Svg -> Svg
+figure :: FigureData Float -> Svg -> Svg
 figure fd =
   S.docTypeSvg
   ! S.version "1.1"
-  ! S.width (vd $ _width fd)
-  ! S.height (vd $ _height fd)
-  ! S.viewbox (vds [_xmin fd, _ymin fd, _xmax fd, _ymax fd])
+  ! S.width (vf $ _width fd)
+  ! S.height (vf $ _height fd)
+  ! S.viewbox (vfs [_xmin fd, _ymin fd, _xmax fd, _ymax fd])
 
 
 -- | A filled rectangle, centered at (x0, y0)
@@ -98,14 +101,14 @@ line x1 y1 x2 y2 sw col = S.line ! S.x1 (vd x1) ! S.y1 (vd y1) ! S.x2 (vd x2)  !
 --
 -- <polyline points="1,1 2,1 2,2 3,4" fill="none" stroke="#ff0000" stroke-width="0.1" />
 polyline :: (Show a1, Show a) => [(a1, a)] -> Double -> C.Colour Double -> Svg
-polyline lis sw col = S.polyline ! S.points (S.toValue $ unwords $ map showP2 lis) ! S.fill noFill ! S.stroke (colourAttr col )! S.strokeWidth (vd sw) ! S.strokeLinejoin (S.toValue ("round" :: String))
+polyline lis sw col = S.polyline ! S.points (S.toValue $ unwords $ map showP2 lis) ! S.fill none ! S.stroke (colourAttr col )! S.strokeWidth (vd sw) ! S.strokeLinejoin (S.toValue ("round" :: String))
 
 showP2 :: (Show a, Show a1) => (a1, a) -> String
 showP2 (x, y) = show x ++ "," ++ show y 
 
 
-noFill :: S.AttributeValue
-noFill = S.toValue ("none" :: String)
+none :: S.AttributeValue
+none = S.toValue ("none" :: String)
 
 
   
@@ -129,18 +132,23 @@ colourAttr = S.toValue . C.sRGB24show
 vi :: Int -> S.AttributeValue
 vi = S.toValue
 
-
 -- | For use e.g. in `viewbox`
 vis :: [Int] -> S.AttributeValue
 vis = S.toValue . unwords . map show
 
+-- Double
 vd :: Double -> S.AttributeValue
 vd = S.toValue
 
 vds :: [Double] -> S.AttributeValue
 vds = S.toValue . unwords . map show
 
+-- Float
+vf :: Float -> S.AttributeValue
+vf = S.toValue
 
+vfs :: [Float] -> S.AttributeValue
+vfs = S.toValue . unwords . map show
 
 
 --

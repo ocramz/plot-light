@@ -21,8 +21,8 @@ both f = f &&& f
 
 fname = "data/forex"
 
-xPlot = 800
-yPlot = 600
+xPlot = 400
+yPlot = 300
 fnameOut = "data/forex_plot.svg"
 
 main = do
@@ -32,18 +32,20 @@ main = do
              Right datarows -> do
                 let
                   dat = tspToTuple rateHigh <$> reverse datarows
-                  (dat', fdat) = mkFigureData xPlot yPlot toRealFloat dat
+                  (dat', fdat) = mkFigureData xPlot yPlot toFloat dat
                 -- pure fdat -- (polyline dat 0.1 C.red) 
                   svg_t = renderSvg $ figure fdat
-                       (polyline dat' 0.1 C.red)
+                       (polyline dat' 0.5 C.red)
                 T.writeFile fnameOut $ T.pack svg_t
 
+
+toFloat x = toRealFloat x :: Float
 
 -- putStrLn $ renderSvg (polyline [(1,1), (2,1), (2,2), (3,4)] 0.1 C.red)
 
 
-tspToTuple :: (a -> b) -> TsPoint a -> (Double, b)
+-- tspToTuple :: (a -> b) -> TsPoint a -> (Double, b)
 tspToTuple f tsp = (tickToDouble tsp, f $ _val tsp) where
   
-tickToDouble :: TsPoint a -> Double
+-- tickToDouble :: TsPoint a -> Double
 tickToDouble = fromRational . fromTick . _tick
