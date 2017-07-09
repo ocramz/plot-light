@@ -56,7 +56,7 @@ instance Num a => AdditiveGroup (V2 a) where
 class AdditiveGroup v => VectorSpace v where
   type Scalar v :: *
   (.*) :: Scalar v -> v -> v
-
+  
 instance Num a => VectorSpace (V2 a) where
   type Scalar (V2 a) = a
   n .* (V2 vx vy) = V2 (n*vx) (n*vy)
@@ -88,15 +88,20 @@ mkV2fromEndpoints (Point px py _) (Point qx qy _) = V2 (qx-px) (qy-py)
 (-.) = mkV2fromEndpoints
 
 
-origin :: a -> Point Integer a
+origin :: Num c => a -> Point c a
 origin = Point 0 0
 
 
 -- | A Mat2 can be seen as a linear operator V2 -> V2
 data Mat2 a = Mat2 a a a a deriving (Eq, Show)
 
+-- | Linear maps, i.e. linear transformations of vectors
 class Hermitian v => LinearMap m v where
   (#>) :: m -> v -> v
+
+-- | Multiplicative matrix semigroup ("multiplying" two matrices together)
+class MultiplicativeSemigroup m where
+  (##) :: m -> m -> m
 
 instance Num a => LinearMap (Mat2 a) (V2 a) where
   (Mat2 a00 a01 a10 a11) #> (V2 vx vy) = V2 (a00 * vx + a01 * vy) (a10 * vx + a11 * vy)
@@ -108,21 +113,52 @@ diagMat2 rx ry = Mat2 rx 0 0 ry
 -- | Diagonal matrices in R2 behave as scaling transformations
 data DiagMat2 a = DMat2 a a deriving (Eq, Show)
 
+-- | Create a diagonal matrix
+mkDMat2 :: a -> a -> DiagMat2 a
+mkDMat2 = DMat2
+
 -- | The class of invertible linear transformations
 class LinearMap m v => MatrixGroup m v where
   (<\>) :: m -> v -> v
+  
+instance Num a => MultiplicativeSemigroup (DiagMat2 a) where
+  DMat2 a b ## DMat2 c d = DMat2 (a*c) (b*d)
 
 -- | Diagonal matrices can always be inverted
 instance Num a => LinearMap (DiagMat2 a) (V2 a) where
   DMat2 d1 d2 #> V2 vx vy = V2 (d1 * vx) (d2 * vy)
 instance Fractional a => MatrixGroup (DiagMat2 a) (V2 a) where
-  DMat2 d1 d2 <\> V2 vx vy = V2 (vx/d1) (vy/d2)
+  DMat2 d1 d2 <\> V2 vx vy = V2 (vx / d1) (vy / d2)
+
+-- | Build a V2 from a `Point` p (i.e. assuming the V2 points from the origin (0,0) to p)
+v2fromPoint :: Num a => Point a t -> V2 a
+v2fromPoint p@(Point _ _ l) = origin l -. p
+
+-- | Move a point along a vector
+movePoint :: Num a => V2 a -> Point a l -> Point a l
+movePoint (V2 vx vy) (Point px py l) = Point (px + vx) (py + vy) l
 
 
--- remapFrame f1 f2 x = undefined
---   where
---     vorig = x -. _fpmin f1
---     rx = _fpmax f1 - 
+-- | Map a `Point` between two `Frame`s
+betweenFrames from to f p = movePoint (m2 #> f vfrom) p
+  where
+    m1 = mkDMat2 (width from) (height from)
+    m2 = mkDMat2 (width to) (height to)
+    o1 = _fpmin from
+    o2 = _fpmin to
+    vfrom = m1 <\> (p -. o1)
+
+-- | The affine transformation that maps a `Point` contained in a `Frame` onto the unit square
+-- toUnitSquare :: Fractional a => Frame a t -> Point a t1 -> V2 a
+toUnitSquare from p = m1 <\> (p -. o1)
+  where
+    m1 = mkDMat2 (width from) (height from)
+    o1 = _fpmin from
+
+fromUnitSquare to p = m2 #> (p -. o2)
+  where
+    m2 = mkDMat2 (width to) (height to)
+    o2 = _fpmin to
 
 -- class Located v where
 --   type Coords v :: *
