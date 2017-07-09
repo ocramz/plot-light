@@ -120,18 +120,27 @@ movePoint (V2 vx vy) (Point px py l) = Point (px + vx) (py + vy) l
 
 
 -- | The vector translation from a `Point` contained in a `Frame` onto the unit square
-toUnitSquare :: Fractional a => Frame a l -> Point a l -> V2 a
-toUnitSquare from p = mm <\> (p -. o1)
+toUnitSquare :: Fractional a => Frame a l -> Point a l -> Point a l
+toUnitSquare from p = movePoint vmove p
   where
     mm = mkDMat2 (width from) (height from)
     o1 = _fpmin from
+    vmove = mm <\> (p -. o1)
 
 -- | The vector translation from a `Point` contained in the unit square onto a `Frame`
-fromUnitSquare :: Num a => Frame a l -> Point a l -> V2 a
-fromUnitSquare to p = (mm #> v2fromPoint p) ^+^ vo
+fromUnitSquare :: Num a => Frame a l -> Point a l -> Point a l
+fromUnitSquare to p = movePoint vmove p
   where
     mm = mkDMat2 (width to) (height to)
     vo = v2fromPoint (_fpmin to)
+    vmove = (mm #> v2fromPoint p) ^+^ vo
+
+
+
+
+
+
+
 
 -- class Located v where
 --   type Coords v :: *
