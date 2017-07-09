@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 -- {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
 {-# language TypeFamilies, FlexibleContexts #-}
 {- |
@@ -52,31 +53,77 @@ instance Num a => AdditiveGroup (V2 a) where
   (^+^) = mappend
   (V2 a b) ^-^ (V2 c d) = V2 (a-c) (b-d)
 
-class Vectorspace v where
+class AdditiveGroup v => VectorSpace v where
   type Scalar v :: *
   (.*) :: Scalar v -> v -> v
 
-instance Num a => Vectorspace (V2 a) where
+instance Num a => VectorSpace (V2 a) where
   type Scalar (V2 a) = a
   n .* (V2 vx vy) = V2 (n*vx) (n*vy)
 
-class Hermitian v where
+class VectorSpace v => Hermitian v where
   type InnerProduct v :: *
   (<.>) :: v -> v -> InnerProduct v
+
 
 instance Num a => Hermitian (V2 a) where
   type InnerProduct (V2 a) = a
   (V2 a b) <.> (V2 c d) = (a*c) + (b*d)
-  
+
 
 norm2 ::
-  (Hermitian v, Floating (InnerProduct v)) => v -> InnerProduct v
+  (Hermitian v, Floating n, n ~ (InnerProduct v)) => v -> n
 norm2 v = sqrt $ v <.> v
 
-normalize2 :: (InnerProduct v ~ Scalar v, Floating (Scalar v), Vectorspace v,
-      Hermitian v) =>
+normalize2 :: (InnerProduct v ~ Scalar v, Floating (Scalar v), Hermitian v) =>
      v -> v
 normalize2 v = (1/norm2 v) .* v
 
 
-mkV2 (Point px py) (Point qx qy) = V2 (qx-px) (qy-py)
+-- | Create a V2 `v` from two endpoints p1, p2. That is `v` can be seen as pointing from `p1` to `p2`
+mkV2fromEndpoints :: Num a => Point a t1 -> Point a t -> V2 a
+mkV2fromEndpoints (Point px py _) (Point qx qy _) = V2 (qx-px) (qy-py)
+
+(-.) :: Num a => Point a t1 -> Point a t -> V2 a
+(-.) = mkV2fromEndpoints
+
+
+origin :: a -> Point Integer a
+origin = Point 0 0
+
+
+-- | A Mat2 can be seen as a linear operator V2 -> V2
+data Mat2 a = Mat2 a a a a deriving (Eq, Show)
+
+class Hermitian v => LinearMap m v where
+  (#>) :: m -> v -> v
+
+instance Num a => LinearMap (Mat2 a) (V2 a) where
+  (Mat2 a00 a01 a10 a11) #> (V2 vx vy) = V2 (a00 * vx + a01 * vy) (a10 * vx + a11 * vy)
+
+-- | A diagonal matrix
+diagMat2 :: Num a => a -> a -> Mat2 a
+diagMat2 rx ry = Mat2 rx 0 0 ry
+
+-- | Diagonal matrices in R2 behave as scaling transformations
+data DiagMat2 a = DMat2 a a deriving (Eq, Show)
+
+-- | The class of invertible linear transformations
+class LinearMap m v => MatrixGroup m v where
+  (<\>) :: m -> v -> v
+
+-- | Diagonal matrices can always be inverted
+instance Num a => LinearMap (DiagMat2 a) (V2 a) where
+  DMat2 d1 d2 #> V2 vx vy = V2 (d1 * vx) (d2 * vy)
+instance Fractional a => MatrixGroup (DiagMat2 a) (V2 a) where
+  DMat2 d1 d2 <\> V2 vx vy = V2 (vx/d1) (vy/d2)
+
+
+-- remapFrame f1 f2 x = undefined
+--   where
+--     vorig = x -. _fpmin f1
+--     rx = _fpmax f1 - 
+
+-- class Located v where
+--   type Coords v :: *
+--   position :: v -> Coords v
