@@ -29,7 +29,7 @@ class AdditiveGroup v where
 instance Num a => AdditiveGroup (V2 a) where
   zero = mempty
   (^+^) = mappend
-  (V2 a b) ^-^ (V2 c d) = V2 (a-c) (b-d)
+  (V2 a b) ^-^ (V2 c d) = V2 (a - c) (b - d)
 
 class AdditiveGroup v => VectorSpace v where
   type Scalar v :: *
@@ -59,14 +59,14 @@ normalize2 v = (1/norm2 v) .* v
 
 
 -- | Create a V2 `v` from two endpoints p1, p2. That is `v` can be seen as pointing from `p1` to `p2`
-mkV2fromEndpoints :: Num a => Point a t1 -> Point a t -> V2 a
-mkV2fromEndpoints (Point px py _) (Point qx qy _) = V2 (qx-px) (qy-py)
+mkV2fromEndpoints :: Num a => Point a -> Point a -> V2 a
+mkV2fromEndpoints (Point px py) (Point qx qy) = V2 (qx-px) (qy-py)
 
-(-.) :: Num a => Point a t1 -> Point a t -> V2 a
+(-.) :: Num a => Point a -> Point a -> V2 a
 (-.) = mkV2fromEndpoints
 
 
-origin :: Num c => a -> Point c a
+origin :: Num a => Point a
 origin = Point 0 0
 
 
@@ -109,18 +109,20 @@ instance Fractional a => MatrixGroup (DiagMat2 a) (V2 a) where
   DMat2 d1 d2 <\> V2 vx vy = V2 (vx / d1) (vy / d2)
 
 -- | Build a V2 from a `Point` p (i.e. assuming the V2 points from the origin (0,0) to p)
-v2fromPoint :: Num a => Point a t -> V2 a
-v2fromPoint p@(Point _ _ l) = origin l -. p
+v2fromPoint :: Num a => Point a -> V2 a
+v2fromPoint p = origin -. p
 
 -- | Move a point along a vector
-movePoint :: Num a => V2 a -> Point a l -> Point a l
-movePoint (V2 vx vy) (Point px py l) = Point (px + vx) (py + vy) l
+movePoint :: Num a => V2 a -> Point a -> Point a
+movePoint (V2 vx vy) (Point px py) = Point (px + vx) (py + vy)
 
 
 
 
 -- | The vector translation from a `Point` contained in a `Frame` onto the unit square
-toUnitSquare :: Fractional a => Frame a l -> Point a l -> Point a l
+--
+-- NB: we do not check that `p` is actually contained within the frame. This has to be supplied correctly by the user
+toUnitSquare :: Fractional a => Frame a -> Point a -> Point a
 toUnitSquare from p = movePoint vmove p
   where
     mm = mkDMat2 (width from) (height from)
@@ -128,7 +130,9 @@ toUnitSquare from p = movePoint vmove p
     vmove = mm <\> (p -. o1)
 
 -- | The vector translation from a `Point` contained in the unit square onto a `Frame`
-fromUnitSquare :: Num a => Frame a l -> Point a l -> Point a l
+--
+-- NB: we do not check that `p` is actually contained in [0,1] x [0,1], This has to be supplied correctly by the user
+fromUnitSquare :: Num a => Frame a -> Point a -> Point a
 fromUnitSquare to p = movePoint vmove p
   where
     mm = mkDMat2 (width to) (height to)
