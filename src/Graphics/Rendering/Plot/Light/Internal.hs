@@ -50,7 +50,7 @@ rectCentered x0 y0 wid hei col = S.g ! S.transform (S.translate x0c y0c) $
 
 -- centeredAt x0 y0 = S.g ! A.transform (translate x0 y0) 
 
--- | A line segment
+-- | Line segment
 --
 -- e.g. 
 -- > putStrLn $ renderSvg (line 0 0 1 1 0.1 C.blueviolet)
@@ -62,17 +62,24 @@ line x1 y1 x2 y2 sw col = S.line ! S.x1 (vd x1) ! S.y1 (vd y1) ! S.x2 (vd x2)  !
 
 
 
--- <polyline points="40 140 80 100 120 140" stroke="black" stroke-width="20"
---       stroke-linecap="round" fill="none" stroke-linejoin="round"/>
+-- <polyline points="40 140 80 100 120 140" stroke="black" stroke-width="20" stroke-linecap="round" fill="none" stroke-linejoin="round"/>
 
--- <polyline points="20,20 40,25 60,40 80,120 120,140 200,180"
--- style="fill:none;stroke:black;stroke-width:3" />
+-- <polyline points="20,20 40,25 60,40 80,120 120,140 200,180" style="fill:none;stroke:black;stroke-width:3" />
 
+-- | Polyline (piecewise straight line)
+-- e.g.
+-- > putStrLn $ renderSvg (polyline [(1,1), (2,1), (2,2), (3,4)] 0.1 C.red)
+--
+-- <polyline points="1,1 2,1 2,2 3,4" fill="none" stroke="#ff0000" stroke-width="0.1" />
 polyline :: (Show a1, Show a) => [(a1, a)] -> Double -> C.Colour Double -> Svg
-polyline lis sw col = S.polyline ! S.points (S.toValue $ unwords $ map showP2 lis) ! S.fill (S.toValue ("none" :: String)) ! S.stroke (colourAttr col )! S.strokeWidth (vd sw)
+polyline lis sw col = S.polyline ! S.points (S.toValue $ unwords $ map showP2 lis) ! S.fill noFill ! S.stroke (colourAttr col )! S.strokeWidth (vd sw) ! S.strokeLinejoin (S.toValue ("round" :: String))
 
-showP2 :: (Show a, Show a1) => (a1, a) -> [Char]
+showP2 :: (Show a, Show a1) => (a1, a) -> String
 showP2 (x, y) = show x ++ "," ++ show y 
+
+
+noFill :: S.AttributeValue
+noFill = S.toValue ("none" :: String)
 
 
   
