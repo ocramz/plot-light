@@ -21,6 +21,8 @@ both f = f &&& f
 
 fname = "data/forex"
 
+xPlot = 800
+yPlot = 600
 fnameOut = "data/forex_plot.svg"
 
 main = do
@@ -30,15 +32,10 @@ main = do
              Right datarows -> do
                 let
                   dat = tspToTuple rateHigh <$> reverse datarows
-                  (t, x) = unzip dat
-                  (tmax, tmin) = (maximum &&& minimum) t
-                  td = tmax - tmin
-                  (xmax, xmin) = (toRealFloat . maximum &&& toRealFloat . minimum) x
-                  xd = xmax - xmin
-                  fdat = FigData td xd tmin tmax xmin xmax
+                  (dat', fdat) = mkFigureData xPlot yPlot toRealFloat dat
                 -- pure fdat -- (polyline dat 0.1 C.red) 
                   svg_t = renderSvg $ figure fdat
-                       (polyline dat 0.1 C.red)
+                       (polyline dat' 0.1 C.red)
                 T.writeFile fnameOut $ T.pack svg_t
 
 

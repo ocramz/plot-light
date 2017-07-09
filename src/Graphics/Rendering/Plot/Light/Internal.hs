@@ -1,8 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Graphics.Rendering.Plot.Light.Internal where
 
--- import Control.Arrow ((&&&), (***))
+import Control.Arrow ((&&&), (***))
 import Data.Semigroup (Min(..), Max(..))
+import Data.Scientific (Scientific, toRealFloat)
 
 -- import Data.Foldable
 import qualified Data.Text as T
@@ -39,6 +40,20 @@ asf f r1 r2 = (m, me, mm) where
 
 
 
+
+-- | Remap the figure data to fit within [0, xPlot], [0, yPlot]
+-- mkFigureData :: (Fractional a, Ord a) => a -> a -> [(a, a)] -> ([(a, a)], FigureData a)
+mkFigureData xPlot yPlot fy dat = (dat', FigData xPlot yPlot 0 xPlot 0 yPlot) where
+  (x_, y0_) = unzip dat
+  y_ = map fy y0_
+  (xmax, xmin) = (maximum &&& minimum) x_
+  xd = xmax - xmin
+  (ymax, ymin) = (maximum &&& minimum) y_
+  yd = ymax - ymin
+  remapX = affine 0 xPlot xmin xmax
+  remapY = affine 0 yPlot ymin ymax
+  flipY y = yPlot - y
+  dat' = zip (map remapX x_) (map (flipY . remapY) y_)  
 
 
 -- | Header for a Figure
