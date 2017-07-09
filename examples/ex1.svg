@@ -21,7 +21,7 @@
 
 <!-- <text transform="rotate(30)" fill="#ff0000">hullo!</text> -->
 <!-- <text transform="translate(20 0)rotate(-30)" fill="#ff0000">hullo!</text> -->
-<text x="-30" y="0" transform="translate(0 20)rotate(-30)" fill="#ff0000">hullo!</text>
+<text x="-60" y="0" transform="translate(100 0)rotate(-30)" fill="#ff0000">hullo!</text>
   <!--  <text x="250" y="150"  -->
   <!--        font-family="Verdana" font-size="55" fill="blue" > -->
   <!--    Hello, out there -->

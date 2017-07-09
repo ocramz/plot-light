@@ -1,5 +1,5 @@
 name:                plot-light
-version:             0.1.0.2
+version:             0.1.0.3
 synopsis:            A lightweight plotting library, exporting to SVG
 description:         A lightweight plotting library, exporting to SVG
 homepage:            https://github.com/ocramz/plot-light
@@ -21,14 +21,13 @@ library
   default-language:    Haskell2010
   ghc-options:         -Wall
   hs-source-dirs:      src
-  exposed-modules:     Lib
-                       Graphics.Rendering.Plot.Light
+  exposed-modules:     Graphics.Rendering.Plot.Light                    
+  other-modules:
                        Graphics.Rendering.Plot.Light.Internal
                        Graphics.Rendering.Plot.Light.IO.Text
                        Graphics.Rendering.Plot.Light.PlotTypes.Heatmap
                        Graphics.Rendering.Plot.Light.PlotTypes.TimeSeries
-                       Graphics.Rendering.Plot.Light.PlotTypes.TimeSeries.Candlestick                       
-  other-modules:       Data.TimeSeries.Forex
+                       Graphics.Rendering.Plot.Light.PlotTypes.TimeSeries.Candlestick                          Data.TimeSeries.Forex
                        Graphics.Rendering.Plot.Light.Internal.Types
                        Graphics.Rendering.Plot.Light.Internal.Geometry
   build-depends:       base >= 4.7 && < 5

@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Graphics.Rendering.Plot.Light.Internal where
+module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Point(..), LabeledPoint(..), Axis(..), mkFigureData, figure, rectCentered, line, tick, ticks, axis, text, polyline, V2(..), Mat2, DiagMat2, diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), norm2, normalize2, mkV2fromEndpoints, v2fromPoint, origin, movePoint, moveLabeledPointV2, fromUnitSquare, toUnitSquare, e1, e2) where
 
 import Data.Monoid ((<>))
 import Control.Arrow ((&&&), (***))
@@ -116,13 +116,18 @@ axis ax len sw col tickLenFrac p@(Point x y) ps = do
 
 -- | `text` renders text onto the SVG canvas. It is also possible to rotate and move the text, however the order of these modifier matters.
 -- NB1: `x` and `y` determine the position of the bottom-left corner of the text box. If a nonzero rotation is applied, the whole text box will move in a circle of radius || x^2 + y^2 ||
--- NB2: rotate and translate are applied in this order
+-- NB2: the `rotate` and `translate` apply to the _center_ of the text box instead
 --
--- > putStrLn $ renderSvg $ text "hullo!" (Point (-30) 0) (-45) 0 20 C.red
+-- > putStrLn $ renderSvg $ text (-45) C.red "hullo!" (V2 (-30) 0) (Point 0 20)
 -- <text x="-30" y="0" transform="translate(0 20)rotate(-45)" fill="#ff0000">hullo!</text>
 text :: (Show a, Show a1, S.ToValue a2) =>
-              T.Text -> Point a2 -> a1 -> a -> a -> C.Colour Double -> Svg
-text te (Point x y) rot dx dy col = 
+              a1        -- | Rotation angle 
+     -> C.Colour Double -- | Font colour
+     -> T.Text          -- | Text 
+     -> V2 a2           -- | Displacement
+     -> Point a         -- | Initial center position of the text box
+     -> Svg
+text rot col te (V2 x y) (Point dx dy) = 
   S.text_ (S.toMarkup te) ! SA.x (S.toValue x) ! SA.y (S.toValue y) ! SA.transform (S.translate dx dy <> S.rotate rot) ! SA.fill (colourAttr col)
 
 
@@ -150,23 +155,10 @@ none = S.toValue ("none" :: String)
   
 -- * Helpers
 
-
--- | Given a point `x` in a range [x1min, x1max], map it by affine transformation onto the interval [x2min, x2max]
--- More precisely, first it maps `x` onto the unit interval and from this onto the interval of interest
-affine :: Fractional t => t -> t -> t -> t -> t -> t
-affine = withAffine id
-
--- | Applies a function to the values in the unit interval
-withAffine :: Fractional t => (t -> t) -> t -> t -> t -> t -> t -> t
-withAffine f x2min x2max x1min x1max x = (f (x - x1min)/d1)*d2 + x2min where
-  d1 = x1max - x1min
-  d2 = x2max - x2min
-  
-
-
--- Render a Colour from `colour` into a `blaze` Attribute
+-- | Render a Colour from `colour` into a `blaze` Attribute
 colourAttr :: C.Colour Double -> S.AttributeValue
 colourAttr = S.toValue . C.sRGB24show 
+
 
 -- ** Conversion from primitive numerical types to AttributeValue
 vi :: Int -> S.AttributeValue

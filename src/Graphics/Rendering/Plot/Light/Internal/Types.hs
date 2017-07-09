@@ -1,6 +1,5 @@
 module Graphics.Rendering.Plot.Light.Internal.Types  where
 
-
 data FigureData a =
   FigData {
     _width :: a

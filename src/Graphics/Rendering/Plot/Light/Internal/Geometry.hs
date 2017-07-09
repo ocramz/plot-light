@@ -85,16 +85,13 @@ class MultiplicativeSemigroup m where
 instance Num a => LinearMap (Mat2 a) (V2 a) where
   (Mat2 a00 a01 a10 a11) #> (V2 vx vy) = V2 (a00 * vx + a01 * vy) (a10 * vx + a11 * vy)
 
--- | A diagonal matrix
+-- | Create a diagonal matrix
 diagMat2 :: Num a => a -> a -> Mat2 a
 diagMat2 rx ry = Mat2 rx 0 0 ry
 
 -- | Diagonal matrices in R2 behave as scaling transformations
 data DiagMat2 a = DMat2 a a deriving (Eq, Show)
 
--- | Create a diagonal matrix
-mkDMat2 :: a -> a -> DiagMat2 a
-mkDMat2 = DMat2
 
 -- | The class of invertible linear transformations
 class LinearMap m v => MatrixGroup m v where
@@ -125,10 +122,11 @@ moveLabeledPointV2 = moveLabeledPoint . movePoint
 -- | The vector translation from a `Point` contained in a `Frame` onto the unit square
 --
 -- NB: we do not check that `p` is actually contained within the frame. This has to be supplied correctly by the user
-toUnitSquare :: Fractional a => Frame a -> Point a -> Point a
+toUnitSquare :: (Fractional a, MatrixGroup (Mat2 a) (V2 a)) =>
+    Frame a -> Point a -> Point a
 toUnitSquare from p = movePoint vmove p
   where
-    mm = mkDMat2 (width from) (height from)
+    mm = diagMat2 (width from) (height from)
     o1 = _fpmin from
     vmove = mm <\> (p -. o1)
 
@@ -138,7 +136,7 @@ toUnitSquare from p = movePoint vmove p
 fromUnitSquare :: Num a => Frame a -> Point a -> Point a
 fromUnitSquare to p = movePoint vmove p
   where
-    mm = mkDMat2 (width to) (height to)
+    mm = diagMat2 (width to) (height to)
     vo = v2fromPoint (_fpmin to)
     vmove = (mm #> v2fromPoint p) ^+^ vo
 
