@@ -25,8 +25,16 @@ main = do
   case pd of Left e -> error e
              Right datarows -> do
                 let
-                  dat = tspToTuple rateHigh <$> datarows
-                  svg_t = renderSvg (polyline dat 0.1 C.red)
+                  dat = tspToTuple rateHigh <$> reverse datarows
+                  (t, x) = unzip dat
+                  tmin = minimum t
+                  tmax = maximum t
+                  td = tmax - tmin
+                  xmin = minimum x
+                  xmax = maximum x
+                  xd = xmax - xmin
+                  fdat = FigData td xd tmin tmax xmin xmax
+                  svg_t = renderSvg $ figure fdat (polyline dat 0.1 C.red)
                 T.writeFile fnameOut $ T.pack svg_t
 
 

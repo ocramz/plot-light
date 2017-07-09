@@ -27,7 +27,7 @@ fromTick (Tick d t) = fromIntegral (toModifiedJulianDay d) + timeOfDayToDayFract
 
 
 -- | Transform the time coordinate of a timeseries point 
-mapToViewbox :: FigureData (Ratio Integer) d
+mapToViewbox :: FigureData (Ratio Integer)
                    -> Tick      -- | Lower bound
                    -> Tick      -- | Upper bound
                    -> TsPoint a -- | A point in the timeseries
@@ -38,7 +38,7 @@ mapToViewbox fd tmin tmax p = LabeledPoint t' (_tick p) (_val p)
   
 
 toViewboxRange ::
-  FigureData Rational d -> Tick -> Tick -> TsPoint a -> Rational
+  FigureData Rational -> Tick -> Tick -> TsPoint a -> Rational
 toViewboxRange fd tmin tmax p =
   affine (_xmin fd) (_xmax fd) (fromTick tmin) (fromTick tmax) (fromTick $ _tick p)
 

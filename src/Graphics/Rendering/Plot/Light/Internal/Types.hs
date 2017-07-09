@@ -1,7 +1,7 @@
 module Graphics.Rendering.Plot.Light.Internal.Types where
 
 
-data FigureData a d =
+data FigureData a =
   FigData {
     _width :: a
   , _height :: a
@@ -9,7 +9,6 @@ data FigureData a d =
   , _xmax :: a
   , _ymin :: a
   , _ymax :: a
-  , _figData :: d
       }
 
 -- | A LabeledPoint carries the information of where a point should be plotted, what label should it carry (e.g. for labelling the axes) and its function value 

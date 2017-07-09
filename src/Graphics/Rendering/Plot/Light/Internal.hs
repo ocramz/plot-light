@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Graphics.Rendering.Plot.Light.Internal where
 
-import Control.Arrow ((&&&), (***))
+-- import Control.Arrow ((&&&), (***))
+import Data.Semigroup (Min(..), Max(..))
 
 -- import Data.Foldable
 import qualified Data.Text as T
@@ -29,9 +30,19 @@ import Graphics.Rendering.Plot.Light.Internal.Types
 --     mm = maximum d
 --     m = minimum d
 
+asf f r1 r2 = (m, me, mm) where
+  r1' = f r1
+  r2' = f r2
+  m = min r1' r2'
+  mm = max r1' r2'
+  me = (r1' + r2')/2
+
+
+
+
 
 -- | Header for a Figure
-figure :: FigureData Int d -> Svg -> Svg
+figure :: FigureData Int -> Svg -> Svg
 figure fd =
   S.docTypeSvg
   ! S.version "1.1"
