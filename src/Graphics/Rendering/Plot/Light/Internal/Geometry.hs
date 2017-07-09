@@ -12,28 +12,6 @@ import Graphics.Rendering.Plot.Light.Internal.Types
 
 import Data.Monoid
 
--- mapPointToViewbox ff fx fy xlens ylens figdat xmin xmax ymin ymax p = LabeledPoint t' (xlens p) p' 
---   where
---     t' = affine (fx . ff $ _xmin figdat) (fx . ff $ _xmax figdat) (fx xmin) (fx xmax) (fx $ xlens p)
---     p' = withAffine (1 -) (fy . ff $ _ymin figdat) (fy . ff $ _ymax figdat) ymin ymax (fy $ ylens p)
-
-
-
-
--- viaUnitSquare fx fy xmin xmax ymin ymax (LabeledPoint (x, y) l a) =
---   LabeledPoint c' l a where
---     c' = (viaUnitInterv fx xmin xmax x, viaUnitInterv fy ymin ymax y)
-
-
--- viaUnitInterv :: Fractional t => (t -> t) -> t -> t -> t -> t
--- viaUnitInterv f xmin xmax = from01 . f . to01
---   where
---     to01 x = (x - xmin)/xd
---     from01 x = (x * xd) + xmin
---     xd = xmax - xmin
-
-
-
 
 
 
@@ -139,26 +117,21 @@ movePoint :: Num a => V2 a -> Point a l -> Point a l
 movePoint (V2 vx vy) (Point px py l) = Point (px + vx) (py + vy) l
 
 
--- | Map a `Point` between two `Frame`s
-betweenFrames from to f p = movePoint (m2 #> f vfrom) p
-  where
-    m1 = mkDMat2 (width from) (height from)
-    m2 = mkDMat2 (width to) (height to)
-    o1 = _fpmin from
-    o2 = _fpmin to
-    vfrom = m1 <\> (p -. o1)
 
--- | The affine transformation that maps a `Point` contained in a `Frame` onto the unit square
--- toUnitSquare :: Fractional a => Frame a t -> Point a t1 -> V2 a
-toUnitSquare from p = m1 <\> (p -. o1)
+
+-- | The vector translation from a `Point` contained in a `Frame` onto the unit square
+toUnitSquare :: Fractional a => Frame a l -> Point a l -> V2 a
+toUnitSquare from p = mm <\> (p -. o1)
   where
-    m1 = mkDMat2 (width from) (height from)
+    mm = mkDMat2 (width from) (height from)
     o1 = _fpmin from
 
-fromUnitSquare to p = m2 #> (p -. o2)
+-- | The vector translation from a `Point` contained in the unit square onto a `Frame`
+fromUnitSquare :: Num a => Frame a l -> Point a l -> V2 a
+fromUnitSquare to p = (mm #> v2fromPoint p) ^+^ vo
   where
-    m2 = mkDMat2 (width to) (height to)
-    o2 = _fpmin to
+    mm = mkDMat2 (width to) (height to)
+    vo = v2fromPoint (_fpmin to)
 
 -- class Located v where
 --   type Coords v :: *
