@@ -88,10 +88,11 @@ ticks :: Foldable t =>
                -> Svg
 ticks ax len sw col ps = forM_ ps (tick ax len sw col)
 
--- ps0 :: [Point Double]
--- ps0 = [Point 0 1, Point 2 3, Point 4 5]
 
 -- | An axis with tickmarks
+--
+-- λ> putStrLn $ renderSvg $ axis X 200 2 C.red 0.05 (Point 150 10) [Point 50 1, Point 60 1, Point 70 1]
+-- <line x1="50.0" y1="10.0" x2="250.0" y2="10.0" stroke="#ff0000" stroke-width="2.0" /><line x1="50.0" y1="5.0" x2="50.0" y2="15.0" stroke="#ff0000" stroke-width="2.0" /><line x1="60.0" y1="5.0" x2="60.0" y2="15.0" stroke="#ff0000" stroke-width="2.0" /><line x1="70.0" y1="5.0" x2="70.0" y2="15.0" stroke="#ff0000" stroke-width="2.0" />
 axis :: (Functor t, Foldable t) =>
               Axis
               -> Double

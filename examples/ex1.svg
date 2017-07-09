@@ -12,7 +12,17 @@
 <!-- <polyline points="1,1 2,1 2,2 3,4" fill="none" stroke="#ff0000" stroke-width="0.05" stroke-linejoin="round" /> -->
 
 
-<line x1="50.0" y1="10.0" x2="250.0" y2="10.0" stroke="#ff0000" stroke-width="2.0" /><line x1="10.0" y1="0.0" x2="10.0" y2="20.0" stroke="#ff0000" stroke-width="2.0" /><line x1="30.0" y1="0.0" x2="30.0" y2="20.0" stroke="#ff0000" stroke-width="2.0" /><line x1="50.0" y1="0.0" x2="50.0" y2="20.0" stroke="#ff0000" stroke-width="2.0" />
+<!-- <line x1="0.0" y1="0.0" x2="250.0" y2="0.0" stroke="#ff0000" stroke-width="2.0" /><line x1="10.0" y1="0.0" x2="10.0" y2="20.0" stroke="#ff0000" stroke-width="2.0" /><line x1="30.0" y1="0.0" x2="30.0" y2="20.0" stroke="#ff0000" stroke-width="2.0" /><line x1="50.0" y1="0.0" x2="50.0" y2="20.0" stroke="#ff0000" stroke-width="2.0" /> -->
+
+<!-- <g transform="translate(100,0) rotate(-45)"><text x="0" y="0" fill="red">I love SVG</text> </g> -->
+<!-- <text x="0" y="0" fill="blue" transform="translate(90,0) rotate(-35)">I love SVG</text> -->
+
+<line x1="50.0" y1="10.0" x2="250.0" y2="10.0" stroke="#ff0000" stroke-width="2.0" /><line x1="50.0" y1="5.0" x2="50.0" y2="15.0" stroke="#ff0000" stroke-width="2.0" /><line x1="60.0" y1="5.0" x2="60.0" y2="15.0" stroke="#ff0000" stroke-width="2.0" /><line x1="70.0" y1="5.0" x2="70.0" y2="15.0" stroke="#ff0000" stroke-width="2.0" />
+
+  <!--  <text x="250" y="150"  -->
+  <!--        font-family="Verdana" font-size="55" fill="blue" > -->
+  <!--    Hello, out there -->
+  <!-- </text> -->
 
 </g>
 </svg>
