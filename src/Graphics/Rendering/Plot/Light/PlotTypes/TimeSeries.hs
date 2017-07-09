@@ -24,23 +24,22 @@ fromTick :: Tick -> Rational
 fromTick (Tick d t) = fromIntegral (toModifiedJulianDay d) + timeOfDayToDayFraction t
 
 
-
-
 -- | Transform the time coordinate of a timeseries point 
-mapToViewbox :: FigureData (Ratio Integer)
-                   -> Tick      -- | Lower bound
-                   -> Tick      -- | Upper bound
-                   -> TsPoint a -- | A point in the timeseries
-                   -> LabeledPoint (Ratio Integer) Tick a
-mapToViewbox fd tmin tmax p = LabeledPoint t' (_tick p) (_val p)
+mapPointToViewbox :: (Fractional t, Fractional a) =>
+                           (px -> Rational)    -- | From the FigureData type
+                           -> (Rational -> t)  -- | To the time axis type
+                           -> (Rational -> a)  -- | To the value type
+                           -> FigureData px   
+                           -> Tick             -- | Min. time
+                           -> Tick             -- | Max. time
+                           -> a                -- | Min. value
+                           -> a                -- | Max. value
+                           -> TsPoint Rational
+                           -> LabeledPoint t Tick a
+mapPointToViewbox ff fx fy figdat xmin xmax ymin ymax p = LabeledPoint t' (_tick p) p' 
   where
-    t' = toViewboxRange fd tmin tmax p
-  
-
-toViewboxRange ::
-  FigureData Rational -> Tick -> Tick -> TsPoint a -> Rational
-toViewboxRange fd tmin tmax p =
-  affine (_xmin fd) (_xmax fd) (fromTick tmin) (fromTick tmax) (fromTick $ _tick p)
+    t' = affine (fx . ff $ _xmin figdat) (fx . ff $ _xmax figdat) (fx $ fromTick xmin) (fx $ fromTick xmax) (fx . fromTick $ _tick p)
+    p' = affine (fy . ff $ _ymin figdat) (fy . ff $ _ymax figdat) ymin ymax (fy $ _val p)
 
 
 

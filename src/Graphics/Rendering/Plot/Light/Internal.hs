@@ -41,18 +41,17 @@ asf f r1 r2 = (m, me, mm) where
 
 
 
--- | Remap the figure data to fit within [0, xPlot], [0, yPlot]
--- It also flips the data along the y axis since the origin in SVG is the top-left corner of the screen
--- mkFigureData ::
---   (Fractional a, Ord a) => a -> a -> (b -> a) -> [(a, b)] -> ([(a, a)], FigureData a)
+-- | Preprocess the dataset for plotting and create the SVG header (figure and viewbox corners)
+-- 1. Remap the figure data to fit within [0, xPlot], [0, yPlot], expressed in pixels
+-- 2. Flip the data along the y axis since the origin in SVG is the top-left corner of the screen
+mkFigureData ::
+  (Fractional a, Ord a) => a -> a -> (b -> a) -> [(a, b)] -> ([(a, a)], FigureData a)
 mkFigureData xPlot yPlot fconv dat = (dat', FigData xPlot yPlot 0 xPlot 0 yPlot) where
   (x_, y0_) = unzip dat
   -- x_ = map fconv x0_
   y_ = map fconv y0_
   (xmax, xmin) = (maximum &&& minimum) x_
-  xd = xmax - xmin
   (ymax, ymin) = (maximum &&& minimum) y_
-  yd = ymax - ymin
   remapX = affine 0 xPlot xmin xmax
   remapY = affine 0 yPlot ymin ymax
   flipY y = yPlot - y
@@ -116,6 +115,7 @@ none = S.toValue ("none" :: String)
 
 
 -- | Given a point `x` in a range [x1min, x1max], map it by affine transformation onto the interval [x2min, x2max]
+-- More precisely, first it maps `x` onto the unit simplex and from this onto the interval of interest
 affine :: Fractional t => t -> t -> t -> t -> t -> t
 affine x2min x2max x1min x1max x = (x - x1min)*d2/d1 + x2min where
   d1 = x1max - x1min

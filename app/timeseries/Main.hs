@@ -12,7 +12,7 @@ import Data.TimeSeries.Forex
 import qualified Data.Attoparsec.Text as A
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import Data.Scientific (toRealFloat)
+import Data.Scientific (Scientific, toRealFloat)
 import Text.Blaze.Svg.Renderer.String (renderSvg)
 import qualified Data.Colour.Names as C
 
@@ -33,19 +33,15 @@ main = do
                 let
                   dat = tspToTuple rateHigh <$> reverse datarows
                   (dat', fdat) = mkFigureData xPlot yPlot toFloat dat
-                -- pure fdat -- (polyline dat 0.1 C.red) 
                   svg_t = renderSvg $ figure fdat
                        (polyline dat' 0.5 C.red)
                 T.writeFile fnameOut $ T.pack svg_t
 
-
+toFloat :: Scientific -> Float
 toFloat x = toRealFloat x :: Float
 
--- putStrLn $ renderSvg (polyline [(1,1), (2,1), (2,2), (3,4)] 0.1 C.red)
-
-
--- tspToTuple :: (a -> b) -> TsPoint a -> (Double, b)
-tspToTuple f tsp = (tickToDouble tsp, f $ _val tsp) where
+tspToTuple :: (a -> b) -> TsPoint a -> (Float, b)
+tspToTuple f tsp = (tickToFloat tsp, f $ _val tsp) where
   
--- tickToDouble :: TsPoint a -> Double
-tickToDouble = fromRational . fromTick . _tick
+tickToFloat :: TsPoint a -> Float
+tickToFloat = fromRational . fromTick . _tick
