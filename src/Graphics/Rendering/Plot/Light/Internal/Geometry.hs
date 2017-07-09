@@ -7,20 +7,21 @@ This module provides functionality for working with affine transformations (i.e.
 -}
 module Graphics.Rendering.Plot.Light.Internal.Geometry where
 
-import Graphics.Rendering.Plot.Light.Internal
 import Graphics.Rendering.Plot.Light.Internal.Types
 
-import Data.Monoid
 
 
-
-
+-- | V2 is a vector in R^2
 data V2 a = V2 a a deriving (Eq, Show)
 
+-- | Vectors form a monoid w.r.t. vector addition
 instance Num a => Monoid (V2 a) where
   mempty = V2 0 0
   (V2 a b) `mappend` (V2 c d) = V2 (a + b) (c + d)
 
+-- | Additive group : 
+-- v ^+^ zero = zero ^+^ v = v
+-- v ^-^ v == zero
 class AdditiveGroup v where
   zero :: v
   (^+^) :: v -> v -> v
@@ -31,6 +32,7 @@ instance Num a => AdditiveGroup (V2 a) where
   (^+^) = mappend
   (V2 a b) ^-^ (V2 c d) = V2 (a - c) (b - d)
 
+-- | Vector space : multiplication by a scalar quantity
 class AdditiveGroup v => VectorSpace v where
   type Scalar v :: *
   (.*) :: Scalar v -> v -> v
@@ -39,33 +41,32 @@ instance Num a => VectorSpace (V2 a) where
   type Scalar (V2 a) = a
   n .* (V2 vx vy) = V2 (n*vx) (n*vy)
 
+-- | Hermitian space : inner product
 class VectorSpace v => Hermitian v where
   type InnerProduct v :: *
   (<.>) :: v -> v -> InnerProduct v
-
 
 instance Num a => Hermitian (V2 a) where
   type InnerProduct (V2 a) = a
   (V2 a b) <.> (V2 c d) = (a*c) + (b*d)
 
-
+-- | Euclidean (L^2) norm
 norm2 ::
   (Hermitian v, Floating n, n ~ (InnerProduct v)) => v -> n
 norm2 v = sqrt $ v <.> v
 
+-- | Normalize a V2 w.r.t. its Euclidean norm
 normalize2 :: (InnerProduct v ~ Scalar v, Floating (Scalar v), Hermitian v) =>
      v -> v
 normalize2 v = (1/norm2 v) .* v
 
 
 -- | Create a V2 `v` from two endpoints p1, p2. That is `v` can be seen as pointing from `p1` to `p2`
-mkV2fromEndpoints :: Num a => Point a -> Point a -> V2 a
+mkV2fromEndpoints, (-.) :: Num a => Point a -> Point a -> V2 a
 mkV2fromEndpoints (Point px py) (Point qx qy) = V2 (qx-px) (qy-py)
-
-(-.) :: Num a => Point a -> Point a -> V2 a
 (-.) = mkV2fromEndpoints
 
-
+-- | The origin of the axes, point (0, 0)
 origin :: Num a => Point a
 origin = Point 0 0
 
@@ -116,7 +117,9 @@ v2fromPoint p = origin -. p
 movePoint :: Num a => V2 a -> Point a -> Point a
 movePoint (V2 vx vy) (Point px py) = Point (px + vx) (py + vy)
 
-
+-- | Move a `LabeledPoint` along a vector
+moveLabeledPointV2 :: Num a => V2 a -> LabeledPoint l a -> LabeledPoint l a
+moveLabeledPointV2 = moveLabeledPoint . movePoint
 
 
 -- | The vector translation from a `Point` contained in a `Frame` onto the unit square
@@ -140,6 +143,10 @@ fromUnitSquare to p = movePoint vmove p
     vmove = (mm #> v2fromPoint p) ^+^ vo
 
 
+-- | Coordinate unit vectors
+e1, e2 :: Num a => V2 a
+e1 = V2 1 0
+e2 = V2 0 1
 
 
 

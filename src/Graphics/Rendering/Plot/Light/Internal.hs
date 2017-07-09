@@ -2,6 +2,7 @@
 module Graphics.Rendering.Plot.Light.Internal where
 
 import Control.Arrow ((&&&), (***))
+import Control.Monad (forM, forM_)
 import Data.Semigroup (Min(..), Max(..))
 import Data.Scientific (Scientific, toRealFloat)
 
@@ -22,6 +23,7 @@ import qualified Data.Colour.SRGB as C
 import GHC.Real
 
 import Graphics.Rendering.Plot.Light.Internal.Types
+import Graphics.Rendering.Plot.Light.Internal.Geometry
 
 
 
@@ -60,6 +62,51 @@ rectCentered x0 y0 wid hei col = S.g ! S.transform (S.translate x0c y0c) $
 line :: Double -> Double -> Double -> Double -> Double -> C.Colour Double -> Svg
 line x1 y1 x2 y2 sw col = S.line ! S.x1 (vd x1) ! S.y1 (vd y1) ! S.x2 (vd x2)  ! S.y2 (vd y2) ! S.stroke (colourAttr col )! S.strokeWidth (vd sw)
 
+tick :: Axis -> Double -> Double -> C.Colour Double -> Point Double -> Svg
+tick ax len sw col (Point x y) = line x1 y1 x2 y2 sw col where
+  lh = len / 2
+  (x1, y1, x2, y2)
+    | ax == Y = (x, y-lh, x, y+lh)
+    | otherwise = (x-lh, y, x+lh, y)
+
+tickX, tickY ::
+     Double          -- | Length
+  -> Double          -- | Stroke width
+  -> C.Colour Double -- | Stroke colour
+  -> Point Double    -- | Center coordinates
+  -> Svg
+tickX = tick X
+tickY = tick Y
+
+-- | An array of axis-aligned identical segments (to be used as axis tickmarks), with centers given by the array of `Point`s
+ticks :: Foldable t =>
+               Axis                -- | Axis 
+               -> Double           -- | Length         
+               -> Double           -- | Stroke width
+               -> C.Colour Double  -- | Stroke colour
+               -> t (Point Double) -- | Center coordinates
+               -> Svg
+ticks ax len sw col ps = forM_ ps (tick ax len sw col)
+
+-- ps0 :: [Point Double]
+-- ps0 = [Point 0 1, Point 2 3, Point 4 5]
+
+-- | An axis with tickmarks
+axis :: (Functor t, Foldable t) =>
+              Axis
+              -> Double
+              -> Double
+              -> C.Colour Double
+              -> Double
+              -> Point Double
+              -> t (Point Double)
+              -> Svg
+axis ax len sw col tickLenFrac p@(Point x y) ps = do
+  tick ax len sw col p
+  ticks (otherAxis ax) (tickLenFrac * len) sw col (f <$> ps)
+  where
+    f | ax == X = setPointY y
+      | otherwise = setPointX x
 
 
 
