@@ -9,7 +9,7 @@ data FigureData a =
   , _xmax :: a
   , _ymin :: a
   , _ymax :: a
-      }
+      } deriving (Eq, Show)
 
 -- | A LabeledPoint carries the information of where a point should be plotted, what label should it carry (e.g. for labelling the axes) and its function value 
 data LabeledPoint c l a =

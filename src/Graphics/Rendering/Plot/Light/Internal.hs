@@ -42,13 +42,13 @@ asf f r1 r2 = (m, me, mm) where
 
 
 -- | Header for a Figure
-figure :: FigureData Int -> Svg -> Svg
+figure :: FigureData Double -> Svg -> Svg
 figure fd =
   S.docTypeSvg
   ! S.version "1.1"
-  ! S.width (vi $ _width fd)
-  ! S.height (vi $ _height fd)
-  ! S.viewbox (vis [_xmin fd, _ymin fd, _xmax fd, _ymax fd])
+  ! S.width (vd $ _width fd)
+  ! S.height (vd $ _height fd)
+  ! S.viewbox (vds [_xmin fd, _ymin fd, _xmax fd, _ymax fd])
 
 
 -- | A filled rectangle, centered at (x0, y0)
@@ -122,6 +122,8 @@ vis = S.toValue . unwords . map show
 vd :: Double -> S.AttributeValue
 vd = S.toValue
 
+vds :: [Double] -> S.AttributeValue
+vds = S.toValue . unwords . map show
 
 
 
