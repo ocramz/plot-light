@@ -8,7 +8,7 @@ import qualified Data.Text as T
 -- import qualified Data.Vector as V
 
 import Text.Blaze.Svg
-import Text.Blaze.Svg11 -- ((!), mkPath, rotate, translate, l, m)
+import Text.Blaze.Svg11  ((!))
 import qualified Text.Blaze.Svg11 as S
 import qualified Text.Blaze.Svg11.Attributes as S
 import Text.Blaze.Svg.Renderer.String (renderSvg)
@@ -30,10 +30,6 @@ import Graphics.Rendering.Plot.Light.Internal.Types
 --     m = minimum d
 
 
-
-
-
-
 -- | Header for a Figure
 figure :: FigureData Int d -> Svg -> Svg
 figure fd =
@@ -47,15 +43,21 @@ figure fd =
 -- | A filled rectangle, centered at (x0, y0)
 rectCentered
   :: Double -> Double -> Double -> Double -> C.Colour Double -> Svg
-rectCentered x0 y0 wid hei col = S.g ! S.transform (translate x0c y0c) $ 
+rectCentered x0 y0 wid hei col = S.g ! S.transform (S.translate x0c y0c) $ 
   S.rect ! S.width (vd wid) ! S.height (vd hei) ! S.fill (colourAttr col) where
    x0c = x0 - (wid / 2)
    y0c = y0 - (hei / 2)   
 
 -- centeredAt x0 y0 = S.g ! A.transform (translate x0 y0) 
 
-
-line x1 x2 y1 y2 = S.line ! S.x1 (vd x1) ! S.x2 (vd x2) ! S.y1 (vd y1) ! S.y2 (vd y2)
+-- | A line segment
+--
+-- e.g. 
+-- > putStrLn $ renderSvg (line 0 0 1 1 0.1 C.blueviolet)
+-- 
+-- <line x1="0.0" y1="0.0" x2="1.0" y2="1.0" stroke="#8a2be2" stroke-width="0.1" />
+line :: Double -> Double -> Double -> Double -> Double -> C.Colour Double -> Svg
+line x1 y1 x2 y2 sw col = S.line ! S.x1 (vd x1) ! S.y1 (vd y1) ! S.x2 (vd x2)  ! S.y2 (vd y2) ! S.stroke (colourAttr col )! S.strokeWidth (vd sw)
 
 
 -- * Helpers
