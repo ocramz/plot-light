@@ -12,7 +12,7 @@ import qualified Data.Text as T
 
 import Text.Blaze.Svg
 import Text.Blaze.Svg11  ((!))
-import qualified Text.Blaze.Svg11 as S hiding (style)
+import qualified Text.Blaze.Svg11 as S hiding (style, rotate)
 import qualified Text.Blaze.Svg11.Attributes as S
 import Text.Blaze.Svg.Renderer.String (renderSvg)
 
@@ -108,6 +108,16 @@ axis ax len sw col tickLenFrac p@(Point x y) ps = do
   where
     f | ax == X = setPointY y
       | otherwise = setPointX x
+
+
+
+-- * text
+
+textGen te (Point x y) rot = S.text_ $ S.text te ! S.customAttribute "transform" ts
+  where
+    ts = S.toValue $ unwords [transls, rots]
+    transls = "translate("++show x ++"," ++ show y ++ ")"
+    rots = "rotate(" ++ show rot ++")"
 
 
 
