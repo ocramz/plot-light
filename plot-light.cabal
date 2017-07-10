@@ -1,5 +1,5 @@
 name:                plot-light
-version:             0.1.0.4
+version:             0.1.0.5
 synopsis:            A lightweight plotting library, exporting to SVG
 description:         A lightweight plotting library, exporting to SVG
 homepage:            https://github.com/ocramz/plot-light
