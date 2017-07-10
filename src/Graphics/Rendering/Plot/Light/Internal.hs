@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Point(..), LabeledPoint(..), Axis(..), mkFigureData, figure, rectCentered, line, tick, ticks, axis, text, polyline, V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), norm2, normalize2, mkV2fromEndpoints, v2fromPoint, origin, movePoint, moveLabeledPointV2, fromUnitSquare, toUnitSquare, e1, e2) where
+module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Point(..), LabeledPoint(..), Axis(..), mkFigureData, svgHeader, rectCentered, line, tick, ticks, axis, text, polyline, V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), norm2, normalize2, mkV2fromEndpoints, v2fromPoint, origin, movePoint, moveLabeledPointV2, fromUnitSquare, toUnitSquare, e1, e2) where
 
 import Data.Monoid ((<>))
 import Control.Arrow ((&&&), (***))
@@ -34,14 +34,14 @@ mkFigureData :: Num a =>
        -> a
        -> a
        -> FigureData a
-mkFigureData (Point xmin ymin) xlen ylen =
-  FigData xlen ylen xmin (xmin + xlen) ymin (ymin + ylen)
+mkFigureData (Point xmi ymi) xlen ylen =
+  FigData xlen ylen xmi (xmi + xlen) ymi (ymi + ylen)
 
 
 
--- | Header for a Figure
-figure :: FigureData Int -> Svg -> Svg
-figure fd =
+-- | Create the SVG header from `FigureData`
+svgHeader :: FigureData Int -> Svg -> Svg
+svgHeader fd =
   S.docTypeSvg
   ! SA.version "1.1"
   ! SA.width (vi $ _width fd)

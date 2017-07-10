@@ -7,31 +7,44 @@
 -- Maintainer  :  Marco Zocca <zocca marco gmail>
 --
 -- `plot-light` provides functionality for rendering vector
--- graphics as SVG. It is geared in particular towards scientific plotting,
--- and it is termed "light" because it only requires native Haskell dependencies.
+-- graphics in SVG format. It is geared in particular towards scientific plotting,
+-- and it is termed "light" because it only requires few native Haskell dependencies.
 --
 -- It builds upon `blaze-svg` by adding type-safe combinators,
--- geometry primitives and functionaliity
+-- geometry primitives and related functions.
+--
+-- == Usage
 --
 -- To use this project you just need to import this module qualified (to avoid name clashes with any other modules you might have loaded on the side), for example as follows :
 --
 -- @import Graphics.Rendering.Plot.Light as P@
+--
+-- If you wish to try out the examples in this page, you will need to have `renderSvg` in scope as well:
+--
+-- @import Text.Blaze.Svg.Renderer.String (renderSvg)@
 
 module Graphics.Rendering.Plot.Light (
-  -- * Geometry elements
+  -- * Graphical elements
   rectCentered, line, axis, text, polyline,
   -- * Types
   FigureData(..), Point(..), LabeledPoint(..), Axis(..),
-  mkFigureData, figure,
+  mkFigureData, svgHeader,
   -- * Geometry
   -- ** Vectors
   V2(..),
   -- ** Matrices
   Mat2(..), DiagMat2(..), diagMat2,
-  -- ** Typeclasses
-  AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..),
+  -- ** Primitive elements
+  origin, e1, e2,
+  -- ** Vector operations 
   norm2, normalize2,
-  mkV2fromEndpoints, v2fromPoint, origin, movePoint, moveLabeledPointV2, fromUnitSquare, toUnitSquare, e1, e2) where
+  -- ** Vector construction
+  mkV2fromEndpoints, v2fromPoint, 
+  -- ** Operations on points
+  movePoint, moveLabeledPointV2, fromUnitSquare, toUnitSquare,
+  -- ** Typeclasses
+  AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..)
+  ) where
 
 -- import Data.Foldable
 import qualified Data.Text as T

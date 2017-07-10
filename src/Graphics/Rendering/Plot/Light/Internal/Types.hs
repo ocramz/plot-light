@@ -27,7 +27,7 @@ setPointX, setPointY :: a -> Point a -> Point a
 setPointX = setPointCoord X
 setPointY = setPointCoord Y
 
--- | A `LabeledPoint` carries the information of where a point should be plotted, what label should it carry (e.g. for labelling the axes) and its function value 
+-- | A `LabeledPoint` carries a "label" (i.e. any additional information such as a text tag, or any other data structure), in addition to position information. Data points on a plot are `LabeledPoint`s.
 data LabeledPoint l a =
   LabeledPoint {
    _lp :: Point a,

@@ -19,14 +19,20 @@ instance Num a => Monoid (V2 a) where
   mempty = V2 0 0
   (V2 a b) `mappend` (V2 c d) = V2 (a + b) (c + d)
 
--- | Additive group : 
--- v ^+^ zero = zero ^+^ v = v
--- v ^-^ v == zero
+-- | Additive group :
+-- 
+-- > v ^+^ zero == zero ^+^ v == v
+--
+-- > v ^-^ v == zero
 class AdditiveGroup v where
+  -- | Identity element
   zero :: v
+  -- | Group action ("sum")
   (^+^) :: v -> v -> v
+  -- | Inverse group action ("subtraction")
   (^-^) :: v -> v -> v
 
+-- | Vectors form an additive group
 instance Num a => AdditiveGroup (V2 a) where
   zero = mempty
   (^+^) = mappend
@@ -35,6 +41,7 @@ instance Num a => AdditiveGroup (V2 a) where
 -- | Vector space : multiplication by a scalar quantity
 class AdditiveGroup v => VectorSpace v where
   type Scalar v :: *
+  -- | Scalar multiplication
   (.*) :: Scalar v -> v -> v
   
 instance Num a => VectorSpace (V2 a) where
@@ -44,6 +51,7 @@ instance Num a => VectorSpace (V2 a) where
 -- | Hermitian space : inner product
 class VectorSpace v => Hermitian v where
   type InnerProduct v :: *
+  -- | Inner product
   (<.>) :: v -> v -> InnerProduct v
 
 instance Num a => Hermitian (V2 a) where
@@ -71,16 +79,21 @@ origin :: Num a => Point a
 origin = Point 0 0
 
 
--- | A Mat2 can be seen as a linear operator V2 -> V2
+-- | A Mat2 can be seen as a linear operator that acts on points in the plane
 data Mat2 a = Mat2 a a a a deriving (Eq, Show)
 
 -- | Linear maps, i.e. linear transformations of vectors
 class Hermitian v => LinearMap m v where
+  -- | Matrix action, i.e. linear transformation of a vector
   (#>) :: m -> v -> v
 
 -- | Multiplicative matrix semigroup ("multiplying" two matrices together)
 class MultiplicativeSemigroup m where
+  -- | Matrix product
   (##) :: m -> m -> m
+
+instance Num a => MultiplicativeSemigroup (Mat2 a) where
+  Mat2 a00 a01 a10 a11 ## Mat2 b00 b01 b10 b11 = Mat2 (a00*b00+a01*b10) (a00*b01+a01*b11) (a10*b00+a11*b10) (a10*b01+a11*b11)
 
 instance Num a => LinearMap (Mat2 a) (V2 a) where
   (Mat2 a00 a01 a10 a11) #> (V2 vx vy) = V2 (a00 * vx + a01 * vy) (a10 * vx + a11 * vy)
@@ -95,14 +108,16 @@ data DiagMat2 a = DMat2 a a deriving (Eq, Show)
 
 -- | The class of invertible linear transformations
 class LinearMap m v => MatrixGroup m v where
+  -- | Inverse matrix action on a vector
   (<\>) :: m -> v -> v
   
 instance Num a => MultiplicativeSemigroup (DiagMat2 a) where
   DMat2 a b ## DMat2 c d = DMat2 (a*c) (b*d)
 
--- | Diagonal matrices can always be inverted
 instance Num a => LinearMap (DiagMat2 a) (V2 a) where
   DMat2 d1 d2 #> V2 vx vy = V2 (d1 * vx) (d2 * vy)
+
+-- | Diagonal matrices can always be inverted
 instance Fractional a => MatrixGroup (DiagMat2 a) (V2 a) where
   DMat2 d1 d2 <\> V2 vx vy = V2 (vx / d1) (vy / d2)
 
@@ -130,7 +145,7 @@ toUnitSquare from p = movePoint vmove p
     o1 = _fpmin from
     vmove = mm <\> (p -. o1)
 
--- | The vector translation from a `Point` contained in the unit square onto a `Frame`
+-- | The vector translation from a `Point` `p` contained in the unit square onto a `Frame`
 --
 -- NB: we do not check that `p` is actually contained in [0,1] x [0,1], This has to be supplied correctly by the user
 fromUnitSquare :: Num a => Frame a -> Point a -> Point a
@@ -141,9 +156,11 @@ fromUnitSquare to p = movePoint vmove p
     vmove = (mm #> v2fromPoint p) ^+^ vo
 
 
--- | Coordinate unit vectors
-e1, e2 :: Num a => V2 a
+-- | X-aligned unit vector
+e1 :: Num a => V2 a
 e1 = V2 1 0
+-- | Y-aligned unit vector
+e2 :: Num a => V2 a
 e2 = V2 0 1
 
 
