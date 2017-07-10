@@ -31,7 +31,8 @@ setPointY = setPointCoord Y
 data LabeledPoint l a =
   LabeledPoint {
    _lp :: Point a,
-   _lplabel :: l } deriving (Eq, Show)
+   _lplabel :: l
+   } deriving (Eq, Show)
 
 moveLabeledPoint :: (Point a -> Point b) -> LabeledPoint l a -> LabeledPoint l b
 moveLabeledPoint f (LabeledPoint p l) = LabeledPoint (f p) l
@@ -39,7 +40,8 @@ moveLabeledPoint f (LabeledPoint p l) = LabeledPoint (f p) l
 -- | A frame, i.e. a bounding box for objects
 data Frame a = Frame {
    _fpmin :: Point a,
-   _fpmax :: Point a} deriving (Eq, Show)
+   _fpmax :: Point a
+   } deriving (Eq, Show)
 
 -- | Frame corner coordinates
 xmin, xmax, ymin, ymax :: Frame a -> a

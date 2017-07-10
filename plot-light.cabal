@@ -27,7 +27,8 @@ library
                        Graphics.Rendering.Plot.Light.IO.Text
                        Graphics.Rendering.Plot.Light.PlotTypes.Heatmap
                        Graphics.Rendering.Plot.Light.PlotTypes.TimeSeries
-                       Graphics.Rendering.Plot.Light.PlotTypes.TimeSeries.Candlestick                          Data.TimeSeries.Forex
+                       Graphics.Rendering.Plot.Light.PlotTypes.TimeSeries.Candlestick
+                       Data.TimeSeries.Forex
                        Graphics.Rendering.Plot.Light.Internal.Types
                        Graphics.Rendering.Plot.Light.Internal.Geometry
   build-depends:       base >= 4.7 && < 5
