@@ -21,8 +21,13 @@ spec =
 
 
 
-prop_multMatGroup :: (MatrixGroup m a, Eq a) => m -> a -> Bool
+-- * Properties
+
+prop_multMatGroup :: (MatrixGroup m v, Eq v) => m -> v -> Bool
 prop_multMatGroup m v = m <\> (m #> v) == v
+
+
+-- * Newtypes and their Arbitrary instances
 
 newtype V2r a = V2r { v2r :: V2 a } deriving (Eq, Show)
 instance Num a => Arbitrary (V2r a) where
