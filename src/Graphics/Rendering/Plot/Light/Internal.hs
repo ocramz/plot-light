@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Point(..), LabeledPoint(..), Axis(..), mkFigureData, svgHeader, rectCentered, line, tick, ticks, axis, text, polyline, V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), norm2, normalize2, mkV2fromEndpoints, v2fromPoint, origin, movePoint, moveLabeledPointV2, fromUnitSquare, toUnitSquare, e1, e2) where
+module Graphics.Rendering.Plot.Light.Internal (Frame(..), Point(..), LabeledPoint(..), Axis(..), svgHeader, rectCentered, line, tick, ticks, axis, text, polyline, V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, movePoint, moveLabeledPointV2, fromUnitSquare, toUnitSquare, e1, e2) where
 
 import Data.Monoid ((<>))
 import Control.Arrow ((&&&), (***))
@@ -28,25 +28,17 @@ import Graphics.Rendering.Plot.Light.Internal.Geometry
 
 
 
--- | Create a `FigureData` structure from the top-left corner point and its side lengths
-mkFigureData :: Num a =>
-          Point a      
-       -> a
-       -> a
-       -> FigureData a
-mkFigureData (Point xmi ymi) xlen ylen =
-  FigData xlen ylen xmi (xmi + xlen) ymi (ymi + ylen)
-
 
 
 -- | Create the SVG header from `FigureData`
-svgHeader :: FigureData Int -> Svg -> Svg
+svgHeader :: Frame Int -> Svg -> Svg
 svgHeader fd =
   S.docTypeSvg
   ! SA.version "1.1"
-  ! SA.width (vi $ _width fd)
-  ! SA.height (vi $ _height fd)
-  ! SA.viewbox (vis [_xmin fd, _ymin fd, _xmax fd, _ymax fd])
+  ! SA.width (vi $ width fd)
+  ! SA.height (vi $ height fd)
+  ! SA.viewbox (vis [xmin fd, ymin fd, xmax fd, ymax fd])
+
 
 
 -- | A filled rectangle

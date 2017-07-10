@@ -26,9 +26,10 @@
 module Graphics.Rendering.Plot.Light (
   -- * Graphical elements
   rectCentered, line, axis, text, polyline,
+  -- ** SVG utilities
+  svgHeader,
   -- * Types
-  FigureData(..), Point(..), LabeledPoint(..), Axis(..),
-  mkFigureData, svgHeader,
+  Frame(..), Point(..), LabeledPoint(..), Axis(..),
   -- * Geometry
   -- ** Vectors
   V2(..),
@@ -39,7 +40,7 @@ module Graphics.Rendering.Plot.Light (
   -- ** Vector operations 
   norm2, normalize2,
   -- ** Vector construction
-  mkV2fromEndpoints, v2fromPoint, 
+  v2fromEndpoints, v2fromPoint, 
   -- ** Operations on points
   movePoint, moveLabeledPointV2, fromUnitSquare, toUnitSquare,
   -- ** Typeclasses

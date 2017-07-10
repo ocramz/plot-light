@@ -1,18 +1,10 @@
 module Graphics.Rendering.Plot.Light.Internal.Types  where
 
-data FigureData a =
-  FigData {
-    _width :: a
-  , _height :: a
-  , _xmin :: a
-  , _xmax :: a
-  , _ymin :: a
-  , _ymax :: a
-      } deriving (Eq, Show)
 
 
 -- | A `Point` defines a point in R2
-data Point a = Point { _px :: a, _py :: a} deriving (Eq, Show)
+data Point a = Point { _px :: a,
+                       _py :: a } deriving (Eq, Show)
 
 mkPoint :: a -> a -> Point a
 mkPoint = Point

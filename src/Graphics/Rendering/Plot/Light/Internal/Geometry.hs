@@ -70,9 +70,9 @@ normalize2 v = (1/norm2 v) .* v
 
 
 -- | Create a V2 `v` from two endpoints p1, p2. That is `v` can be seen as pointing from `p1` to `p2`
-mkV2fromEndpoints, (-.) :: Num a => Point a -> Point a -> V2 a
-mkV2fromEndpoints (Point px py) (Point qx qy) = V2 (qx-px) (qy-py)
-(-.) = mkV2fromEndpoints
+v2fromEndpoints, (-.) :: Num a => Point a -> Point a -> V2 a
+v2fromEndpoints (Point px py) (Point qx qy) = V2 (qx-px) (qy-py)
+(-.) = v2fromEndpoints
 
 -- | The origin of the axes, point (0, 0)
 origin :: Num a => Point a
