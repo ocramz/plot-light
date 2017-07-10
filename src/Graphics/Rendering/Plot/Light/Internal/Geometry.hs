@@ -1,6 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
--- {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
-{-# language TypeFamilies, FlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses, TypeFamilies, FlexibleContexts, FlexibleInstances #-}
 {- |
 This module provides functionality for working with affine transformations (i.e. in the unit square)
  
@@ -176,9 +174,11 @@ instance Eps Double where
 instance Eps Float where
   a ~= b = abs (a - b) <= 1e-6
 
-instance (Ord a, Floating a) => Eps (V2 a) where
+instance Eps (V2 Double) where
   v1 ~= v2 = norm2 (v1 ^-^ v2) <= 1e-8
   
+instance Eps (V2 Float) where
+  v1 ~= v2 = norm2 (v1 ^-^ v2) <= 1e-4
 
 
 
