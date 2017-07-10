@@ -7,17 +7,13 @@
 -- Maintainer  :  Marco Zocca <zocca marco gmail>
 --
 -- `plot-light` provides functionality for rendering vector
--- graphics in SVG format. It is geared in particular towards scientific plotting,
--- and it is termed "light" because it only requires few native Haskell dependencies.
---
--- It builds upon `blaze-svg` by adding type-safe combinators,
--- geometry primitives and related functions.
+-- graphics in SVG format. It is geared in particular towards scientific plotting, and it is termed "light" because it only requires a few common Haskell dependencies and no external libraries.
 --
 -- == Usage
 --
 -- To use this project you just need to import this module qualified (to avoid name clashes with any other modules you might have loaded on the side), for example as follows :
 --
--- @import Graphics.Rendering.Plot.Light as P@
+-- @import qualified Graphics.Rendering.Plot.Light as P@
 --
 -- If you wish to try out the examples in this page, you will need to have `renderSvg` in scope as well:
 --

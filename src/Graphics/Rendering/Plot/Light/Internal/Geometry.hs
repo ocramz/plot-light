@@ -178,7 +178,7 @@ instance Eps (V2 Double) where
   v1 ~= v2 = norm2 (v1 ^-^ v2) <= 1e-8
   
 instance Eps (V2 Float) where
-  v1 ~= v2 = norm2 (v1 ^-^ v2) <= 1e-4
+  v1 ~= v2 = norm2 (v1 ^-^ v2) <= 1e-3
 
 
 

@@ -12,7 +12,7 @@ main = hspec spec
 
 spec :: Spec
 spec =
-  describe "Lib" $ do
+  describe "Graphics.Rendering.Plot.Light" $ do
     it "works" $ 
       True `shouldBe` True
     prop "prop_matMultGroup [Float]: m <\\> (m #> v) ~= v" $
