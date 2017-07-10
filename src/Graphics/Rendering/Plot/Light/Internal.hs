@@ -49,7 +49,7 @@ svgHeader fd =
   ! SA.viewbox (vis [_xmin fd, _ymin fd, _xmax fd, _ymax fd])
 
 
--- | A filled rectangle, centered at (x0, y0)
+-- | A filled rectangle
 rectCentered
   :: Point Double    -- ^ Center coordinates           
   -> Double          -- ^ Width
@@ -66,7 +66,12 @@ rectCentered (Point x0 y0) wid hei col = S.g ! SA.transform (S.translate x0c y0c
 -- 
 -- > > putStrLn $ renderSvg (line 0 0 1 1 0.1 C.blueviolet)
 -- > <line x1="0.0" y1="0.0" x2="1.0" y2="1.0" stroke="#8a2be2" stroke-width="0.1" />
-line :: Point Double -> Point Double -> Double -> C.Colour Double -> Svg
+line ::
+     Point Double    -- ^ First point
+  -> Point Double    -- ^ Second point
+  -> Double          -- ^ Stroke width
+  -> C.Colour Double -- ^ Stroke colour
+  -> Svg
 line (Point x1 y1) (Point x2 y2) sw col = S.line ! SA.x1 (vd x1) ! SA.y1 (vd y1) ! SA.x2 (vd x2)  ! SA.y2 (vd y2) ! SA.stroke (colourAttr col )! SA.strokeWidth (vd sw)
 
 tick :: Axis -> Double -> Double -> C.Colour Double -> Point Double -> Svg
@@ -122,9 +127,9 @@ axis ax len sw col tickLenFrac p@(Point x y) ps = do
 
 -- | `text` renders text onto the SVG canvas. It is also possible to rotate and move the text, however the order of these modifiers matters.
 -- 
--- NB1: `x` and `y` determine the position of the bottom-left corner of the text box. If a nonzero rotation is applied, the whole text box will move in a circle of radius || x^2 + y^2 ||
+-- NB1: The `Point` parameter `p` determines the /initial/ position of the bottom-left corner of the text box. If a nonzero rotation is applied, the whole text box will move on a circle of radius || x^2 + y^2 || centered at `p`.
 --
--- NB2: the `rotate` and `translate` attributes apply to the _center_ of the text box instead
+-- NB2: the `rotate` and `translate` attributes apply to the /center/ of the visible text instead.
 --
 -- > > putStrLn $ renderSvg $ text (-45) C.red "hullo!" (V2 (-30) 0) (Point 0 20)
 -- > <text x="-30" y="0" transform="translate(0 20)rotate(-45)" fill="#ff0000">hullo!</text>
