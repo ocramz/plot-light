@@ -165,6 +165,23 @@ e2 = V2 0 1
 
 
 
+-- | Numerical equality 
+class Eps a where
+  -- | Comparison within numerical precision
+  (~=) :: a -> a -> Bool
+
+instance Eps Double where
+  a ~= b = abs (a - b) <= 1e-12
+
+instance Eps Float where
+  a ~= b = abs (a - b) <= 1e-6
+
+instance (Ord a, Floating a) => Eps (V2 a) where
+  v1 ~= v2 = norm2 (v1 ^-^ v2) <= 1e-8
+  
+
+
+
 
 
 

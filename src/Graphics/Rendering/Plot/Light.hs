@@ -40,11 +40,11 @@ module Graphics.Rendering.Plot.Light (
   -- ** Vector operations 
   norm2, normalize2,
   -- ** Vector construction
-  v2fromEndpoints, v2fromPoint, 
+  v2fromEndpoints, v2fromPoint,
   -- ** Operations on points
   movePoint, moveLabeledPointV2, fromUnitSquare, toUnitSquare,
   -- ** Typeclasses
-  AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..)
+  AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..)
   ) where
 
 -- import Data.Foldable

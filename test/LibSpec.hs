@@ -23,8 +23,10 @@ spec =
 
 -- * Properties
 
-prop_multMatGroup :: (MatrixGroup m v, Eq v) => m -> v -> Bool
-prop_multMatGroup m v = m <\> (m #> v) == v
+-- prop_matSemi
+
+prop_multMatGroup :: (MatrixGroup m v, Eps v) => m -> v -> Bool
+prop_multMatGroup m v = m <\> (m #> v) ~= v
 
 
 -- * Newtypes and their Arbitrary instances
