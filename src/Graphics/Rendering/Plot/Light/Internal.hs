@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Graphics.Rendering.Plot.Light.Internal (Frame(..), Point(..), LabeledPoint(..), Axis(..), svgHeader, rectCentered, circle, line, tick, ticks, axis, text, polyline, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, movePoint, moveLabeledPointV2, fromUnitSquare, toUnitSquare, e1, e2) where
+module Graphics.Rendering.Plot.Light.Internal (Frame(..), Point(..), LabeledPoint(..), Axis(..), svgHeader, rectCentered, circle, line, tick, ticks, axis, text, polyline, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, movePoint, moveLabeledPointV2, fromUnitSquare, toUnitSquare, e1, e2) where
 
 import Data.Monoid ((<>))
 import qualified Data.Foldable as F (toList)
@@ -29,7 +29,7 @@ import Graphics.Rendering.Plot.Light.Internal.Geometry
 
 
 
--- | Create the SVG header from `FigureData`
+-- | Create the SVG header from a `Frame`
 svgHeader :: Frame Int -> Svg -> Svg
 svgHeader fd =
   S.docTypeSvg
@@ -78,6 +78,7 @@ strokeDashArray :: Real a => [a] -> S.Attribute
 strokeDashArray sz = SA.strokeDasharray (S.toValue str) where
   str = intercalate ", " $ map (show . real) sz
 
+-- | Specify a continuous or dashed stroke
 data LineStroke_ a = Continuous | Dashed [a] deriving (Eq, Show)
 
 
@@ -136,23 +137,37 @@ axis ax len sw col tickLenFrac p@(Point x y) ls ps = do
 
 -- * text
 
--- | `text` renders text onto the SVG canvas. It is also possible to rotate and move the text, however the order of these modifiers matters.
--- 
--- NB1: The `Point` parameter `p` determines the /initial/ position of the bottom-left corner of the text box. If a nonzero rotation is applied, the whole text box will move on a circle of radius || x^2 + y^2 || centered at `p`.
+-- | `text` renders text onto the SVG canvas
 --
--- NB2: the `rotate` and `translate` attributes apply to the /center/ of the visible text instead.
+-- == Conventions
 --
--- > > putStrLn $ renderSvg $ text (-45) C.red "hullo!" (V2 (-30) 0) (Point 0 20)
--- > <text x="-30" y="0" transform="translate(0 20)rotate(-45)" fill="#ff0000">hullo!</text>
-text :: (Show a, Show a1, S.ToValue a2) =>
-              a1        -- ^ Rotation angle 
+-- The `Point` argument `p` refers to the /lower-left/ corner of the text box.
+--
+-- After the text is rendered, its text box can be rotated by `rot` degrees around `p` and then optionally anchored.
+--
+-- The user can supply an additional `V2` displacement which will be applied /after/ rotation and anchoring and refers to the rotated text box frame.
+--
+-- > > putStrLn $ renderSvg $ text (-45) C.green TAEnd "blah" (V2 (- 10) 0) (Point 250 0)
+-- > <text x="-10.0" y="0.0" transform="translate(250.0 0.0)rotate(-45.0)" fill="#008000" text-anchor="end">blah</text>
+text :: (Show a, Real a) =>
+        a               -- ^ Rotation angle of the frame 
      -> C.Colour Double -- ^ Font colour
+     -> TextAnchor_
      -> T.Text          -- ^ Text 
-     -> V2 a2           -- ^ Displacement
-     -> Point a         -- ^ Initial center position of the text box
+     -> V2 a            -- ^ Displacement w.r.t. rotated frame
+     -> Point a         -- ^ Reference frame origin of the text box
      -> Svg
-text rot col te (V2 x y) (Point dx dy) = 
-  S.text_ (S.toMarkup te) ! SA.x (S.toValue x) ! SA.y (S.toValue y) ! SA.transform (S.translate dx dy <> S.rotate rot) ! SA.fill (colourAttr col)
+text rot col ta te (V2 vx vy) (Point x y) = S.text_ (S.toMarkup te) ! SA.x (vd vx) ! SA.y (vd vy) ! SA.transform (S.translate (real x) (real y) <> S.rotate (real rot)) ! SA.fill (colourAttr col) ! textAnchor ta
+
+-- | Specify at which end should the text be anchored to its current point
+data TextAnchor_ = TAStart | TAMiddle | TAEnd deriving (Eq, Show)
+
+textAnchor :: TextAnchor_ -> S.Attribute
+textAnchor TAStart = SA.textAnchor (vs "start")
+textAnchor TAMiddle = SA.textAnchor (vs "middle")
+textAnchor TAEnd = SA.textAnchor (vs "end")
+
+
 
 
 -- | A circle
@@ -172,14 +187,11 @@ circle (Point x y) r scol fcol =
 
 
 
--- <polyline points="40 140 80 100 120 140" stroke="black" stroke-width="20" stroke-linecap="round" fill="none" stroke-linejoin="round"/>
-
--- <polyline points="20,20 40,25 60,40 80,120 120,140 200,180" style="fill:none;stroke:black;stroke-width:3" />
 
 -- | Polyline (piecewise straight line)
 -- 
--- > > putStrLn $ renderSvg (polyline [Point 1 1, Point 2 1, Point 10 2] 0.1 (Dashed [0.3, 0.2]) Round C.red)
--- > <polyline points="1.0,1.0 2.0,1.0 10.0,2.0" fill="none" stroke="#ff0000" stroke-width="0.1" stroke-linejoin="round" stroke-dasharray="0.3, 0.2" />
+-- > > putStrLn $ renderSvg (polyline [Point 100 50, Point 120 20, Point 230 50] 4 (Dashed [3, 5]) Round C.blueviolet)
+-- > <polyline points="100.0,50.0 120.0,20.0 230.0,50.0" fill="none" stroke="#8a2be2" stroke-width="4.0" stroke-linejoin="round" stroke-dasharray="3.0, 5.0" />
 polyline :: (Foldable t, Show a1, Show a, RealFrac a, RealFrac a1) =>
             t (Point a)     -- ^ Data
          -> a1              -- ^ Stroke width
@@ -202,6 +214,7 @@ colourStrokeOpt Nothing = SA.stroke none
 colourStrokeOpt (Just c) = SA.stroke (colourAttr c)
 
 
+-- | Specify the type of connection between line segments
 data StrokeLineJoin_ = Miter | Round | Bevel | Inherit deriving (Eq, Show)
 
 strokeLineJoin :: StrokeLineJoin_ -> S.Attribute
@@ -226,6 +239,14 @@ colourAttr = S.toValue . C.sRGB24show
 
 
 -- ** Conversion from primitive numerical types to AttributeValue
+
+-- String
+
+vs :: String -> S.AttributeValue
+vs x = S.toValue (x :: String)
+
+-- Int
+
 vi :: Int -> S.AttributeValue
 vi = S.toValue
 
@@ -242,6 +263,9 @@ vd = vd0 . real
 
 real :: (Real a, Fractional b) => a -> b
 real = fromRational . toRational
+
+showd :: Real a => a -> String
+showd = show . real
 
 -- vds :: [Double] -> S.AttributeValue
 -- vds = S.toValue . unwords . map show

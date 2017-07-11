@@ -25,7 +25,7 @@ module Graphics.Rendering.Plot.Light (
   -- * Graphical elements
   rectCentered, circle, line, axis, text, polyline,
   -- ** Element attributes
-  LineStroke_(..), StrokeLineJoin_(..), 
+  LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..),
   -- ** SVG utilities
   svgHeader,
   -- * Types
