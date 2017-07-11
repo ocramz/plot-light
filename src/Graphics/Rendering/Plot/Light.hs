@@ -11,13 +11,14 @@
 --
 -- == Usage
 --
--- To use this project you just need to import this module qualified (to avoid name clashes with any other modules you might have loaded on the side), for example as follows :
+-- To use this project you just need to import this module. If GHC complains with name clashes you can import the module in "qualified form".
 --
--- @import qualified Graphics.Rendering.Plot.Light as P@
+-- @import Graphics.Rendering.Plot.Light@
 --
--- If you wish to try out the examples in this page, you will need to have `renderSvg` in scope as well:
+-- If you wish to try out the examples in this page, you will need to have these additional import statements:
 --
 -- @import Text.Blaze.Svg.Renderer.String (renderSvg)@
+-- @import qualified Data.Colour.Names as C@
 
 module Graphics.Rendering.Plot.Light (
   -- * Graphical elements

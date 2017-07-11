@@ -30,10 +30,6 @@ mkTick yy mm dd hr mi se = do
    return $ Tick d tim
 
 
--- | Map a Tick onto the rationals
-fromTick :: Tick -> Rational
-fromTick (Tick d t) = fromIntegral (toModifiedJulianDay d) + timeOfDayToDayFraction t
-    
 
 tspToTuple :: (a -> b) -> TsPoint a -> (Float, b)
 tspToTuple f tsp = (tickToFloat tsp, f $ _val tsp)
@@ -41,6 +37,10 @@ tspToTuple f tsp = (tickToFloat tsp, f $ _val tsp)
 tickToFloat :: TsPoint a -> Float
 tickToFloat = fromRational . fromTick . _tick
 
+-- | Map a Tick onto the rationals
+fromTick :: Tick -> Rational
+fromTick (Tick d t) = fromIntegral (toModifiedJulianDay d) + timeOfDayToDayFraction t
+    
 
 
 
