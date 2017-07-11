@@ -20,7 +20,7 @@ import qualified Text.Blaze.Svg11.Attributes as SA hiding (rotate)
 import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 import qualified Data.Colour as C
--- import qualified Data.Colour.Names as C
+import qualified Data.Colour.Names as C
 import qualified Data.Colour.SRGB as C
 
 import GHC.Real
@@ -117,22 +117,23 @@ ticks ax len sw col ls ps = forM_ ps (tick ax len sw col ls)
 -- > > putStrLn $ renderSvg $ axis X 200 2 C.red 0.05 (Point 150 10) Continuous [Point 50 1, Point 60 1, Point 70 1]
 -- > <line x1="50.0" y1="10.0" x2="250.0" y2="10.0" stroke="#ff0000" stroke-width="2.0" /><line x1="50.0" y1="5.0" x2="50.0" y2="15.0" stroke="#ff0000" stroke-width="2.0" /><line x1="60.0" y1="5.0" x2="60.0" y2="15.0" stroke="#ff0000" stroke-width="2.0" /><line x1="70.0" y1="5.0" x2="70.0" y2="15.0" stroke="#ff0000" stroke-width="2.0" />
 axis :: (Functor t, Foldable t, Show a, RealFrac a) =>
-              Axis               -- ^ Axis (i.e. either `X` or `Y`)
+              Point a            -- ^ Origin coordinates
+              -> Axis            -- ^ Axis (i.e. either `X` or `Y`)
               -> a               -- ^ Length
               -> a               -- ^ Stroke width
               -> C.Colour Double -- ^ Stroke colour
               -> a               -- ^ Tick length fraction (w.r.t axis length)
-              -> Point a         -- ^ Axis center coordinate
               -> LineStroke_ a
               -> t (Point a)     -- ^ Tick center coordinates
               -> Svg
-axis ax len sw col tickLenFrac p@(Point x y) ls ps = do
-  tick ax len sw col ls p
-  ticks (otherAxis ax) (tickLenFrac * len) sw col ls (f <$> ps)
-  where
-    f | ax == X = setPointY y
-      | otherwise = setPointX x
-
+axis o@(Point ox oy) ax len sw col tickLenFrac ls ps = do
+      line o pend sw ls col
+      ticks (otherAxis ax) (tickLenFrac * len) sw col ls (f <$> ps)
+        where
+          pend | ax == X = Point (ox + len) oy
+               | otherwise = Point ox (oy + len)
+          f | ax == X = setPointY oy
+            | otherwise = setPointX ox
 
 
 -- * text
@@ -245,14 +246,6 @@ colourAttr = S.toValue . C.sRGB24show
 vs :: String -> S.AttributeValue
 vs x = S.toValue (x :: String)
 
--- Int
-
-vi :: Int -> S.AttributeValue
-vi = S.toValue
-
--- | For use e.g. in `viewbox`
-vis :: [Int] -> S.AttributeValue
-vis = S.toValue . unwords . map show
 
 -- Double
 vd0 :: Double -> S.AttributeValue
