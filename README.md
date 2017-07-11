@@ -19,3 +19,18 @@ It builds upon `blaze-svg` by adding type-safe combinators, geometry primitives 
 To use this project you just need to import this module qualified (to avoid name clashes with any other modules you might have loaded on the side), for example as follows :
 
 `import Graphics.Rendering.Plot.Light as P`
+
+## Documentation
+
+Available on Hackage : https://hackage.haskell.org/package/plot-light in the `Graphics.Rendering.Plot.Light` module
+
+Please let me know if documentation is lacking or confusing. 
+
+## Contributing
+
+You can use `plot-light` in your own projects (either personal, academic or commercial), and all feedback in terms of comments, bug reports, feature requests and patches is welcome.
+
+
+## License
+
+BSD-2, see LICENSE file
