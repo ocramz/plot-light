@@ -6,7 +6,7 @@ import qualified Data.Foldable as F (toList)
 import Data.List
 import Control.Arrow ((&&&), (***))
 import Control.Monad (forM, forM_)
-import Data.Semigroup (Min(..), Max(..))
+-- import Data.Semigroup (Min(..), Max(..))
 import Data.Scientific (Scientific, toRealFloat)
 
 -- import Data.Foldable
