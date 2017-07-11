@@ -109,7 +109,7 @@ data V2 a = V2 a a deriving (Eq, Show)
 -- | Vectors form a monoid w.r.t. vector addition
 instance Num a => Monoid (V2 a) where
   mempty = V2 0 0
-  (V2 a b) `mappend` (V2 c d) = V2 (a + b) (c + d)
+  (V2 a b) `mappend` (V2 c d) = V2 (a + c) (b + d)
 
 -- | Additive group :
 -- 
@@ -239,23 +239,18 @@ moveLabeledPointV2 = moveLabeledPoint . movePoint
 
 
 
-
+fromFrame :: Fractional a => Frame a -> V2 a -> V2 a
 fromFrame from v = mfrom <\> (v ^-^ vfrom) where
   vfrom = v2fromPoint (_fpmin from) -- min.point vector of `from`
   mfrom = diagMat2 (width from) (height from) -- rescaling matrix of `from`
 
+toFrame :: Num a => Frame a -> V2 a -> V2 a
 toFrame to v01 = (mto #> v01) ^+^ vto where
   vto = v2fromPoint (_fpmin to)     -- min.point vector of `to`
   mto = diagMat2 (width to) (height to)       -- rescaling matrix of `to`
 
 
-from, to :: Frame Double
-from = Frame (Point 5 1) (Point 8 3)
-to = Frame (Point 1 2) (Point 4 4)
 
-v1 = V2 7 2 :: V2 Double
-v01 = V2 (2/3) 1
-v2 = V2 3 3 :: V2 Double -- what we expect
 
 -- | Given two frames `F1` and `F2`, returns a function `f` that maps an arbitrary vector `v` that points within `F1` to one contained within `F2`.
 --
@@ -273,13 +268,9 @@ frameToFrame :: (Fractional a, LinearMap m (V2 a)) =>
                    -> V2 a     -- ^ Optional shift 
                    -> V2 a     -- ^ Initial vector
                    -> V2 a
-frameToFrame from to mopt vopt v = (mto #> v01') ^+^ vto
+frameToFrame from to mopt vopt v = toFrame to v01'
   where
-    vfrom = v2fromPoint (_fpmin from) -- min.point vector of `from` 
-    vto = v2fromPoint (_fpmin to)     -- min.point vector of `to`
-    mfrom = diagMat2 (width from) (height from) -- rescaling matrix of `from`
-    mto = diagMat2 (width to) (height to)       -- rescaling matrix of `to`
-    v01 = mfrom <\> (v ^-^ vfrom)
+    v01 = fromFrame from v
     v01' = (mopt #> v01) ^+^ vopt
 
 moveLabeledPointV2Frames ::

@@ -1,4 +1,4 @@
-{-# language FlexibleInstances, ScopedTypeVariables #-}
+{-# language FlexibleInstances, FlexibleContexts, ScopedTypeVariables #-}
 module LibSpec where
 
 import Test.Hspec
@@ -13,13 +13,17 @@ main = hspec spec
 spec :: Spec
 spec =
   describe "Graphics.Rendering.Plot.Light" $ do
-    it "works" $ 
-      True `shouldBe` True
-    prop "prop_matMultGroup [Float]: m <\\> (m #> v) ~= v" $
-      \(PropDiagMatVec (m :: DiagMat2r Float) v ) -> prop_multMatGroup m v
-    prop "prop_matMultGroup [Double]: m <\\> (m #> v) ~= v" $
-      \(PropDiagMatVec (m :: DiagMat2r Double) v ) -> prop_multMatGroup m v
-    it "frameToFrame" $ do
+    -- it "works" $ 
+    --   True `shouldBe` True
+    prop "V2 : additive group [Float]" $ \(v :: V2r Float) ->
+      prop_V2_additiveGroup v `shouldBe` True
+    prop "V2 : additive group [Double]" $ \(v :: V2 Double) ->
+      prop_V2_additiveGroup v `shouldBe` True
+    prop "Mat2 : multiplicative group [Float]: m <\\> (m #> v) ~= v" $
+      \(PropDiagMatVec (m :: DiagMat2r Float) v ) -> prop_multMatGroup m v `shouldBe` True
+    prop "Mat2 : multiplicative group [Double]: m <\\> (m #> v) ~= v" $
+      \(PropDiagMatVec (m :: DiagMat2r Double) v ) -> prop_multMatGroup m v `shouldBe` True
+    it "Frame : frameToFrame works" $ do
       let from = Frame (Point 5 1) (Point 8 3) :: Frame Double
           to = Frame (Point 1 2) (Point 4 4)
           v1 = v2fromPoint $ Point 7 2
@@ -27,14 +31,27 @@ spec =
           vopt = V2 0 0 
           v2 = frameToFrame from to mopt vopt v1
           p2 = movePoint v2 origin
-      p2 `shouldBe` Point 3 3
-      -- norm2 (p2 -. Point 3 3) ~= 0 `shouldBe` True
+      -- p2 `shouldBe` Point 3 3
+      norm2 (p2 -. Point 3 3) ~= 0 `shouldBe` True
       
 
 
 
 
+
+
+
+
+
+
 -- * Properties
+
+prop_V2_additiveGroup
+  :: (Eps v, VectorSpace v, Num (Scalar v)) => v -> Bool
+prop_V2_additiveGroup v =
+  v ^+^ zero ~= v  &&
+  (v ^+^ v) ~= (2 .* v) &&
+  (v ^-^ v) ~= zero
 
 prop_multMatGroup :: (MatrixGroup m v, Eps v) => m -> v -> Bool
 prop_multMatGroup m v = m <\> (m #> v) ~= v
