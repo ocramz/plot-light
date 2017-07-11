@@ -11,7 +11,7 @@
 --
 -- == Usage
 --
--- To use this project you just need `import Graphics.Rendering.Plot.Light`. If GHC complains of name clashes you can import the module in "qualified" form.
+-- To use this project you just need @import Graphics.Rendering.Plot.Light@. If GHC complains of name clashes you can import the module in "qualified" form.
 --
 -- If you wish to try out the examples in this page, you will need to have these additional import statements:
 --
@@ -45,18 +45,14 @@ module Graphics.Rendering.Plot.Light (
   AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..)
   ) where
 
--- import Data.Foldable
-import qualified Data.Text as T
+-- import qualified Data.Text as T
 
-import Text.Blaze.Svg
--- import Text.Blaze.Svg11 ((!), mkPath, rotate, translate, l, m)
--- import qualified Text.Blaze.Svg11 as S
--- import qualified Text.Blaze.Svg11.Attributes as A
-import Text.Blaze.Svg.Renderer.String (renderSvg)
+-- import Text.Blaze.Svg
+-- import Text.Blaze.Svg.Renderer.String (renderSvg)
 
-import qualified Data.Colour as C
-import qualified Data.Colour.Names as C
-import qualified Data.Colour.SRGB as C
+-- import qualified Data.Colour as C
+-- import qualified Data.Colour.Names as C
+-- import qualified Data.Colour.SRGB as C
 
 import Graphics.Rendering.Plot.Light.Internal
 

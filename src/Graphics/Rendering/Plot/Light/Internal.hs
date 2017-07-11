@@ -4,7 +4,7 @@ module Graphics.Rendering.Plot.Light.Internal (Frame(..), Point(..), LabeledPoin
 import Data.Monoid ((<>))
 import qualified Data.Foldable as F (toList)
 import Data.List
-import Control.Arrow ((&&&), (***))
+-- import Control.Arrow ((&&&), (***))
 import Control.Monad (forM, forM_)
 -- import Data.Semigroup (Min(..), Max(..))
 import Data.Scientific (Scientific, toRealFloat)
@@ -20,7 +20,7 @@ import qualified Text.Blaze.Svg11.Attributes as SA hiding (rotate)
 import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 import qualified Data.Colour as C
-import qualified Data.Colour.Names as C
+-- import qualified Data.Colour.Names as C
 import qualified Data.Colour.SRGB as C
 
 import GHC.Real
@@ -30,13 +30,13 @@ import Graphics.Rendering.Plot.Light.Internal.Geometry
 
 
 -- | Create the SVG header from a `Frame`
-svgHeader :: Frame Int -> Svg -> Svg
+svgHeader :: Real a => Frame a -> Svg -> Svg
 svgHeader fd =
   S.docTypeSvg
   ! SA.version "1.1"
-  ! SA.width (vi $ width fd)
-  ! SA.height (vi $ height fd)
-  ! SA.viewbox (vis [xmin fd, ymin fd, xmax fd, ymax fd])
+  ! SA.width (vd $ width fd)
+  ! SA.height (vd $ height fd)
+  ! SA.viewbox (vds [xmin fd, ymin fd, xmax fd, ymax fd])
 
 
 
@@ -264,11 +264,9 @@ vd = vd0 . real
 real :: (Real a, Fractional b) => a -> b
 real = fromRational . toRational
 
-showd :: Real a => a -> String
-showd = show . real
 
--- vds :: [Double] -> S.AttributeValue
--- vds = S.toValue . unwords . map show
+vds :: Real a => [a] -> S.AttributeValue
+vds = S.toValue . unwords . map (show . real)
 
 
 
@@ -283,18 +281,6 @@ showd = show . real
 
 
 
---
-
--- main :: IO ()
--- main = do
---   let a = renderSvg svgDoc
---   putStrLn a
-
--- svgDoc :: S.Svg
--- svgDoc = S.docTypeSvg ! A.version "1.1" ! A.width "150" ! A.height "100" ! A.viewbox "0 0 3 2" $ do
---     S.g ! A.transform makeTransform $ do
---       -- S.rect ! A.width "1" ! A.height "2" ! A.fill "#008d46"
---       -- S.rect ! A.width "1" ! A.height "2" ! A.fill "#ffffff"
 --       S.rect ! A.width "1" ! A.height "2" ! A.fill "#d2232c"
 --       -- S.path ! A.d makePath
 
