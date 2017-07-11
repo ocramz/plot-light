@@ -40,7 +40,7 @@ module Graphics.Rendering.Plot.Light (
   -- ** Vector construction
   v2fromEndpoints, v2fromPoint,
   -- ** Operations on points
-  movePoint, moveLabeledPointV2, fromUnitSquare, toUnitSquare,
+  movePoint, moveLabeledPointV2, 
   -- ** Typeclasses
   AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..)
   ) where

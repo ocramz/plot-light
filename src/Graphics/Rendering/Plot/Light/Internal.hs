@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Graphics.Rendering.Plot.Light.Internal (Frame(..), mkFrame, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint,  Axis(..), svgHeader, rectCentered, circle, line, tick, ticks, axis, text, polyline, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, movePoint, moveLabeledPointV2, fromUnitSquare, toUnitSquare, e1, e2) where
+module Graphics.Rendering.Plot.Light.Internal (Frame(..), mkFrame, mkFrameOrigin, frameFromDataset, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint,  Axis(..), svgHeader, rectCentered, circle, line, tick, ticks, axis, text, polyline, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, movePoint, moveLabeledPointV2, moveLabeledPointV2Frames, e1, e2) where
 
 import Data.Monoid ((<>))
 import qualified Data.Foldable as F (toList)
@@ -83,8 +83,8 @@ data LineStroke_ a = Continuous | Dashed [a] deriving (Eq, Show)
 
 
 
-tick :: (Show a, RealFrac a) => Axis -> a -> a -> C.Colour Double -> LineStroke_ a -> Point a -> Svg
-tick ax len sw col ls (Point x y) = line (Point x1 y1) (Point x2 y2) sw ls col where
+tick :: (Show a, RealFrac a) => Axis -> a -> a -> C.Colour Double -> Point a -> Svg
+tick ax len sw col (Point x y) = line (Point x1 y1) (Point x2 y2) sw Continuous col where
   lh = len / 2
   (x1, y1, x2, y2)
     | ax == Y = (x, y-lh, x, y+lh)
@@ -94,18 +94,18 @@ tick ax len sw col ls (Point x y) = line (Point x1 y1) (Point x2 y2) sw ls col w
 labeledTick
   :: (Show a, RealFrac a) =>
      Axis
-     -> a
-     -> a
+     -> a                 -- ^ Length
+     -> a                 -- ^ Stroke width
      -> C.Colour Double
-     -> a
-     -> TextAnchor_
-     -> (t -> T.Text)
-     -> V2 a
+     -> a                 -- ^ Label angle
+     -> TextAnchor_     
+     -> (t -> T.Text)     -- ^ Label rendering
+     -> V2 a              -- ^ Label shift 
      -> LabeledPoint t a
      -> Svg
 labeledTick ax len sw col lrot tanchor flab vlab (LabeledPoint p label) = do
   let ls = Continuous
-  tick ax len sw col ls p
+  tick ax len sw col p
   text lrot col tanchor (flab label) vlab p
 
 
@@ -115,11 +115,13 @@ ticks :: (Foldable t, Show a, RealFrac a) =>
                -> a                -- ^ Length         
                -> a                -- ^ Stroke width
                -> C.Colour Double  -- ^ Stroke colour
-               -> LineStroke_ a    -- ^ Stroke type
                -> t (Point a)      -- ^ Center coordinates
                -> Svg
-ticks ax len sw col ls ps = forM_ ps (tick ax len sw col ls)
+ticks ax len sw col ps = forM_ ps (tick ax len sw col)
 
+
+labeledTicks ax len sw col lrot tanchor flab vlab ps =
+  forM_ ps (labeledTick ax len sw col lrot tanchor flab vlab)
 
 -- | An axis with tickmarks
 --
@@ -133,11 +135,16 @@ axis :: (Functor t, Foldable t, Show a, RealFrac a) =>
               -> C.Colour Double -- ^ Stroke colour
               -> a               -- ^ Tick length fraction (w.r.t axis length)
               -> LineStroke_ a   -- ^ Stroke type
-              -> t (Point a)     -- ^ Tick center coordinates
+              -> a               -- ^ Label rotation angle
+              -> TextAnchor_     
+              -> (l -> T.Text)
+              -> V2 a
+              -> t (LabeledPoint l a)     -- ^ Tick center coordinates
               -> Svg
-axis o@(Point ox oy) ax len sw col tickLenFrac ls ps = do
+axis o@(Point ox oy) ax len sw col tickLenFrac ls lrot tanchor flab vlab ps = do
       line o pend sw ls col
-      ticks (otherAxis ax) (tickLenFrac * len) sw col ls (f <$> ps)
+      -- ticks (otherAxis ax) (tickLenFrac * len) sw col (f <$> ps)
+      labeledTicks (otherAxis ax) (tickLenFrac * len) sw col lrot tanchor flab vlab (moveLabeledPoint f <$> ps)
         where
           pend | ax == X = Point (ox + len) oy
                | otherwise = Point ox (oy + len)

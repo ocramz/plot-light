@@ -51,6 +51,9 @@ data Frame a = Frame {
 mkFrame :: Point a -> Point a -> Frame a
 mkFrame = Frame
 
+mkFrameOrigin :: Num a => a -> a -> Frame a
+mkFrameOrigin w h = Frame origin (Point w h)
+
 
 -- | Create a `Frame` from a container of `LabeledPoint`s `P`, i.e. construct two points `p1` and `p2` such that :
 --
@@ -248,27 +251,30 @@ frameToFrame :: (Fractional a, LinearMap m (V2 a)) =>
                       Frame a  -- ^ Initial frame
                    -> Frame a  -- ^ Final frame
                    -> m        -- ^ Optional rescaling in [0,1] x [0,1]
+                   -> V2 a     -- ^ Optional shift 
                    -> V2 a     -- ^ Initial vector
                    -> V2 a
-frameToFrame from to m01 v = (mto #> v01') ^+^ vto
+frameToFrame from to mopt vopt v = (mto #> v01') ^+^ vto
   where
     vfrom = v2fromPoint (_fpmin from) -- min.point vector of `from` 
     vto = v2fromPoint (_fpmin to)     -- min.point vector of `to`
     mfrom = diagMat2 (width from) (height from) -- rescaling matrix of `from`
     mto = diagMat2 (width to) (height to)       -- rescaling matrix of `to`
-    v01' = m01 #> (mfrom <\> (v ^-^ vfrom))     
+    v01 = mfrom <\> (v ^-^ vfrom)
+    v01' = (mopt #> v01) ^+^ vopt
 
 moveLabeledPointV2Frames ::
   (LinearMap m (V2 a), Fractional a) =>
      Frame a          -- ^ Initial frame
   -> Frame a          -- ^ Final frame
   -> m                -- ^ Optional rescaling in [0,1] x [0,1]
+  -> V2 a             -- ^ Optional shift
   -> LabeledPoint l a -- ^ Initial `LabeledPoint`
   -> LabeledPoint l a
-moveLabeledPointV2Frames from to m01 lp = moveLabeledPointV2 vmove lp
+moveLabeledPointV2Frames from to mopt vopt lp = moveLabeledPointV2 vmove lp
   where
-    vlp = v2fromPoint $ _lp lp
-    vmove = frameToFrame from to m01 vlp
+    vlp = v2fromPoint $ _lp lp -- vector associated with starting point
+    vmove = frameToFrame from to mopt vopt vlp -- frame translation vector
 
 
 
