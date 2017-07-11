@@ -127,7 +127,7 @@ labeledTicks ax len sw col fontsize lrot tanchor flab vlab ps =
 -- | A plot axis with labeled tickmarks
 --
 -- > > putStrLn $ renderSvg $ axis (Point 0 50) X 200 2 C.red 0.05 Continuous 15 (-45) TAEnd T.pack (V2 (-10) 0) [LabeledPoint (Point 50 1) "bla", LabeledPoint (Point 60 1) "asdf"]
--- <line x1="0.0" y1="50.0" x2="200.0" y2="50.0" stroke="#ff0000" stroke-width="2.0" /><line x1="50.0" y1="45.0" x2="50.0" y2="55.0" stroke="#ff0000" stroke-width="2.0" /><text x="-10.0" y="0.0" transform="translate(50.0 50.0)rotate(-45.0)" font-size="15" fill="#ff0000" text-anchor="end">bla</text><line x1="60.0" y1="45.0" x2="60.0" y2="55.0" stroke="#ff0000" stroke-width="2.0" /><text x="-10.0" y="0.0" transform="translate(60.0 50.0)rotate(-45.0)" font-size="15" fill="#ff0000" text-anchor="end">asdf</text>
+-- > <line x1="0.0" y1="50.0" x2="200.0" y2="50.0" stroke="#ff0000" stroke-width="2.0" /><line x1="50.0" y1="45.0" x2="50.0" y2="55.0" stroke="#ff0000" stroke-width="2.0" /><text x="-10.0" y="0.0" transform="translate(50.0 50.0)rotate(-45.0)" font-size="15" fill="#ff0000" text-anchor="end">bla</text><line x1="60.0" y1="45.0" x2="60.0" y2="55.0" stroke="#ff0000" stroke-width="2.0" /><text x="-10.0" y="0.0" transform="translate(60.0 50.0)rotate(-45.0)" font-size="15" fill="#ff0000" text-anchor="end">asdf</text>
 axis :: (Functor t, Foldable t, Show a, RealFrac a) =>
               Point a            -- ^ Origin coordinates
               -> Axis            -- ^ Axis (i.e. either `X` or `Y`)
@@ -157,24 +157,24 @@ axis o@(Point ox oy) ax len sw col tickLenFrac ls fontsize lrot tanchor flab vla
 
 -- | `text` renders text onto the SVG canvas
 --
--- == Conventions
+-- === Conventions
 --
 -- The `Point` argument `p` refers to the /lower-left/ corner of the text box.
 --
--- After the text is rendered, its text box can be rotated by `rot` degrees around `p` and then optionally anchored.
+-- The text box can be rotated by `rot` degrees around `p` and then anchored at either its beginning, middle or end to `p` with the `TextAnchor_` flag.
 --
 -- The user can supply an additional `V2` displacement which will be applied /after/ rotation and anchoring and refers to the rotated text box frame.
 --
 -- > > putStrLn $ renderSvg $ text (-45) C.green TAEnd "blah" (V2 (- 10) 0) (Point 250 0)
 -- > <text x="-10.0" y="0.0" transform="translate(250.0 0.0)rotate(-45.0)" fill="#008000" text-anchor="end">blah</text>
 text :: (Show a, Real a) =>
-        a               -- ^ Rotation angle of the frame
+        a               -- ^ Rotation angle of the textbox
      -> Int             -- ^ Font size
      -> C.Colour Double -- ^ Font colour
-     -> TextAnchor_     -- ^ How to anchor a text label to the axis
+     -> TextAnchor_     -- ^ How to anchor the text to the point
      -> T.Text          -- ^ Text 
-     -> V2 a            -- ^ Displacement w.r.t. rotated frame
-     -> Point a         -- ^ Reference frame origin of the text box
+     -> V2 a            -- ^ Displacement w.r.t. rotated textbox
+     -> Point a         -- ^ Initial position of the text box (i.e. before rotation and displacement)
      -> Svg
 text rot fontsize col ta te (V2 vx vy) (Point x y) = S.text_ (S.toMarkup te) ! SA.x (vd vx) ! SA.y (vd vy) ! SA.transform (S.translate (real x) (real y) <> S.rotate (real rot)) ! SA.fontSize (vi fontsize) ! SA.fill (colourAttr col) ! textAnchor ta
 
