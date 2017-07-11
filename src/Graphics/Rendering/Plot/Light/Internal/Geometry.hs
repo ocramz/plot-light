@@ -252,15 +252,17 @@ toFrame to v01 = (mto #> v01) ^+^ vto where
 
 
 
--- | Given two frames `F1` and `F2`, returns a function `f` that maps an arbitrary vector `v` that points within `F1` to one contained within `F2`.
+-- | Given two frames `F1` and `F2`, returns a function `f` that maps an arbitrary vector `v` contained within `F1` onto one contained within `F2`.
 --
--- 1. map `v` into a unit square vector `v01` with an affine transformation
+-- This function is composed of three affine maps :
 --
--- 2. (optional) map `v01` into another point in the unit square via a linear rescaling
+-- 1. map `v` into a vector `v01` that points within the unit square,
 --
--- 3. map `v01'` onto `F2` with a second affine transformation
+-- 2. map `v01` onto `v01'`. This transformation serves to e.g. flip the dataset along the y axis (since the origin of the SVG canvas is the top-left corner of the screen). If this is not needed one can just supply the identity matrix and the zero vector,
 --
--- NB: we do not check that `v` is actually contained within the `F1`. This has to be supplied correctly by the user.
+-- 3. map `v01'` onto the target frame `F2`. 
+--
+-- NB: we do not check that `v` is actually contained within the `F1`, nor that `v01'` is still contained within [0,1] x [0, 1]. This has to be supplied correctly by the user.
 frameToFrame :: (Fractional a, LinearMap m (V2 a)) =>
                       Frame a  -- ^ Initial frame
                    -> Frame a  -- ^ Final frame
@@ -272,6 +274,15 @@ frameToFrame from to mopt vopt v = toFrame to v01'
   where
     v01 = fromFrame from v
     v01' = (mopt #> v01) ^+^ vopt
+
+
+-- -- flip the dataset up-down
+-- flipUD01 :: (Num a, LinearMap (DiagMat2 a) (V2 a)) =>
+--                     V2 a -> V2 a
+-- flipUD01 v = (m #> v) ^+^ v0 where
+--   m = diagMat2 1 (-1)
+--   v0 = V2 0 1
+
 
 moveLabeledPointV2Frames ::
   (LinearMap m (V2 a), Fractional a) =>
