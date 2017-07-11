@@ -18,11 +18,14 @@
 -- If you wish to try out the examples in this page, you will need to have these additional import statements:
 --
 -- @import Text.Blaze.Svg.Renderer.String (renderSvg)@
+-- 
 -- @import qualified Data.Colour.Names as C@
 
 module Graphics.Rendering.Plot.Light (
   -- * Graphical elements
-  rectCentered, line, axis, text, polyline,
+  rectCentered, circle, line, axis, text, polyline,
+  -- ** Element attributes
+  LineStroke_(..), StrokeLineJoin_(..), 
   -- ** SVG utilities
   svgHeader,
   -- * Types
@@ -56,7 +59,6 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 import qualified Data.Colour as C
 import qualified Data.Colour.Names as C
 import qualified Data.Colour.SRGB as C
-
 
 import Graphics.Rendering.Plot.Light.Internal
 

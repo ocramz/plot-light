@@ -6,7 +6,6 @@ import Data.Time
 import qualified Data.Text as T
 
 import Graphics.Rendering.Plot.Light.Internal
-import Graphics.Rendering.Plot.Light.Internal.Types
 import Data.TimeSeries.Forex
 
 

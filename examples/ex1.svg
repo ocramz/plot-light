@@ -27,5 +27,12 @@
   <!--    Hello, out there -->
   <!-- </text> -->
 
+
+  <circle cx="20.0" cy="30.0" r="15.0" fill="#ff0000" stroke="none" />
+  <circle cx="20.0" cy="40.0" r="15.0" fill="none" stroke="#0000ff" />
+
+  <line x1="0.0" y1="0.0" x2="50" y2="150" stroke="#8a2be2" stroke-width="4" stroke-dasharray="2, 3" />
+
+  
 </g>
 </svg>
