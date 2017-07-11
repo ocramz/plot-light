@@ -105,7 +105,6 @@ labeledTick
      -> LabeledPoint t a
      -> Svg
 labeledTick ax len sw col fontsize lrot tanchor flab vlab (LabeledPoint p label) = do
-  let ls = Continuous
   tick ax len sw col p
   text lrot fontsize col tanchor (flab label) vlab p
 
