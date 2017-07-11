@@ -11,9 +11,7 @@
 --
 -- == Usage
 --
--- To use this project you just need to import this module. If GHC complains with name clashes you can import the module in "qualified form".
---
--- @import Graphics.Rendering.Plot.Light@
+-- To use this project you just need `import Graphics.Rendering.Plot.Light`. If GHC complains of name clashes you can import the module in "qualified" form.
 --
 -- If you wish to try out the examples in this page, you will need to have these additional import statements:
 --

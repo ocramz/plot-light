@@ -16,9 +16,8 @@ It builds upon `blaze-svg` by adding type-safe combinators, geometry primitives 
 
 ## Usage
 
-To use this project you just need to import this module qualified (to avoid name clashes with any other modules you might have loaded on the side), for example as follows :
+To use this project you just need `import Graphics.Rendering.Plot.Light`. If GHC complains of name clashes you can import the module in "qualified" form.
 
-`import Graphics.Rendering.Plot.Light as P`
 
 ## Documentation
 
