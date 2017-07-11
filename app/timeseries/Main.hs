@@ -20,7 +20,7 @@ import qualified Data.Colour.Names as C
 
 
 
-fname = "data/forex"
+fname = "data/forex_small"
 
 xPlot = 400
 yPlot = 300
