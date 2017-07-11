@@ -33,4 +33,4 @@ You can use `plot-light` in your own projects (either personal, academic or comm
 
 ## License
 
-BSD-2, see LICENSE file
+BSD-3, see LICENSE file
