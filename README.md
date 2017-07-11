@@ -28,7 +28,7 @@ Please let me know if documentation is lacking or confusing.
 
 ## Contributing
 
-You can use `plot-light` in your own projects (either personal, academic or commercial), and all feedback in terms of comments, bug reports, feature requests and patches is welcome.
+You can use `plot-light` in your own projects (either personal, academic or commercial), and all feedback such as comments, bug reports, feature requests and patches is welcome.
 
 
 ## License
