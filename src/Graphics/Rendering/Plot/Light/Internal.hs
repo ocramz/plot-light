@@ -123,22 +123,22 @@ ticks ax len sw col ps = forM_ ps (tick ax len sw col)
 labeledTicks ax len sw col lrot tanchor flab vlab ps =
   forM_ ps (labeledTick ax len sw col lrot tanchor flab vlab)
 
--- | An axis with tickmarks
+-- | A plot axis with labeled tickmarks
 --
--- > > putStrLn $ renderSvg $ axis (Point 0 50) X 200 2 C.red 0.05 Continuous [Point 50 1, Point 60 1, Point 70 1]
--- > <line x1="0.0" y1="50.0" x2="200.0" y2="50.0" stroke="#ff0000" stroke-width="2.0" /><line x1="50.0" y1="45.0" x2="50.0" y2="55.0" stroke="#ff0000" stroke-width="2.0" /><line x1="60.0" y1="45.0" x2="60.0" y2="55.0" stroke="#ff0000" stroke-width="2.0" /><line x1="70.0" y1="45.0" x2="70.0" y2="55.0" stroke="#ff0000" stroke-width="2.0" /> 
+-- > > putStrLn $ renderSvg $ axis (Point 0 50) X 200 2 C.red 0.05 Continuous (-45) TAEnd T.pack (V2 (-10) 0) [LabeledPoint (Point 50 1) "bla", LabeledPoint (Point 60 1) "asdf"]
+-- <line x1="0.0" y1="50.0" x2="200.0" y2="50.0" stroke="#ff0000" stroke-width="2.0" /><line x1="50.0" y1="45.0" x2="50.0" y2="55.0" stroke="#ff0000" stroke-width="2.0" /><text x="-10.0" y="0.0" transform="translate(50.0 50.0)rotate(-45.0)" fill="#ff0000" text-anchor="end">bla</text><line x1="60.0" y1="45.0" x2="60.0" y2="55.0" stroke="#ff0000" stroke-width="2.0" /><text x="-10.0" y="0.0" transform="translate(60.0 50.0)rotate(-45.0)" fill="#ff0000" text-anchor="end">asdf</text>
 axis :: (Functor t, Foldable t, Show a, RealFrac a) =>
               Point a            -- ^ Origin coordinates
               -> Axis            -- ^ Axis (i.e. either `X` or `Y`)
-              -> a               -- ^ Length
+              -> a               -- ^ Length of the axis
               -> a               -- ^ Stroke width
               -> C.Colour Double -- ^ Stroke colour
-              -> a               -- ^ Tick length fraction (w.r.t axis length)
+              -> a               -- ^ The tick length is a fraction of the axis length
               -> LineStroke_ a   -- ^ Stroke type
               -> a               -- ^ Label rotation angle
-              -> TextAnchor_     
-              -> (l -> T.Text)
-              -> V2 a
+              -> TextAnchor_     -- ^ How to anchor a text label to the axis
+              -> (l -> T.Text)   -- ^ How to render the tick label
+              -> V2 a            -- ^ Offset the label
               -> t (LabeledPoint l a)     -- ^ Tick center coordinates
               -> Svg
 axis o@(Point ox oy) ax len sw col tickLenFrac ls lrot tanchor flab vlab ps = do

@@ -1,5 +1,5 @@
 name:                plot-light
-version:             0.1.0.7
+version:             0.1.0.8
 synopsis:            A lightweight plotting library, exporting to SVG
 description:         A lightweight plotting library, exporting to SVG
 homepage:            https://github.com/ocramz/plot-light
@@ -41,8 +41,8 @@ library
                      , colour
                      , palette
                      , blaze-svg
-                     , hspec    
-                     , QuickCheck
+                     -- , hspec    
+                     -- , QuickCheck
                                           
 
 -- executable plot-light
