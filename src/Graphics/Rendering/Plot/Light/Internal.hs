@@ -97,16 +97,17 @@ labeledTick
      -> a                 -- ^ Length
      -> a                 -- ^ Stroke width
      -> C.Colour Double
+     -> Int               -- ^ Font size
      -> a                 -- ^ Label angle
      -> TextAnchor_     
      -> (t -> T.Text)     -- ^ Label rendering
      -> V2 a              -- ^ Label shift 
      -> LabeledPoint t a
      -> Svg
-labeledTick ax len sw col lrot tanchor flab vlab (LabeledPoint p label) = do
+labeledTick ax len sw col fontsize lrot tanchor flab vlab (LabeledPoint p label) = do
   let ls = Continuous
   tick ax len sw col p
-  text lrot col tanchor (flab label) vlab p
+  text lrot fontsize col tanchor (flab label) vlab p
 
 
 -- | An array of axis-aligned identical segments (to be used as axis tickmarks), with centers given by the array of `Point`s
@@ -120,13 +121,13 @@ ticks :: (Foldable t, Show a, RealFrac a) =>
 ticks ax len sw col ps = forM_ ps (tick ax len sw col)
 
 
-labeledTicks ax len sw col lrot tanchor flab vlab ps =
-  forM_ ps (labeledTick ax len sw col lrot tanchor flab vlab)
+labeledTicks ax len sw col fontsize lrot tanchor flab vlab ps =
+  forM_ ps (labeledTick ax len sw col fontsize lrot tanchor flab vlab)
 
 -- | A plot axis with labeled tickmarks
 --
--- > > putStrLn $ renderSvg $ axis (Point 0 50) X 200 2 C.red 0.05 Continuous (-45) TAEnd T.pack (V2 (-10) 0) [LabeledPoint (Point 50 1) "bla", LabeledPoint (Point 60 1) "asdf"]
--- <line x1="0.0" y1="50.0" x2="200.0" y2="50.0" stroke="#ff0000" stroke-width="2.0" /><line x1="50.0" y1="45.0" x2="50.0" y2="55.0" stroke="#ff0000" stroke-width="2.0" /><text x="-10.0" y="0.0" transform="translate(50.0 50.0)rotate(-45.0)" fill="#ff0000" text-anchor="end">bla</text><line x1="60.0" y1="45.0" x2="60.0" y2="55.0" stroke="#ff0000" stroke-width="2.0" /><text x="-10.0" y="0.0" transform="translate(60.0 50.0)rotate(-45.0)" fill="#ff0000" text-anchor="end">asdf</text>
+-- > > putStrLn $ renderSvg $ axis (Point 0 50) X 200 2 C.red 0.05 Continuous 15 (-45) TAEnd T.pack (V2 (-10) 0) [LabeledPoint (Point 50 1) "bla", LabeledPoint (Point 60 1) "asdf"]
+-- <line x1="0.0" y1="50.0" x2="200.0" y2="50.0" stroke="#ff0000" stroke-width="2.0" /><line x1="50.0" y1="45.0" x2="50.0" y2="55.0" stroke="#ff0000" stroke-width="2.0" /><text x="-10.0" y="0.0" transform="translate(50.0 50.0)rotate(-45.0)" font-size="15" fill="#ff0000" text-anchor="end">bla</text><line x1="60.0" y1="45.0" x2="60.0" y2="55.0" stroke="#ff0000" stroke-width="2.0" /><text x="-10.0" y="0.0" transform="translate(60.0 50.0)rotate(-45.0)" font-size="15" fill="#ff0000" text-anchor="end">asdf</text>
 axis :: (Functor t, Foldable t, Show a, RealFrac a) =>
               Point a            -- ^ Origin coordinates
               -> Axis            -- ^ Axis (i.e. either `X` or `Y`)
@@ -135,16 +136,16 @@ axis :: (Functor t, Foldable t, Show a, RealFrac a) =>
               -> C.Colour Double -- ^ Stroke colour
               -> a               -- ^ The tick length is a fraction of the axis length
               -> LineStroke_ a   -- ^ Stroke type
+              -> Int               -- ^ Label font size
               -> a               -- ^ Label rotation angle
               -> TextAnchor_     -- ^ How to anchor a text label to the axis
               -> (l -> T.Text)   -- ^ How to render the tick label
               -> V2 a            -- ^ Offset the label
               -> t (LabeledPoint l a)     -- ^ Tick center coordinates
               -> Svg
-axis o@(Point ox oy) ax len sw col tickLenFrac ls lrot tanchor flab vlab ps = do
+axis o@(Point ox oy) ax len sw col tickLenFrac ls fontsize lrot tanchor flab vlab ps = do
       line o pend sw ls col
-      -- ticks (otherAxis ax) (tickLenFrac * len) sw col (f <$> ps)
-      labeledTicks (otherAxis ax) (tickLenFrac * len) sw col lrot tanchor flab vlab (moveLabeledPoint f <$> ps)
+      labeledTicks (otherAxis ax) (tickLenFrac * len) sw col fontsize lrot tanchor flab vlab (moveLabeledPoint f <$> ps)
         where
           pend | ax == X = Point (ox + len) oy
                | otherwise = Point ox (oy + len)
@@ -167,14 +168,15 @@ axis o@(Point ox oy) ax len sw col tickLenFrac ls lrot tanchor flab vlab ps = do
 -- > > putStrLn $ renderSvg $ text (-45) C.green TAEnd "blah" (V2 (- 10) 0) (Point 250 0)
 -- > <text x="-10.0" y="0.0" transform="translate(250.0 0.0)rotate(-45.0)" fill="#008000" text-anchor="end">blah</text>
 text :: (Show a, Real a) =>
-        a               -- ^ Rotation angle of the frame 
+        a               -- ^ Rotation angle of the frame
+     -> Int             -- ^ Font size
      -> C.Colour Double -- ^ Font colour
-     -> TextAnchor_
+     -> TextAnchor_     -- ^ How to anchor a text label to the axis
      -> T.Text          -- ^ Text 
      -> V2 a            -- ^ Displacement w.r.t. rotated frame
      -> Point a         -- ^ Reference frame origin of the text box
      -> Svg
-text rot col ta te (V2 vx vy) (Point x y) = S.text_ (S.toMarkup te) ! SA.x (vd vx) ! SA.y (vd vy) ! SA.transform (S.translate (real x) (real y) <> S.rotate (real rot)) ! SA.fill (colourAttr col) ! textAnchor ta
+text rot fontsize col ta te (V2 vx vy) (Point x y) = S.text_ (S.toMarkup te) ! SA.x (vd vx) ! SA.y (vd vy) ! SA.transform (S.translate (real x) (real y) <> S.rotate (real rot)) ! SA.fontSize (vi fontsize) ! SA.fill (colourAttr col) ! textAnchor ta
 
 -- | Specify at which end should the text be anchored to its current point
 data TextAnchor_ = TAStart | TAMiddle | TAEnd deriving (Eq, Show)
@@ -261,6 +263,9 @@ colourAttr = S.toValue . C.sRGB24show
 
 vs :: String -> S.AttributeValue
 vs x = S.toValue (x :: String)
+
+vi :: Int -> S.AttributeValue
+vi = S.toValue
 
 
 -- Double
