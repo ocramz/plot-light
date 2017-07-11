@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Graphics.Rendering.Plot.Light.Internal (Frame(..), Point(..), LabeledPoint(..), Axis(..), svgHeader, rectCentered, circle, line, tick, ticks, axis, text, polyline, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, movePoint, moveLabeledPointV2, fromUnitSquare, toUnitSquare, e1, e2) where
+module Graphics.Rendering.Plot.Light.Internal (Frame(..), Point(..), LabeledPoint(..), mkLabeledPoint,  Axis(..), svgHeader, rectCentered, circle, line, tick, ticks, axis, text, polyline, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, movePoint, moveLabeledPointV2, fromUnitSquare, toUnitSquare, e1, e2) where
 
 import Data.Monoid ((<>))
 import qualified Data.Foldable as F (toList)
@@ -106,7 +106,7 @@ ticks :: (Foldable t, Show a, RealFrac a) =>
                -> a                -- ^ Length         
                -> a                -- ^ Stroke width
                -> C.Colour Double  -- ^ Stroke colour
-               -> LineStroke_ a
+               -> LineStroke_ a    -- ^ Stroke type
                -> t (Point a)      -- ^ Center coordinates
                -> Svg
 ticks ax len sw col ls ps = forM_ ps (tick ax len sw col ls)
@@ -123,7 +123,7 @@ axis :: (Functor t, Foldable t, Show a, RealFrac a) =>
               -> a               -- ^ Stroke width
               -> C.Colour Double -- ^ Stroke colour
               -> a               -- ^ Tick length fraction (w.r.t axis length)
-              -> LineStroke_ a
+              -> LineStroke_ a   -- ^ Stroke type
               -> t (Point a)     -- ^ Tick center coordinates
               -> Svg
 axis o@(Point ox oy) ax len sw col tickLenFrac ls ps = do
@@ -196,8 +196,8 @@ circle (Point x y) r scol fcol =
 polyline :: (Foldable t, Show a1, Show a, RealFrac a, RealFrac a1) =>
             t (Point a)     -- ^ Data
          -> a1              -- ^ Stroke width
-         -> LineStroke_ a
-         -> StrokeLineJoin_  
+         -> LineStroke_ a   -- ^ Stroke type 
+         -> StrokeLineJoin_ -- ^ Stroke join type 
          -> C.Colour Double -- ^ Stroke colour
          -> Svg
 polyline lis sw Continuous slj col = S.polyline ! SA.points (S.toValue $ unwords $ map show $ F.toList lis) ! SA.fill none ! SA.stroke (colourAttr col ) ! SA.strokeWidth (vd sw) ! strokeLineJoin slj
@@ -264,13 +264,6 @@ vds = S.toValue . unwords . map (show . real)
 
 
 
-
--- -- Float
--- vf :: Float -> S.AttributeValue
--- vf = S.toValue
-
--- vfs :: [Float] -> S.AttributeValue
--- vfs = S.toValue . unwords . map show
 
 
 

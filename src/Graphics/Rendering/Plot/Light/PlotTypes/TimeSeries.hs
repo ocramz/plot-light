@@ -3,6 +3,8 @@ module Graphics.Rendering.Plot.Light.PlotTypes.TimeSeries where
 import GHC.Real
 import Data.Fixed (Pico)
 import Data.Time
+import Data.Scientific
+
 import qualified Data.Text as T
 
 import Graphics.Rendering.Plot.Light.Internal
@@ -30,10 +32,18 @@ mkTick yy mm dd hr mi se = do
 
 
 
-tspToTuple :: (a -> b) -> TsPoint a -> (Float, b)
-tspToTuple f tsp = (tickToFloat tsp, f $ _val tsp)
+-- | Create a `LabeledPoint` from a time series point (`TsPoint`). The `_tick` (time axis) field will be used for the x coordinate, whereas both fields of TsPoint may be used to create the 
+tspToLP :: Fractional a => 
+     (t -> a)
+  -> (Tick -> t -> l)
+  -> TsPoint t
+  -> LabeledPoint l a
+tspToLP f g = LabeledPoint <$> pf <*> lf where
+  pf = Point <$> tickToFloat <*> f . _val
+  lf = g <$> _tick <*> _val
   
-tickToFloat :: TsPoint a -> Float
+  
+tickToFloat :: Fractional b => TsPoint a -> b
 tickToFloat = fromRational . fromTick . _tick
 
 -- | Map a Tick onto the rationals

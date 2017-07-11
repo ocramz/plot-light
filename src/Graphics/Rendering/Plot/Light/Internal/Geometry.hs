@@ -7,6 +7,8 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry where
 
 import Data.Monoid ((<>))
 
+
+
 -- | A `Point` defines a point in R2
 data Point a = Point { _px :: a,
                        _py :: a } deriving (Eq)
@@ -34,6 +36,9 @@ data LabeledPoint l a =
    _lplabel :: l
    } deriving (Eq, Show)
 
+mkLabeledPoint :: Point a -> l -> LabeledPoint l a
+mkLabeledPoint = LabeledPoint
+
 moveLabeledPoint :: (Point a -> Point b) -> LabeledPoint l a -> LabeledPoint l b
 moveLabeledPoint f (LabeledPoint p l) = LabeledPoint (f p) l
 
@@ -42,6 +47,9 @@ data Frame a = Frame {
    _fpmin :: Point a,
    _fpmax :: Point a
    } deriving (Eq, Show)
+
+mkFrame :: Point a -> Point a -> Frame a
+mkFrame = Frame
 
 -- | Frame corner coordinates
 xmin, xmax, ymin, ymax :: Frame a -> a
@@ -231,12 +239,12 @@ fromUnitSquare to p = movePoint vmove p
     vmove = (mm #> v2fromPoint p) ^+^ vo
 
 
--- * HasFrame : things which have a bounding box 
-class HasFrame v where
-  type UnitInterval v :: *
-  type FrameType v :: *
-  fromFrame :: v -> UnitInterval v
-  toFrame :: UnitInterval v -> v
+-- -- * HasFrame : things which have a bounding box 
+-- class HasFrame v where
+--   type UnitInterval v :: *
+--   type FrameType v :: *
+--   fromFrame :: v -> UnitInterval v
+--   toFrame :: UnitInterval v -> v
 
 
 
