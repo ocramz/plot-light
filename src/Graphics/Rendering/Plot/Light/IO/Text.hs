@@ -9,6 +9,7 @@ import Control.Applicative ((<|>))
 import Data.Time (Day, TimeOfDay)
 import qualified Attoparsec.Time as AT
 
+import Data.TimeSeries
 import Data.TimeSeries.Forex
 
 

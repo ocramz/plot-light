@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Graphics.Rendering.Plot.Light.Internal (Frame(..), Point(..), LabeledPoint(..), mkLabeledPoint,  Axis(..), svgHeader, rectCentered, circle, line, tick, ticks, axis, text, polyline, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, movePoint, moveLabeledPointV2, fromUnitSquare, toUnitSquare, e1, e2) where
+module Graphics.Rendering.Plot.Light.Internal (Frame(..), mkFrame, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint,  Axis(..), svgHeader, rectCentered, circle, line, tick, ticks, axis, text, polyline, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, movePoint, moveLabeledPointV2, fromUnitSquare, toUnitSquare, e1, e2) where
 
 import Data.Monoid ((<>))
 import qualified Data.Foldable as F (toList)
@@ -90,15 +90,24 @@ tick ax len sw col ls (Point x y) = line (Point x1 y1) (Point x2 y2) sw ls col w
     | ax == Y = (x, y-lh, x, y+lh)
     | otherwise = (x-lh, y, x+lh, y)
 
-tickX, tickY :: (Show a, RealFrac a) =>
-     a               -- ^ Length
-  -> a               -- ^ Stroke width
-  -> C.Colour Double -- ^ Stroke colour
-  -> LineStroke_ a
-  -> Point a         -- ^ Center coordinates
-  -> Svg
-tickX = tick X
-tickY = tick Y
+
+labeledTick
+  :: (Show a, RealFrac a) =>
+     Axis
+     -> a
+     -> a
+     -> C.Colour Double
+     -> a
+     -> TextAnchor_
+     -> (t -> T.Text)
+     -> V2 a
+     -> LabeledPoint t a
+     -> Svg
+labeledTick ax len sw col lrot tanchor flab vlab (LabeledPoint p label) = do
+  let ls = Continuous
+  tick ax len sw col ls p
+  text lrot col tanchor (flab label) vlab p
+
 
 -- | An array of axis-aligned identical segments (to be used as axis tickmarks), with centers given by the array of `Point`s
 ticks :: (Foldable t, Show a, RealFrac a) =>

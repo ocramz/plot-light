@@ -51,6 +51,23 @@ data Frame a = Frame {
 mkFrame :: Point a -> Point a -> Frame a
 mkFrame = Frame
 
+
+-- | Create a `Frame` from a container of `LabeledPoint`s `P`, i.e. construct two points `p1` and `p2` such that :
+--
+-- p1 := inf(x,y) P
+-- p2 := sup(x,y) P
+frameFromDataset ::
+  (Functor t, Ord a, Foldable t) => t (LabeledPoint l a) -> Frame a
+frameFromDataset ds = mkFrame (Point mx my) (Point mmx mmy)
+  where
+    xcoord = _px . _lp <$> ds
+    ycoord = _py . _lp <$> ds
+    mmx = maximum xcoord 
+    mmy = maximum ycoord 
+    mx = minimum xcoord 
+    my = minimum ycoord
+    
+
 -- | Frame corner coordinates
 xmin, xmax, ymin, ymax :: Frame a -> a
 xmin = _px . _fpmin
@@ -73,18 +90,6 @@ otherAxis :: Axis -> Axis
 otherAxis X = Y
 otherAxis _ = X
 
-
-
--- * Dataset
-
-
--- data Dataset l a = Dataset
---   {
---     dsdat :: [LabeledPoint l a]
---   , dsframe ::Frame a
---   } deriving (Eq, Show)
-
--- instance Monoid (Dataset l a) where
 
 
 
@@ -181,13 +186,24 @@ instance Num a => MultiplicativeSemigroup (Mat2 a) where
 instance Num a => LinearMap (Mat2 a) (V2 a) where
   (Mat2 a00 a01 a10 a11) #> (V2 vx vy) = V2 (a00 * vx + a01 * vy) (a10 * vx + a11 * vy)
 
--- | Create a diagonal matrix
-diagMat2 :: Num a => a -> a -> Mat2 a
-diagMat2 rx ry = Mat2 rx 0 0 ry
+
 
 -- | Diagonal matrices in R2 behave as scaling transformations
 data DiagMat2 a = DMat2 a a deriving (Eq, Show)
 
+-- | Diagonal matrices form a monoid w.r.t. matrix multiplication and have the identity matrix as neutral element
+instance Num a => Monoid (DiagMat2 a) where
+  mempty = DMat2 1 1
+  mappend = (##)
+
+-- | Matrices form a monoid w.r.t. matrix multiplication and have the identity matrix as neutral element
+instance Num a => Monoid (Mat2 a) where
+  mempty = Mat2 1 0 0 1
+  mappend = (##)
+
+-- | Create a diagonal matrix
+diagMat2 :: Num a => a -> a -> DiagMat2 a
+diagMat2 = DMat2
 
 -- | The class of invertible linear transformations
 class LinearMap m v => MatrixGroup m v where
@@ -217,26 +233,43 @@ moveLabeledPointV2 :: Num a => V2 a -> LabeledPoint l a -> LabeledPoint l a
 moveLabeledPointV2 = moveLabeledPoint . movePoint
 
 
--- | The vector translation from a `Point` contained in a `Frame` onto the unit square
---
--- NB: we do not check that `p` is actually contained within the frame. This has to be supplied correctly by the user
-toUnitSquare :: (Fractional a, MatrixGroup (Mat2 a) (V2 a)) =>
-    Frame a -> Point a -> Point a
-toUnitSquare from p = movePoint vmove p
-  where
-    mm = diagMat2 (width from) (height from)
-    o1 = _fpmin from
-    vmove = mm <\> (p -. o1)
 
--- | The vector translation from a `Point` `p` contained in the unit square onto a `Frame`
+
+-- | Given two frames `F1` and `F2`, returns a function `f` that maps an arbitrary vector `v` that points within `F1` to one contained within `F2`.
 --
--- NB: we do not check that `p` is actually contained in [0,1] x [0,1], This has to be supplied correctly by the user
-fromUnitSquare :: Num a => Frame a -> Point a -> Point a
-fromUnitSquare to p = movePoint vmove p
+-- 1. map `v` into a unit square vector `v01` with an affine transformation
+--
+-- 2. (optional) map `v01` into another point in the unit square via a linear rescaling
+--
+-- 3. map `v01'` onto `F2` with a second affine transformation
+--
+-- NB: we do not check that `v` is actually contained within the `F1`. This has to be supplied correctly by the user.
+frameToFrame :: (Fractional a, LinearMap m (V2 a)) =>
+                      Frame a  -- ^ Initial frame
+                   -> Frame a  -- ^ Final frame
+                   -> m        -- ^ Optional rescaling in [0,1] x [0,1]
+                   -> V2 a     -- ^ Initial vector
+                   -> V2 a
+frameToFrame from to m01 v = (mto #> v01') ^+^ vto
   where
-    mm = diagMat2 (width to) (height to)
-    vo = v2fromPoint (_fpmin to)
-    vmove = (mm #> v2fromPoint p) ^+^ vo
+    vfrom = v2fromPoint (_fpmin from) -- min.point vector of `from` 
+    vto = v2fromPoint (_fpmin to)     -- min.point vector of `to`
+    mfrom = diagMat2 (width from) (height from) -- rescaling matrix of `from`
+    mto = diagMat2 (width to) (height to)       -- rescaling matrix of `to`
+    v01' = m01 #> (mfrom <\> (v ^-^ vfrom))     
+
+moveLabeledPointV2Frames ::
+  (LinearMap m (V2 a), Fractional a) =>
+     Frame a          -- ^ Initial frame
+  -> Frame a          -- ^ Final frame
+  -> m                -- ^ Optional rescaling in [0,1] x [0,1]
+  -> LabeledPoint l a -- ^ Initial `LabeledPoint`
+  -> LabeledPoint l a
+moveLabeledPointV2Frames from to m01 lp = moveLabeledPointV2 vmove lp
+  where
+    vlp = v2fromPoint $ _lp lp
+    vmove = frameToFrame from to m01 vlp
+
 
 
 -- -- * HasFrame : things which have a bounding box 
