@@ -41,8 +41,8 @@ library
                      , colour
                      , palette
                      , blaze-svg
-                     -- , hspec    
-                     -- , QuickCheck
+                     , hspec    
+                     , QuickCheck
                                           
 
 -- executable plot-light

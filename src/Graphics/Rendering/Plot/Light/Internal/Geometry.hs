@@ -5,7 +5,7 @@ This module provides functionality for working with affine transformations (i.e.
 -}
 module Graphics.Rendering.Plot.Light.Internal.Geometry where
 
-import Data.Monoid ((<>))
+-- import Data.Monoid ((<>))
 
 
 
@@ -51,6 +51,7 @@ data Frame a = Frame {
 mkFrame :: Point a -> Point a -> Frame a
 mkFrame = Frame
 
+-- | Build a frame rooted at the origin (0, 0)
 mkFrameOrigin :: Num a => a -> a -> Frame a
 mkFrameOrigin w h = Frame origin (Point w h)
 
@@ -238,6 +239,24 @@ moveLabeledPointV2 = moveLabeledPoint . movePoint
 
 
 
+
+fromFrame from v = mfrom <\> (v ^-^ vfrom) where
+  vfrom = v2fromPoint (_fpmin from) -- min.point vector of `from`
+  mfrom = diagMat2 (width from) (height from) -- rescaling matrix of `from`
+
+toFrame to v01 = (mto #> v01) ^+^ vto where
+  vto = v2fromPoint (_fpmin to)     -- min.point vector of `to`
+  mto = diagMat2 (width to) (height to)       -- rescaling matrix of `to`
+
+
+from, to :: Frame Double
+from = Frame (Point 5 1) (Point 8 3)
+to = Frame (Point 1 2) (Point 4 4)
+
+v1 = V2 7 2 :: V2 Double
+v01 = V2 (2/3) 1
+v2 = V2 3 3 :: V2 Double -- what we expect
+
 -- | Given two frames `F1` and `F2`, returns a function `f` that maps an arbitrary vector `v` that points within `F1` to one contained within `F2`.
 --
 -- 1. map `v` into a unit square vector `v01` with an affine transformation
@@ -318,6 +337,3 @@ instance Eps (V2 Float) where
 
 
 
--- class Located v where
---   type Coords v :: *
---   position :: v -> Coords v

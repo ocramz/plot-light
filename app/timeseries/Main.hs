@@ -34,7 +34,8 @@ main = do
   d <- T.readFile fname
   let pd = A.parseOnly parseFxDataset d
   case pd of Left e -> error e
-             Right datarows -> putStrLn $ renderSvg (tsAxis rateOpen xPlot yPlot 3 C.red (-45) datarows)
+             -- Right datarows -> putStrLn $ renderSvg (tsAxis rateOpen xPlot yPlot 3 C.red (-45) datarows)
+             Right d-> print (tsAxis rateOpen xPlot yPlot 3 C.red (-45) d)
 --                   dat = tspToTuple rateHigh <$> reverse datarows
 --                   (dat', fdat) = mkFigureData xPlot yPlot toFloat dat
 --                   svg_t = renderSvg $ figure fdat

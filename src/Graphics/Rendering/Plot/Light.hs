@@ -35,12 +35,14 @@ module Graphics.Rendering.Plot.Light (
   Mat2(..), DiagMat2(..), diagMat2,
   -- ** Primitive elements
   origin, e1, e2,
-  -- ** Vector operations 
+  -- ** Vector norm operations 
   norm2, normalize2,
   -- ** Vector construction
   v2fromEndpoints, v2fromPoint,
   -- ** Operations on points
-  movePoint, moveLabeledPointV2, 
+  movePoint, moveLabeledPointV2, (-.),
+  -- ** Operations on vectors
+  frameToFrame,
   -- ** Typeclasses
   AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..)
   ) where
