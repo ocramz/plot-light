@@ -263,39 +263,39 @@ toFrame to v01 = (mto #> v01) ^+^ vto where
 -- 3. map `v01'` onto the target frame `F2`. 
 --
 -- NB: we do not check that `v` is actually contained within the `F1`, nor that `v01'` is still contained within [0,1] x [0, 1]. This has to be supplied correctly by the user.
-frameToFrame :: (Fractional a, LinearMap m (V2 a)) =>
+frameToFrame :: Fractional a =>
                       Frame a  -- ^ Initial frame
                    -> Frame a  -- ^ Final frame
-                   -> m        -- ^ Optional rescaling in [0,1] x [0,1]
-                   -> V2 a     -- ^ Optional shift 
+                   -> Bool        -- ^ Flip L-R in [0,1] x [0,1]
+                   -> Bool     -- ^ Flip U-D in [0,1] x [0,1]
                    -> V2 a     -- ^ Initial vector
                    -> V2 a
-frameToFrame from to mopt vopt v = toFrame to v01'
+frameToFrame from to fliplr flipud v = toFrame to v01'
   where
     v01 = fromFrame from v
-    v01' = (mopt #> v01) ^+^ vopt
+    v01' | fliplr && flipud = flipLR01 (flipUD01 v01)
+         | fliplr = flipLR01 v01
+         | flipud = flipUD01 v01
+         | otherwise = v01
 
 
--- -- flip the dataset up-down
--- flipUD01 :: (Num a, LinearMap (DiagMat2 a) (V2 a)) =>
---                     V2 a -> V2 a
--- flipUD01 v = (m #> v) ^+^ v0 where
---   m = diagMat2 1 (-1)
---   v0 = V2 0 1
+flipLR01, flipUD01 :: Num a => V2 a -> V2 a
+flipLR01 (V2 a b) = V2 (1 - a) b
+flipUD01 (V2 a b) = V2 a (1 - b)
 
 
 moveLabeledPointV2Frames ::
-  (LinearMap m (V2 a), Fractional a) =>
+  Fractional a =>
      Frame a          -- ^ Initial frame
   -> Frame a          -- ^ Final frame
-  -> m                -- ^ Optional rescaling in [0,1] x [0,1]
-  -> V2 a             -- ^ Optional shift
+  -> Bool             -- ^ Flip L-R in [0,1] x [0,1]
+  -> Bool             -- ^ Flip U-D in [0,1] x [0,1]
   -> LabeledPoint l a -- ^ Initial `LabeledPoint`
   -> LabeledPoint l a
-moveLabeledPointV2Frames from to mopt vopt lp = moveLabeledPointV2 vmove lp
+moveLabeledPointV2Frames from to fliplr flipud lp = moveLabeledPointV2 vmove lp
   where
     vlp = v2fromPoint $ _lp lp -- vector associated with starting point
-    vmove = frameToFrame from to mopt vopt vlp -- frame translation vector
+    vmove = frameToFrame from to fliplr flipud vlp -- frame translation vector
 
 
 

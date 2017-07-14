@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Graphics.Rendering.Plot.Light.Internal (Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameFromDataset, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint,  Axis(..), svgHeader, rectCentered, circle, line, tick, ticks, axis, text, polyline, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), movePoint, moveLabeledPointV2, moveLabeledPointV2Frames, e1, e2) where
+module Graphics.Rendering.Plot.Light.Internal (Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameFromDataset, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint,  Axis(..), svgHeader, rectCentered, circle, line, tick, ticks, axis, text, polyline, filledPolyline, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), movePoint, moveLabeledPointV2, moveLabeledPointV2Frames, e1, e2) where
 
 import Data.Monoid ((<>))
 import qualified Data.Foldable as F (toList)
@@ -230,6 +230,20 @@ colourFillOpt (Just c) = SA.fill (colourAttr c)
 colourStrokeOpt :: Maybe (C.Colour Double) -> S.Attribute
 colourStrokeOpt Nothing = SA.stroke none
 colourStrokeOpt (Just c) = SA.stroke (colourAttr c)
+
+
+-- | A filled polyline
+--
+-- > > putStrLn $ renderSvg $ filledPolyline C.coral 0.3 [(Point 0 1), (Point 10 40), Point 34 50, Point 30 5]
+-- > <polyline points="0,1 10,40 34,50 30,5" fill="#ff7f50" fill-opacity="0.3" />
+filledPolyline :: (Foldable t, Show a, Real o) =>
+                  C.Colour Double   -- ^ Fill colour
+               -> o                 -- ^ Fill opacity
+               -> t (Point a)       -- ^ Contour point coordinates
+               -> Svg
+filledPolyline col opac lis = S.polyline ! SA.points (S.toValue $ unwords $ map show $ F.toList lis) ! SA.fill (colourAttr col) ! SA.fillOpacity (vd opac)
+
+
 
 
 -- | Specify the type of connection between line segments
