@@ -59,6 +59,11 @@ nth xss n = reverse $ go xss n [] where
   go (x:xs) i l | i==0 = go xs n (x : l)
   go [] _ l = l
 
+tsp1 :: Maybe (TsPoint (FxRow Double))
+tsp1 = Tsp <$> mkTick 2017 16 3 20 30 01 <*> Just (FxRow pi 20 10 5.4)
+
+
+
 
   
 

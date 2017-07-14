@@ -27,9 +27,7 @@ spec =
       let from = Frame (Point 5 1) (Point 8 3) :: Frame Double
           to = Frame (Point 1 2) (Point 4 4)
           v1 = v2fromPoint $ Point 7 2
-          mopt = diagMat2 1 1 :: DiagMat2 Double
-          vopt = V2 0 0 
-          v2 = frameToFrame from to mopt vopt v1
+          v2 = frameToFrame from to False False v1
           p2 = movePoint v2 origin
       -- p2 `shouldBe` Point 3 3
       norm2 (p2 -. Point 3 3) ~= 0 `shouldBe` True
