@@ -36,7 +36,14 @@ spec =
 
 
 
+ps = [Point 12312 0.2, Point 13420.2 0.3, Point 14567 0.14]
 
+fin = frameFromPoints ps
+fout = mkFrame (Point 0 0) (Point 1 1)
+
+vf = frameToFrame fin fout False False
+
+v1 = V2 13555.2 0.25
 
 
 

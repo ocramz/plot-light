@@ -42,7 +42,9 @@ module Graphics.Rendering.Plot.Light (
   -- ** Operations on points
   movePoint, moveLabeledPointV2, (-.),
   -- ** Operations on vectors
-  frameToFrame,
+  frameToFrame, 
+  -- ** Operations on frames
+  frameFromPoints, mkFrame, width, height,
   -- ** Typeclasses
   AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..)
   ) where

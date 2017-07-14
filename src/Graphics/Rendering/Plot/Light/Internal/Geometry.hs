@@ -56,21 +56,23 @@ mkFrameOrigin :: Num a => a -> a -> Frame a
 mkFrameOrigin w h = Frame origin (Point w h)
 
 
--- | Create a `Frame` from a container of `LabeledPoint`s `P`, i.e. construct two points `p1` and `p2` such that :
+-- | Create a `Frame` from a container of `Point`s `P`, i.e. construct two points `p1` and `p2` such that :
 --
 -- p1 := inf(x,y) P
 -- p2 := sup(x,y) P
-frameFromDataset ::
-  (Functor t, Ord a, Foldable t) => t (LabeledPoint l a) -> Frame a
-frameFromDataset ds = mkFrame (Point mx my) (Point mmx mmy)
+frameFromPoints :: (Ord a, Foldable t, Functor t) =>
+                         t (Point a) -> Frame a
+frameFromPoints ds = mkFrame (Point mx my) (Point mmx mmy)
   where
-    xcoord = _px . _lp <$> ds
-    ycoord = _py . _lp <$> ds
+    xcoord = _px <$> ds
+    ycoord = _py <$> ds
     mmx = maximum xcoord 
     mmy = maximum ycoord 
     mx = minimum xcoord 
     my = minimum ycoord
-    
+
+
+ 
 
 -- | Frame corner coordinates
 xmin, xmax, ymin, ymax :: Frame a -> a
