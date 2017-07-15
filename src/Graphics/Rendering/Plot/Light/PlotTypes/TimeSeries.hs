@@ -36,12 +36,16 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 --                   -> a
 --                   -> t (TsPoint a)
 --                   -> Svg
-tsAxis fval wFig hFig sw col rot ps = axis (Point 0 200) X wFig sw col 0.01 Continuous 15 rot TAEnd T.pack (V2 (-10) 0) dat'
+tsAxis fval wFig hFig sw col rot ps = do
+  axis oAxis X wFig sw col 0.01 Continuous 10 rot TAEnd T.pack (V2 (-10) 0) dat'
+  polyline (_lp <$> dat') sw Continuous Round col
   where
+    oAxis = Point 10 (0.9 * hFig)
+    oData = Point 10 10
     lpFun = tspToLP fval (\(Tick d t) _ -> show (d, t))
     dat = lpFun <$> ps
     from = frameFromPoints $ _lp <$>  dat
-    to = mkFrameOrigin wFig hFig
+    to = Frame oData (Point wFig hFig)-- mkFrameOrigin wFig hFig
     dat' = moveLabeledPointV2Frames from to False True <$> dat
 
 -- tsAxis fval wFig hFig ps = dat' 

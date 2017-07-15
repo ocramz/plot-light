@@ -211,7 +211,7 @@ instance Num a => Monoid (Mat2 a) where
 diagMat2 :: Num a => a -> a -> DiagMat2 a
 diagMat2 = DMat2
 
- -- | The class of invertible linear transformations
+-- | The class of invertible linear transformations
 class LinearMap m v => MatrixGroup m v where
   -- | Inverse matrix action on a vector
   (<\>) :: m -> v -> v

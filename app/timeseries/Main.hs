@@ -20,15 +20,12 @@ import qualified Data.Colour.Names as C
 
 
 
-fname = "data/forex_small"
+fname = "data/forex"
 
-xPlot = 400
-yPlot = 300
-fnameOut = "data/forex_plot_1.svg"
+xPlot = 800
+yPlot = 600
+fnameOut = "data/forex_plot_2.svg"
 
--- figData = mkFigureData 10 10 xPlot yPlot
-
--- main = print "hello!"
 
 main = do
   d <- T.readFile fname
@@ -36,8 +33,8 @@ main = do
   case pd of Left e -> error e
              Right d -> do
                let svg_t = svgHeader (mkFrameOrigin xPlot yPlot) $ tsAxis (toFloat . rateOpen) xPlot yPlot 3 C.blue (-45) d
-               putStrLn $ renderSvg svg_t
-               -- T.writeFile fnameOut $ T.pack $ renderSvg svg_t
+               -- putStrLn $ renderSvg svg_t
+               T.writeFile fnameOut $ T.pack $ renderSvg svg_t
 
 toFloat :: Scientific -> Float
 toFloat x = toRealFloat x :: Float
