@@ -40,7 +40,7 @@ module Graphics.Rendering.Plot.Light (
   -- ** Vector construction
   v2fromEndpoints, v2fromPoint,
   -- ** Operations on points
-  movePoint, moveLabeledPointV2, (-.),
+  movePoint, moveLabeledPointV2, (-.), toSvgFrame, toSvgFrameLP,
   -- ** Operations on vectors
   frameToFrame, 
   -- ** Operations on frames

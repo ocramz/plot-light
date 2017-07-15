@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Graphics.Rendering.Plot.Light.Internal (Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameFromPoints, width, height, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint,  Axis(..), svgHeader, rectCentered, circle, line, tick, ticks, axis, text, polyline, filledPolyline, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), movePoint, moveLabeledPointV2, moveLabeledPointV2Frames, e1, e2) where
+module Graphics.Rendering.Plot.Light.Internal (Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameFromPoints, width, height, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint,  Axis(..), svgHeader, rectCentered, circle, line, tick, ticks, axis, text, polyline, filledPolyline, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), movePoint, moveLabeledPointV2, moveLabeledPointV2Frames, toSvgFrame, toSvgFrameLP, e1, e2) where
 
 import Data.Monoid ((<>))
 import qualified Data.Foldable as F (toList)
@@ -255,6 +255,24 @@ strokeLineJoin slj = SA.strokeLinejoin (S.toValue str) where
       | slj == Round = "round"
       | slj == Bevel = "bevel"
       | otherwise = "inherit"
+
+
+-- | Move point to the SVG frame of reference (for which the origing is a the top-left corner of the screen)
+toSvgFrame ::
+  Fractional a =>
+     Frame a  -- ^ Initial frame
+  -> Frame a  -- ^ Final frame
+  -> Bool     -- ^ Flip L-R in [0,1] x [0,1]
+  -> Point a  -- ^ Point in the initial frame
+  -> Point a
+toSvgFrame from to fliplr p = pointFromV2 v' where
+  v' = frameToFrame from to fliplr True (v2fromPoint p)
+
+
+-- | Move LabeledPoint to the SVG frame of reference (uses `toSvgFrame` ) 
+toSvgFrameLP ::
+  Fractional a => Frame a -> Frame a -> Bool -> LabeledPoint l a -> LabeledPoint l a
+toSvgFrameLP from to fliplr (LabeledPoint p lab) = LabeledPoint (toSvgFrame from to fliplr p) lab
 
 
 

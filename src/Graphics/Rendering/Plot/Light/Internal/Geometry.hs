@@ -211,6 +211,12 @@ instance Num a => Monoid (Mat2 a) where
 diagMat2 :: Num a => a -> a -> DiagMat2 a
 diagMat2 = DMat2
 
+
+-- | Rotation matrix
+rotMtx :: Floating a => a -> Mat2 a
+rotMtx r = Mat2 (cos r) (- (sin r)) (sin r) (cos r)
+
+
 -- | The class of invertible linear transformations
 class LinearMap m v => MatrixGroup m v where
   -- | Inverse matrix action on a vector
@@ -288,6 +294,8 @@ frameToFrame from to fliplr flipud v = toFrame to v01'
 flipLR01, flipUD01 :: Num a => V2 a -> V2 a
 flipLR01 (V2 a b) = V2 (1 - a) b
 flipUD01 (V2 a b) = V2 a (1 - b)
+
+
 
 
 moveLabeledPointV2Frames ::

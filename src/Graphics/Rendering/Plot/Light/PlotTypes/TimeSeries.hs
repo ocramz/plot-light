@@ -26,35 +26,23 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 -- 1. Remap the figure data to fit within the FigData ranges, expressed in pixels
 -- 2. Flip the data along the y axis since the origin in SVG is the top-left corner of the screen
 
--- tsAxis :: (Num a, LinearMap (DiagMat2 a) (V2 a), RealFrac a, Show a,
---                    Foldable t, Functor t) =>
---                   (a -> a)
---                   -> a
---                   -> a
---                   -> a
---                   -> C.Colour Double
---                   -> a
---                   -> t (TsPoint a)
---                   -> Svg
-tsAxis fval wFig hFig sw col rot ps = do
-  axis oAxis X wFig sw col 0.01 Continuous 10 rot TAEnd T.pack (V2 (-10) 0) dat'
-  polyline (_lp <$> dat') sw Continuous Round col
+tsAxis fval wfig hfig sw col1 col2 rot ps = do                            
+  axis oSvg X (right - left) sw col1 0.01 Continuous 10 rot TAEnd (T.pack . fst) (V2 (-10) 0) dat'
+  axis oSvg Y (top - bot) sw col1 0.01 Continuous 10 0 TAEnd (T.pack . snd) (V2 (-10) 0) dat'
+  polyline (_lp <$> dat') sw Continuous Round col2
   where
-    oAxis = Point 10 (0.9 * hFig)
-    oData = Point 10 10
-    lpFun = tspToLP fval (\(Tick d t) _ -> show (d, t))
-    dat = lpFun <$> ps
-    from = frameFromPoints $ _lp <$>  dat
-    to = Frame oData (Point wFig hFig)-- mkFrameOrigin wFig hFig
-    dat' = moveLabeledPointV2Frames from to False True <$> dat
-
--- tsAxis fval wFig hFig ps = dat' 
---   where
---     lpFun = tspToLP fval (\t _ -> show t)
---     dat = lpFun <$> ps
---     from = frameFromPoints $ _lp <$> dat
---     to = mkFrameOrigin wFig hFig
---     dat' = moveLabeledPointV2Frames from to True True <$> dat
+    dat = tspToLP fval (\(Tick d t) v -> (show (d, t), show (fval v))) <$> ps
+    dat' = toSvgFrameLP from to False <$> dat  
+    (left, right) = (0.1 * wfig, 0.9 * wfig)
+    (top, bot) = (0.1 * hfig, 0.9 * hfig)
+    oTo = Point left top
+    p2To = Point right bot
+    from = frameFromPoints $ _lp <$> dat
+    to = mkFrame oTo p2To
+    oSvg = Point left bot
+    
+    
+    
 
 
 
@@ -66,18 +54,16 @@ tsAxis fval wFig hFig sw col rot ps = do
 -- tsp1 :: Maybe (TsPoint (FxRow Double))
 -- tsp1 = Tsp <$> mkTick 2017 16 3 20 30 01 <*> Just (FxRow pi 20 10 5.4)
 
--- dat1 :: [ LabeledPoint String Double ]
--- dat1 = [LabeledPoint (Point 58000 pi) "blah",
---         LabeledPoint (Point 59000 2.3) "asdf",
---         LabeledPoint (Point 58500 3.42) "yo"]
+dat1 :: [ LabeledPoint String Double ]
+dat1 = [LabeledPoint (Point 0 1) "blah",
+        LabeledPoint (Point 2 0) "asdf",
+        LabeledPoint (Point 3 1) "yo"]
 
--- to, from :: Frame Double
--- from = frameFromPoints $ _lp <$> dat1
--- to = mkFrameOrigin 400 300
+to, from :: Frame Double
+from = frameFromPoints $ _lp <$> dat1
+to = mkFrameOrigin 400 300
 
 
-
--- dat1' = moveLabeledPointV2Frames from to False False <$> dat1
 
 
 
@@ -105,6 +91,10 @@ tickToFractional = fromRational . fromTick . _tick
 fromTick :: Tick -> Rational
 fromTick (Tick d t) = fromIntegral (toModifiedJulianDay d) + timeOfDayToDayFraction t
     
+
+-- fromTickI (Tick d t) = toModifiedJulianDay d + timeOfDayToDayFraction t
+
+
 
 
 
