@@ -33,7 +33,7 @@ main = do
   case pd of Left e -> error e
              Right d -> -- print $ tsAxis (toFloat . rateOpen) xPlot yPlot 3 C.blue (-45) d
                do
-               let svg_t = svgHeader (mkFrameOrigin xPlot yPlot) $ tsAxis (toFloat . rateOpen) xPlot yPlot 3 C.black C.red (-45) d
+               let svg_t = svgHeader (mkFrameOrigin xPlot yPlot) $ tsAxis avgTs xPlot yPlot 3 C.black C.red (-45) d
                -- putStrLn $ renderSvg svg_t
                T.writeFile fnameOut $ T.pack $ renderSvg svg_t
 
@@ -41,3 +41,6 @@ toFloat :: Scientific -> Float
 toFloat x = toRealFloat x :: Float
 
 
+avgTs x = 0.5 * (h + l) where
+  h = toFloat (rateHigh x)
+  l = toFloat (rateLow x)
