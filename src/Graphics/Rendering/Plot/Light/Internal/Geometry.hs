@@ -211,7 +211,7 @@ instance Num a => Monoid (Mat2 a) where
 diagMat2 :: Num a => a -> a -> DiagMat2 a
 diagMat2 = DMat2
 
--- | The class of invertible linear transformations
+ -- | The class of invertible linear transformations
 class LinearMap m v => MatrixGroup m v where
   -- | Inverse matrix action on a vector
   (<\>) :: m -> v -> v
@@ -226,9 +226,13 @@ instance Num a => LinearMap (DiagMat2 a) (V2 a) where
 instance Fractional a => MatrixGroup (DiagMat2 a) (V2 a) where
   DMat2 d1 d2 <\> V2 vx vy = V2 (vx / d1) (vy / d2)
 
--- | Build a V2 from a `Point` p (i.e. assuming the V2 points from the origin (0,0) to p)
+-- | Build a `V2` v from a `Point` p (i.e. assuming v points from the origin (0,0) to p)
 v2fromPoint :: Num a => Point a -> V2 a
 v2fromPoint p = origin -. p
+
+-- | Build a `Point` p from a `V2` v (i.e. assuming points from the origin (0,0) to p)
+pointFromV2 :: V2 a -> Point a
+pointFromV2 (V2 x y) = Point x y
 
 -- | Move a point along a vector
 movePoint :: Num a => V2 a -> Point a -> Point a
@@ -294,10 +298,11 @@ moveLabeledPointV2Frames ::
   -> Bool             -- ^ Flip U-D in [0,1] x [0,1]
   -> LabeledPoint l a -- ^ Initial `LabeledPoint`
   -> LabeledPoint l a
-moveLabeledPointV2Frames from to fliplr flipud lp = moveLabeledPointV2 vmove lp
+moveLabeledPointV2Frames from to fliplr flipud lp = LabeledPoint p' (_lplabel lp)
   where
     vlp = v2fromPoint $ _lp lp -- vector associated with starting point
-    vmove = frameToFrame from to fliplr flipud vlp -- frame translation vector
+    vlp' = frameToFrame from to fliplr flipud vlp -- vector associated w new point
+    p' = pointFromV2 vlp'
 
 
 

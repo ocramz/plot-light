@@ -35,7 +35,7 @@ main = do
   let pd = A.parseOnly parseFxDataset d
   case pd of Left e -> error e
              -- Right datarows -> putStrLn $ renderSvg (tsAxis rateOpen xPlot yPlot 3 C.red (-45) datarows)
-             Right d -> print d -- print $ tsAxis rateOpen xPlot yPlot d
+             Right d -> putStrLn $ renderSvg $ tsAxis (toRealFloat . rateOpen) xPlot yPlot 3 C.blue (-45) d
              -- Right d -> print (tsAxis rateOpen xPlot yPlot 3 C.red (-45) d)
 --                   dat = tspToTuple rateHigh <$> reverse datarows
 --                   (dat', fdat) = mkFigureData xPlot yPlot toFloat dat

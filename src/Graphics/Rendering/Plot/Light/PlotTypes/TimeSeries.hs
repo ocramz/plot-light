@@ -26,42 +26,54 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 -- 1. Remap the figure data to fit within the FigData ranges, expressed in pixels
 -- 2. Flip the data along the y axis since the origin in SVG is the top-left corner of the screen
 
--- -- tsAxis :: (Num a, LinearMap (DiagMat2 a) (V2 a), RealFrac a, Show a,
--- --                    Foldable t, Functor t) =>
--- --                   (a -> a)
--- --                   -> a
--- --                   -> a
--- --                   -> a
--- --                   -> C.Colour Double
--- --                   -> a
--- --                   -> t (TsPoint a)
--- --                   -> Svg
--- tsAxis fval wFig hFig sw col rot ps = dat' -- axis origin X wFig sw col 0.01 Continuous rot TAEnd T.pack (V2 (-10) 0) dat'
---   where
---     lpFun = tspToLP fval (\t _ -> show t)
---     dat = lpFun <$> ps
---     frameFrom = frameFromDataset dat
---     frameTo = mkFrameOrigin wFig hFig
---     dat' = moveLabeledPointV2Frames frameFrom frameTo True True <$> dat
-
-tsAxis fval wFig hFig ps = dat' 
+-- tsAxis :: (Num a, LinearMap (DiagMat2 a) (V2 a), RealFrac a, Show a,
+--                    Foldable t, Functor t) =>
+--                   (a -> a)
+--                   -> a
+--                   -> a
+--                   -> a
+--                   -> C.Colour Double
+--                   -> a
+--                   -> t (TsPoint a)
+--                   -> Svg
+tsAxis fval wFig hFig sw col rot ps = axis origin X wFig sw col 0.01 Continuous 15 rot TAEnd T.pack (V2 (-10) 0) dat'
   where
     lpFun = tspToLP fval (\t _ -> show t)
     dat = lpFun <$> ps
-    frameFrom = frameFromDataset dat
-    frameTo = mkFrameOrigin wFig hFig
-    dat' = moveLabeledPointV2Frames frameFrom frameTo True True <$> dat
+    from = frameFromPoints $ _lp <$>  dat
+    to = mkFrameOrigin wFig hFig
+    dat' = moveLabeledPointV2Frames from to True True <$> dat
+
+-- tsAxis fval wFig hFig ps = dat' 
+--   where
+--     lpFun = tspToLP fval (\t _ -> show t)
+--     dat = lpFun <$> ps
+--     from = frameFromPoints $ _lp <$> dat
+--     to = mkFrameOrigin wFig hFig
+--     dat' = moveLabeledPointV2Frames from to True True <$> dat
 
 
 
-nth xss n = reverse $ go xss n [] where
-  go (_:xs) i l | i>0  = go xs (i-1) l
-  go (x:xs) i l | i==0 = go xs n (x : l)
-  go [] _ l = l
+-- nth xss n = reverse $ go xss n [] where
+--   go (_:xs) i l | i>0  = go xs (i-1) l
+--   go (x:xs) i l | i==0 = go xs n (x : l)
+--   go [] _ l = l
 
-tsp1 :: Maybe (TsPoint (FxRow Double))
-tsp1 = Tsp <$> mkTick 2017 16 3 20 30 01 <*> Just (FxRow pi 20 10 5.4)
+-- tsp1 :: Maybe (TsPoint (FxRow Double))
+-- tsp1 = Tsp <$> mkTick 2017 16 3 20 30 01 <*> Just (FxRow pi 20 10 5.4)
 
+-- dat1 :: [ LabeledPoint String Double ]
+-- dat1 = [LabeledPoint (Point 58000 pi) "blah",
+--         LabeledPoint (Point 59000 2.3) "asdf",
+--         LabeledPoint (Point 58500 3.42) "yo"]
+
+-- to, from :: Frame Double
+-- from = frameFromPoints $ _lp <$> dat1
+-- to = mkFrameOrigin 400 300
+
+
+
+-- dat1' = moveLabeledPointV2Frames from to False False <$> dat1
 
 
 
