@@ -230,7 +230,7 @@ instance Fractional a => MatrixGroup (DiagMat2 a) (V2 a) where
 v2fromPoint :: Num a => Point a -> V2 a
 v2fromPoint p = origin -. p
 
--- | Build a `Point` p from a `V2` v (i.e. assuming points from the origin (0,0) to p)
+-- | Build a `Point` p from a `V2` v (i.e. assuming v points from the origin (0,0) to p)
 pointFromV2 :: V2 a -> Point a
 pointFromV2 (V2 x y) = Point x y
 

@@ -24,7 +24,7 @@ fname = "data/forex_small"
 
 xPlot = 400
 yPlot = 300
-fnameOut = "data/forex_plot.svg"
+fnameOut = "data/forex_plot_1.svg"
 
 -- figData = mkFigureData 10 10 xPlot yPlot
 
@@ -34,16 +34,12 @@ main = do
   d <- T.readFile fname
   let pd = A.parseOnly parseFxDataset d
   case pd of Left e -> error e
-             -- Right datarows -> putStrLn $ renderSvg (tsAxis rateOpen xPlot yPlot 3 C.red (-45) datarows)
-             Right d -> putStrLn $ renderSvg $ tsAxis (toRealFloat . rateOpen) xPlot yPlot 3 C.blue (-45) d
-             -- Right d -> print (tsAxis rateOpen xPlot yPlot 3 C.red (-45) d)
---                   dat = tspToTuple rateHigh <$> reverse datarows
---                   (dat', fdat) = mkFigureData xPlot yPlot toFloat dat
---                   svg_t = renderSvg $ figure fdat
---                        (polyline dat' 0.5 C.red)
---                 T.writeFile fnameOut $ T.pack svg_t
+             Right d -> do
+               let svg_t = svgHeader (mkFrameOrigin xPlot yPlot) $ tsAxis (toFloat . rateOpen) xPlot yPlot 3 C.blue (-45) d
+               putStrLn $ renderSvg svg_t
+               -- T.writeFile fnameOut $ T.pack $ renderSvg svg_t
 
--- toFloat :: Scientific -> Float
--- toFloat x = toRealFloat x :: Float
+toFloat :: Scientific -> Float
+toFloat x = toRealFloat x :: Float
 
 

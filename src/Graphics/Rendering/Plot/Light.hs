@@ -44,7 +44,7 @@ module Graphics.Rendering.Plot.Light (
   -- ** Operations on vectors
   frameToFrame, 
   -- ** Operations on frames
-  frameFromPoints, mkFrame, width, height,
+  frameFromPoints, mkFrame, mkFrameOrigin, width, height,
   -- ** Typeclasses
   AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..)
   ) where
