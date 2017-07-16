@@ -20,8 +20,13 @@
 -- @import qualified Data.Colour.Names as C@
 
 module Graphics.Rendering.Plot.Light (
-  -- * Graphical elements
-  rectCentered, circle, line, axis, text, polyline, filledPolyline, filledBand, candlestick,
+  -- * Plot elements
+  -- ** Geometrical primitives
+  rectCentered, circle, line, text, polyline, filledPolyline,
+  -- ** Composite plot elements
+  filledBand, candlestick,
+  -- ** Plot utilities
+  toPlot, FigureData(..),
   -- ** Element attributes
   LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..),
   -- ** SVG utilities
@@ -40,7 +45,7 @@ module Graphics.Rendering.Plot.Light (
   -- ** Vector construction
   v2fromEndpoints, v2fromPoint,
   -- ** Operations on points
-  movePoint, moveLabeledPointV2, (-.), toSvgFrame, toSvgFrameLP,
+  movePoint, moveLabeledPointV2, (-.), toSvgFrame, toSvgFrameLP, pointRange,
   -- ** Operations on vectors
   frameToFrame, 
   -- ** Operations on frames

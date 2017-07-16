@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Graphics.Rendering.Plot.Light.Internal (Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameFromPoints, width, height, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint,  Axis(..), svgHeader, rectCentered, circle, line, tick, ticks, axis, text, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), movePoint, moveLabeledPointV2, moveLabeledPointV2Frames, toSvgFrame, toSvgFrameLP, e1, e2) where
+module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameFromPoints, width, height, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint,  Axis(..), svgHeader, rectCentered, circle, line, tick, ticks, axis, toPlot, text, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointV2Frames, toSvgFrame, toSvgFrameLP, e1, e2) where
 
 import Data.Monoid ((<>))
 import qualified Data.Foldable as F (toList)
@@ -26,6 +26,25 @@ import qualified Data.Colour.SRGB as C
 import GHC.Real
 
 import Graphics.Rendering.Plot.Light.Internal.Geometry
+
+
+-- | Figure data
+data FigureData a = FigureData {
+  -- | Figure width
+    figWidth :: a
+    -- | Figure height
+  , figHeight :: a
+  -- | Left margin fraction (w.r.t figure width)
+  , figLeftMFrac :: a
+  -- | Right margin fraction (w.r.t figure width)  
+  , figRightMFrac :: a
+  -- | Top margin fraction (w.r.t figure height)
+  , figTopMFrac :: a
+  -- | Bottom margin fraction (w.r.t figure height)  
+  , figBottomMFrac :: a
+  -- | Tick label font size
+  , figLabelFontSize :: Int
+                       } deriving (Eq, Show)
 
 
 
@@ -153,6 +172,49 @@ axis o@(Point ox oy) ax len sw col tickLenFrac ls fontsize lrot tanchor flab vla
             | otherwise = setPointX ox
 
 
+
+-- | `toPlot` performs a number of related operations:
+--
+-- * Maps the dataset to the figure frame
+-- 
+-- * Renders the X, Y axes
+--
+-- * Renders the transformed dataset onto the newly created plot canvas
+toPlot
+  :: (Functor t, Foldable t, Show a, RealFrac a) =>
+     FigureData a     
+     -> (l -> T.Text)  -- ^ X tick label
+     -> (l -> T.Text)  -- ^ Y tick label
+     -> a   -- ^ X label rotation angle
+     -> a -- ^ Y label rotation angle
+     -> a -- ^ Stroke width
+     -> C.Colour Double -- ^ Stroke colour
+     -> (t (LabeledPoint l a) -> t (LabeledPoint l a))  -- ^ X axis labels
+     -> (t (LabeledPoint l a) -> t (LabeledPoint l a))  -- ^ Y axis labels
+     -> (t (LabeledPoint l a) -> Svg)  -- ^ Data rendering function
+     -> t (LabeledPoint l a) -- ^ Data
+     -> Svg 
+toPlot fd flabelx flabely rotx roty sw col1 tickXf tickYf plotf dat = do
+  axis oSvg X (right - left) sw col1 0.05 Continuous fontsize rotx TAEnd flabelx (V2 (-10) 0) (tickXf dat')
+  axis oSvg Y (top - bot) sw col1 0.05 Continuous fontsize roty TAEnd flabely (V2 (-10) 0) (tickYf dat')
+  plotf dat'
+  where
+    fontsize = figLabelFontSize fd
+    wfig = figWidth fd
+    hfig = figHeight fd
+    (left, right) = (figLeftMFrac fd * wfig, figRightMFrac fd * wfig)
+    (top, bot) = (figTopMFrac fd * hfig, figBottomMFrac fd * hfig)
+    oTo = Point left top
+    p2To = Point right bot
+    from = frameFromPoints $ _lp <$> dat
+    to = mkFrame oTo p2To
+    dat' = toSvgFrameLP from to False <$> dat
+    oSvg = Point left bot
+
+
+
+
+
 -- * text
 
 -- | `text` renders text onto the SVG canvas
@@ -197,11 +259,12 @@ circle
   :: (Real a1, Real a) =>
      Point a1                   -- ^ Center
      -> a                       -- ^ Radius
+     -> a                       -- ^ Stroke width
      -> Maybe (C.Colour Double) -- ^ Stroke colour
      -> Maybe (C.Colour Double) -- ^ Fill colour
   -> Svg
-circle (Point x y) r scol fcol =
-  S.circle ! SA.cx (vd x) ! SA.cy (vd y) ! SA.r (vd r) ! colourFillOpt fcol ! colourStrokeOpt scol
+circle (Point x y) r sw scol fcol =
+  S.circle ! SA.cx (vd x) ! SA.cy (vd y) ! SA.r (vd r) ! colourFillOpt fcol ! colourStrokeOpt scol ! SA.strokeWidth (vd sw) 
 
 
 
