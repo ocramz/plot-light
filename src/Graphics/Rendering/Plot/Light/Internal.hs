@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Graphics.Rendering.Plot.Light.Internal (Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameFromPoints, width, height, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint,  Axis(..), svgHeader, rectCentered, circle, line, tick, ticks, axis, text, polyline, filledPolyline, filledBand, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), movePoint, moveLabeledPointV2, moveLabeledPointV2Frames, toSvgFrame, toSvgFrameLP, e1, e2) where
+module Graphics.Rendering.Plot.Light.Internal (Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameFromPoints, width, height, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint,  Axis(..), svgHeader, rectCentered, circle, line, tick, ticks, axis, text, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), movePoint, moveLabeledPointV2, moveLabeledPointV2Frames, toSvgFrame, toSvgFrameLP, e1, e2) where
 
 import Data.Monoid ((<>))
 import qualified Data.Foldable as F (toList)
@@ -48,11 +48,12 @@ rectCentered :: (Show a, RealFrac a) =>
      Point a                 -- ^ Center coordinates           
   -> a                       -- ^ Width
   -> a                       -- ^ Height
+  -> a                       -- ^ Stroke width
   -> Maybe (C.Colour Double) -- ^ Stroke colour
   -> Maybe (C.Colour Double) -- ^ Fill colour  
   -> Svg
-rectCentered (Point x0 y0) wid hei scol fcol = S.g ! SA.transform (S.translate x0c y0c) $ 
-  S.rect ! SA.width (vd wid) ! SA.height (vd hei) ! colourFillOpt fcol ! colourStrokeOpt scol where
+rectCentered (Point x0 y0) wid hei sw scol fcol = S.g ! SA.transform (S.translate x0c y0c) $ 
+  S.rect ! SA.width (vd wid) ! SA.height (vd hei) ! colourFillOpt fcol ! colourStrokeOpt scol ! SA.strokeWidth (vd sw) where
    x0c = x0 - (wid / 2)
    y0c = y0 - (hei / 2)   
 
@@ -256,6 +257,33 @@ filledBand col opac ftop fbot lis0 = filledPolyline col opac (lis1 <> lis2) wher
   lis = F.toList lis0
   lis1 = ftop <$> lis
   lis2 = fbot <$> reverse lis
+
+
+candlestick
+  :: (Show a, RealFrac a) =>
+     (LabeledPoint l a -> Bool)       -- ^ If True, fill the box with the first colour, otherwise with the second
+     -> (LabeledPoint l a -> a) -- ^ Box maximum
+     -> (LabeledPoint l a -> a) -- ^ Box minimum
+     -> (LabeledPoint l a -> a) -- ^ Line maximum
+     -> (LabeledPoint l a -> a) -- ^ Line minimum
+     -> a                       -- ^ Box width
+     -> a                       -- ^ Stroke width
+     -> C.Colour Double         -- ^ First box colour
+     -> C.Colour Double         -- ^ Second box colour
+     -> C.Colour Double         -- ^ Line stroke colour
+     -> LabeledPoint l a        -- ^ Data point
+     -> Svg
+candlestick fdec fboxmin fboxmax fmin fmax wid sw col1 col2 colstroke lp = do
+  line pmin pmax sw Continuous colstroke
+  rectCentered p wid hei sw (Just colstroke) (Just col)
+    where
+    p = _lp lp
+    pmin = setPointY (fmin lp) p
+    pmax = setPointY (fmax lp) p
+    hei = fboxmax lp - fboxmin lp
+    col | fdec lp = col1
+        | otherwise = col2
+
 
 
 

@@ -41,6 +41,7 @@ toFloat :: Scientific -> Float
 toFloat x = toRealFloat x :: Float
 
 
+avgTs :: FxRow Scientific -> Float
 avgTs x = 0.5 * (h + l) where
   h = toFloat (rateHigh x)
   l = toFloat (rateLow x)
