@@ -203,14 +203,14 @@ toPlot
      -> a -- ^ Y label rotation angle
      -> a -- ^ Stroke width
      -> C.Colour Double -- ^ Stroke colour
-     -> (t (LabeledPoint l a) -> t (LabeledPoint l a))  -- ^ X axis labels
-     -> (t (LabeledPoint l a) -> t (LabeledPoint l a))  -- ^ Y axis labels
+     -> Maybe (t (LabeledPoint l a))  -- ^ X axis labels
+     -> Maybe (t (LabeledPoint l a))  -- ^ Y axis labels
      -> (t (LabeledPoint l a) -> Svg)  -- ^ Data rendering function
      -> t (LabeledPoint l a) -- ^ Data
      -> Svg 
-toPlot fd flabelx flabely rotx roty sw col1 tickXf tickYf plotf dat = do
-  axis oSvg X (right - left) sw col1 0.05 Continuous fontsize rotx TAEnd flabelx (V2 (-10) 0) (tickXf dat')
-  axis oSvg Y (top - bot) sw col1 0.05 Continuous fontsize roty TAEnd flabely (V2 (-10) 0) (tickYf dat')
+toPlot fd flabelx flabely rotx roty sw col1 tickxe tickye plotf dat = do
+  axis oSvg X (right - left) sw col1 0.05 Continuous fontsize rotx TAEnd flabelx (V2 (-10) 0) tickx
+  axis oSvg Y (top - bot) sw col1 0.05 Continuous fontsize roty TAEnd flabely (V2 (-10) 0) ticky
   plotf dat'
   where
     fontsize = figLabelFontSize fd
@@ -222,7 +222,12 @@ toPlot fd flabelx flabely rotx roty sw col1 tickXf tickYf plotf dat = do
     p2To = Point right bot
     from = frameFromPoints $ _lp <$> dat
     to = mkFrame oTo p2To
-    dat' = toSvgFrameLP from to False <$> dat
+    datf = toSvgFrameLP from to False -- data mapping function    
+    dat' = datf <$> dat
+    tickDefault ti d = case ti of Just t -> datf <$> t
+                                  Nothing -> d
+    tickx = tickDefault tickxe dat'
+    ticky = tickDefault tickye dat'
     oSvg = Point left bot
 
 

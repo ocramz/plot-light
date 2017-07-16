@@ -46,7 +46,7 @@ tsAxis fval wfig hfig sw col1 col2 rot ps = do
 
 
 tsAxisTest fd sw colAxis colData rot ps =
-  toPlot fd T.pack T.pack rot 0 sw colAxis id id fplot ps where
+  toPlot fd T.pack T.pack rot 0 sw colAxis (Just ptx) (Just pty) fplot ps where
   fplot lps = polyline (_lp <$> lps) sw Continuous Round colData
   
 
