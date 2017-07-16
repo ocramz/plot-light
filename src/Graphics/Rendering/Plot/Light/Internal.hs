@@ -249,9 +249,9 @@ filledPolyline col opac lis = S.polyline ! SA.points (S.toValue $ unwords $ map 
 filledBand :: (Foldable t, Real o, Show a) =>
     C.Colour Double          -- ^ Fill colour
            -> o              -- ^ Fill opacity
-           -> (LabeledPoint l a -> a) -- ^ Create "top" border points
-           -> (LabeledPoint l a -> a) -- ^ Create "bottom" border points
-           -> t (LabeledPoint l a)            -- ^ Centerline point coordinates
+           -> (LabeledPoint l a -> a) -- ^ Band maximum value
+           -> (LabeledPoint l a -> a) -- ^ Band minimum value
+           -> t (LabeledPoint l a)    -- ^ Centerline points
            -> Svg
 filledBand col opac ftop fbot lis0 = filledPolyline col opac (lis1 <> lis2) where
   lis = F.toList lis0
@@ -264,10 +264,10 @@ filledBand col opac ftop fbot lis0 = filledPolyline col opac (lis1 <> lis2) wher
 candlestick
   :: (Show a, RealFrac a) =>
      (LabeledPoint l a -> Bool)       -- ^ If True, fill the box with the first colour, otherwise with the second
-     -> (LabeledPoint l a -> a) -- ^ Box maximum
-     -> (LabeledPoint l a -> a) -- ^ Box minimum
-     -> (LabeledPoint l a -> a) -- ^ Line maximum
-     -> (LabeledPoint l a -> a) -- ^ Line minimum
+     -> (LabeledPoint l a -> a) -- ^ Box maximum value
+     -> (LabeledPoint l a -> a) -- ^ Box minimum value
+     -> (LabeledPoint l a -> a) -- ^ Line maximum value 
+     -> (LabeledPoint l a -> a) -- ^ Line minimum value
      -> a                       -- ^ Box width
      -> a                       -- ^ Stroke width
      -> C.Colour Double         -- ^ First box colour
