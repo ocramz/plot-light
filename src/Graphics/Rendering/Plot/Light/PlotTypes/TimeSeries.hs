@@ -11,7 +11,6 @@ import qualified Data.Text as T
 
 import Graphics.Rendering.Plot.Light.Internal
 import Data.TimeSeries
-import Data.TimeSeries.Forex
 
 -- For debugging
 import Text.Blaze.Svg
