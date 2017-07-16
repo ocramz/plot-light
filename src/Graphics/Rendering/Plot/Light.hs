@@ -22,7 +22,7 @@
 module Graphics.Rendering.Plot.Light (
   -- * Plot elements
   -- ** Geometrical primitives
-  rectCentered, circle, line, text, polyline, filledPolyline,
+  rect, rectCentered, circle, line, text, polyline, filledPolyline,
   -- ** Composite plot elements
   filledBand, candlestick,
   -- ** Plot utilities

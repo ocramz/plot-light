@@ -51,7 +51,7 @@ tsAxisTest fd sw colAxis colData rot ps =
   
 
 
-fdat = FigureData 400 300 0.1 0.9 0.1 0.9 10
+fdat = FigureData 400 300 0.1 0.9 0.1 0.85 10
 
 dat1 :: [ LabeledPoint String Double ]
 dat1 = [LabeledPoint (Point 0 0) "blah",
