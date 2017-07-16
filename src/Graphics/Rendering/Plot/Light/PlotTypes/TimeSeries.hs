@@ -43,9 +43,14 @@ tsAxis fval wfig hfig sw col1 col2 rot ps = do
     
     
 
+-- putStrLn $ renderSvg $ tsAxis' fdat 2 C.black C.red (-45) dat1
+
+tsAxis' fd sw colAxis colData rot ps =
+  toPlot fd T.pack T.pack rot 0 sw colAxis (const ps) (const ps) fplot ps where
+  fplot lps = polyline (_lp <$> lps) sw Continuous Round colData
 
 
-    
+fdat = FigureData 400 300 0.1 0.9 0.1 0.9 10
 
 
 
@@ -60,7 +65,8 @@ tsAxis fval wfig hfig sw col1 col2 rot ps = do
 dat1 :: [ LabeledPoint String Double ]
 dat1 = [LabeledPoint (Point 0 1) "blah",
         LabeledPoint (Point 2 0) "asdf",
-        LabeledPoint (Point 3 1) "yo"]
+        LabeledPoint (Point 3 1) "yo",
+        LabeledPoint (Point 8 9) "blap"]
 
 to, from :: Frame Double
 from = frameFromPoints $ _lp <$> dat1

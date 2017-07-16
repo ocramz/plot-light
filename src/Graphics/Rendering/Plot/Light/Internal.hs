@@ -309,6 +309,8 @@ filledPolyline col opac lis = S.polyline ! SA.points (S.toValue $ unwords $ map 
 
 
 -- | A filled band of colour, given the coordinates of its center line
+--
+-- This element can be used to overlay uncertainty ranges (e.g. the first standard deviation) associated with a given data series.
 filledBand :: (Foldable t, Real o, Show a) =>
     C.Colour Double          -- ^ Fill colour
            -> o              -- ^ Fill opacity
@@ -324,6 +326,11 @@ filledBand col opac ftop fbot lis0 = filledPolyline col opac (lis1 <> lis2) wher
   lis2 = f2  <$> reverse lis
 
 
+-- | A `candlestick` glyph for time series plots. This is a type of box glyph, commonly used in plotting financial time series.
+--
+-- Some financial market quantities such as currency exchange rates are aggregated over some time period (e.g. a day) and summarized by various quantities, for example opening and closing rates, as well as maximum and minimum over the period.
+--
+-- By convention, the `candlestick` colour depends on the derivative sign of one such quantity (e.g. it is green if the market closes higher than it opened, and red otherwise).
 candlestick
   :: (Show a, RealFrac a) =>
      (LabeledPoint l a -> Bool)       -- ^ If True, fill the box with the first colour, otherwise with the second
