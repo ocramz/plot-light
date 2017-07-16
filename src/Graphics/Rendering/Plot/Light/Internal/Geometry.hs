@@ -39,6 +39,9 @@ data LabeledPoint l a =
 mkLabeledPoint :: Point a -> l -> LabeledPoint l a
 mkLabeledPoint = LabeledPoint
 
+labelPoint :: (Point a -> l) -> Point a -> LabeledPoint l a
+labelPoint lf p = LabeledPoint p (lf p)
+
 moveLabeledPoint :: (Point a -> Point b) -> LabeledPoint l a -> LabeledPoint l b
 moveLabeledPoint f (LabeledPoint p l) = LabeledPoint (f p) l
 

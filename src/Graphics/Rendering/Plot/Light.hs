@@ -32,7 +32,7 @@ module Graphics.Rendering.Plot.Light (
   -- ** SVG utilities
   svgHeader,
   -- * Types
-  Frame(..), Point(..), LabeledPoint(..), Axis(..),
+  Frame(..), Point(..), LabeledPoint(..), labelPoint, Axis(..),
   -- * Geometry
   -- ** Vectors
   V2(..),

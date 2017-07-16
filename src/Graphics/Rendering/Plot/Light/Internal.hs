@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameFromPoints, width, height, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint,  Axis(..), svgHeader, rectCentered, circle, line, tick, ticks, axis, toPlot, text, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointV2Frames, toSvgFrame, toSvgFrameLP, e1, e2) where
+module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameFromPoints, width, height, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint,  Axis(..), svgHeader, rectCentered, circle, line, tick, ticks, axis, toPlot, text, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointV2Frames, toSvgFrame, toSvgFrameLP, e1, e2) where
 
 import Data.Monoid ((<>))
 import qualified Data.Foldable as F (toList)
@@ -57,6 +57,20 @@ svgHeader fd =
   ! SA.height (vd $ height fd)
   ! SA.viewbox (vds [xmin fd, ymin fd, xmax fd, ymax fd])
 
+
+-- | A rectangle, defined by its anchor point coordinates and side lengths
+--
+-- > > putStrLn $ renderSvg $ rect (Point 100 200) 30 60 2 Nothing (Just C.aquamarine)
+-- > <rect x="100.0" y="200.0" width="30.0" height="60.0" fill="#7fffd4" stroke="none" stroke-width="2.0" />
+rect :: (Show a, RealFrac a) =>
+     Point a                 -- ^ Center coordinates           
+  -> a                       -- ^ Width
+  -> a                       -- ^ Height
+  -> a                       -- ^ Stroke width
+  -> Maybe (C.Colour Double) -- ^ Stroke colour
+  -> Maybe (C.Colour Double) -- ^ Fill colour  
+  -> Svg
+rect (Point x0 y0) wid hei sw scol fcol = S.rect ! SA.x (vd x0) ! SA.y (vd y0) ! SA.width (vd wid) ! SA.height (vd hei) ! colourFillOpt fcol ! colourStrokeOpt scol ! SA.strokeWidth (vd sw)
 
 
 -- | A rectangle, defined by its center coordinates and side lengths

@@ -43,30 +43,25 @@ tsAxis fval wfig hfig sw col1 col2 rot ps = do
     
     
 
--- putStrLn $ renderSvg $ tsAxis' fdat 2 C.black C.red (-45) dat1
 
-tsAxis' fd sw colAxis colData rot ps =
-  toPlot fd T.pack T.pack rot 0 sw colAxis (const ps) (const ps) fplot ps where
+
+tsAxisTest fd sw colAxis colData rot ps =
+  toPlot fd T.pack T.pack rot 0 sw colAxis id id fplot ps where
   fplot lps = polyline (_lp <$> lps) sw Continuous Round colData
+  
 
 
 fdat = FigureData 400 300 0.1 0.9 0.1 0.9 10
 
-
-
--- nth xss n = reverse $ go xss n [] where
---   go (_:xs) i l | i>0  = go xs (i-1) l
---   go (x:xs) i l | i==0 = go xs n (x : l)
---   go [] _ l = l
-
--- tsp1 :: Maybe (TsPoint (FxRow Double))
--- tsp1 = Tsp <$> mkTick 2017 16 3 20 30 01 <*> Just (FxRow pi 20 10 5.4)
-
 dat1 :: [ LabeledPoint String Double ]
-dat1 = [LabeledPoint (Point 0 1) "blah",
-        LabeledPoint (Point 2 0) "asdf",
-        LabeledPoint (Point 3 1) "yo",
-        LabeledPoint (Point 8 9) "blap"]
+dat1 = [LabeledPoint (Point 0 0) "blah",
+        LabeledPoint (Point 0 1) "asdf",
+        LabeledPoint (Point 1 1) "yo",
+        LabeledPoint (Point 1 2) "blap",
+        LabeledPoint (Point 2 2) "chow"]
+
+ptx = labelPoint (show . _px) <$> pointRange 2 (Point 0 0) (Point 2 0)
+pty = labelPoint (show . _py) <$> pointRange 2 (Point 0 0) (Point 0 2)
 
 to, from :: Frame Double
 from = frameFromPoints $ _lp <$> dat1
@@ -116,3 +111,18 @@ mkTick yy mm dd hr mi se = do
    return $ Tick d tim
 
 
+
+
+
+
+
+
+
+
+-- nth xss n = reverse $ go xss n [] where
+--   go (_:xs) i l | i>0  = go xs (i-1) l
+--   go (x:xs) i l | i==0 = go xs n (x : l)
+--   go [] _ l = l
+
+-- tsp1 :: Maybe (TsPoint (FxRow Double))
+-- tsp1 = Tsp <$> mkTick 2017 16 3 20 30 01 <*> Just (FxRow pi 20 10 5.4)
