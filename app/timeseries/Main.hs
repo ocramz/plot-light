@@ -4,19 +4,19 @@ module Main where
 -- import Control.Arrow ((***), (&&&))
 
 import Graphics.Rendering.Plot.Light
-import Graphics.Rendering.Plot.Light.IO.Text
--- import Graphics.Rendering.Plot.Light.Internal
--- -- import Graphics.Rendering.Plot.Light.Internal.Types
-import Graphics.Rendering.Plot.Light.PlotTypes.TimeSeries
-import Data.TimeSeries
-import Data.TimeSeries.Forex
+import Graphics.Rendering.Plot.Light.PlotTypes
   
 import qualified Data.Attoparsec.Text as A
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
+import qualified Attoparsec.Time as AT
+import qualified Data.Text as T 
+import qualified Data.Text.IO as T (readFile, writeFile)
 import Data.Scientific (Scientific, toRealFloat)
 import Text.Blaze.Svg.Renderer.String (renderSvg)
 import qualified Data.Colour.Names as C
+
+import Control.Applicative ((<|>))
+import Data.Time (Day, TimeOfDay)
+
 
 
 
@@ -45,3 +45,66 @@ avgTs :: FxRow Scientific -> Float
 avgTs x = 0.5 * (h + l) where
   h = toFloat (rateHigh x)
   l = toFloat (rateLow x)
+
+
+
+
+
+-- Forex time series parsers - related
+
+
+data FxRow a  = FxRow {
+    rateOpen :: a
+  , rateHigh :: a
+  , rateLow :: a
+  , rateClose :: a
+               } deriving (Eq, Show)
+
+
+space, comma :: A.Parser Char
+space = A.char ' '
+comma = A.char ','
+
+-- | Parse a row of numbers, separated by `sep`
+rowNums :: A.Parser s -> A.Parser [Scientific]
+rowNums sep = A.sepBy A.scientific sep
+
+rowNumSpace :: A.Parser [Scientific]
+rowNumSpace = rowNums space
+
+-- | parse a grid of numbers, separated by `sep`
+gridNum :: A.Parser s -> A.Parser [[Scientific]]
+gridNum sep = A.sepBy (rowNums sep) A.endOfLine
+
+
+
+
+
+
+
+
+
+-- * Forex dataset
+
+parseFxDataset :: A.Parser [TsPoint (FxRow Scientific)]
+parseFxDataset = A.sepBy parseFxRow A.endOfLine
+
+parseFxRow :: A.Parser (TsPoint (FxRow Scientific))
+parseFxRow = do
+  (d, t) <- parseDateTime
+  _ <- comma
+  open <- A.scientific
+  _ <- comma
+  hi <- A.scientific
+  _ <- comma
+  lo <- A.scientific
+  _ <- comma
+  close <- A.scientific
+  pure $ Tsp (Tick d t) (FxRow open hi lo close)
+
+parseDateTime :: A.Parser (Day, TimeOfDay)
+parseDateTime = do
+  d <- AT.dayInISO8601
+  _ <- space
+  t <- AT.timeOfDayInISO8601
+  return (d, t)
