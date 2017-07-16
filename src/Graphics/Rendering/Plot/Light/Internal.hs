@@ -249,14 +249,16 @@ filledPolyline col opac lis = S.polyline ! SA.points (S.toValue $ unwords $ map 
 filledBand :: (Foldable t, Real o, Show a) =>
     C.Colour Double          -- ^ Fill colour
            -> o              -- ^ Fill opacity
-           -> (x -> Point a) -- ^ Create "top" border points
-           -> (x -> Point a) -- ^ Create "bottom" border points
-           -> t x            -- ^ Centerline point coordinates
+           -> (LabeledPoint l a -> a) -- ^ Create "top" border points
+           -> (LabeledPoint l a -> a) -- ^ Create "bottom" border points
+           -> t (LabeledPoint l a)            -- ^ Centerline point coordinates
            -> Svg
 filledBand col opac ftop fbot lis0 = filledPolyline col opac (lis1 <> lis2) where
   lis = F.toList lis0
-  lis1 = ftop <$> lis
-  lis2 = fbot <$> reverse lis
+  f1 lp = setPointY (ftop lp) $ _lp lp
+  f2 lp = setPointY (fbot lp) $ _lp lp
+  lis1 = f1  <$> lis
+  lis2 = f2  <$> reverse lis
 
 
 candlestick

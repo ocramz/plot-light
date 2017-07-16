@@ -42,6 +42,35 @@ tsAxis fval wfig hfig sw col1 col2 rot ps = do
     oSvg = Point left bot
     
     
+
+
+tsAxisLP
+  :: (Functor t, Foldable t, Show a, RealFrac a) =>
+     a      -- ^ Figure width
+     -> a   -- ^ Figure height                
+     -> a   -- ^ Left margin fraction
+     -> a   -- ^ Right margin fraction
+     -> a   -- ^ Top margin fraction
+     -> a   -- ^ Bottom margin fraction
+     -> (l -> T.Text)  -- ^ X tick label
+     -> (l -> T.Text)  -- ^ Y tick label
+     -> a   -- ^ X label rotation angle
+     -> a -- ^ Y label rotation angle
+     -> a -- ^ Stroke width
+     -> C.Colour Double -- ^ Stroke colour
+     -> t (LabeledPoint l a)  -- ^ Data
+     -> Svg
+tsAxisLP wfig hfig mleft mright mtop mbot flabelx flabely rotx roty sw col1 dat = do
+  axis oSvg X (right - left) sw col1 0.01 Continuous 10 rotx TAEnd flabelx (V2 (-10) 0) dat
+  axis oSvg Y (top - bot) sw col1 0.01 Continuous 10 roty TAEnd flabely (V2 (-10) 0) dat
+  where
+    (left, right) = (mleft * wfig, mright * wfig)
+    (top, bot) = (mtop * hfig, mbot * hfig)
+    oTo = Point left top
+    p2To = Point right bot
+    from = frameFromPoints $ _lp <$> dat
+    to = mkFrame oTo p2To
+    oSvg = Point left bot
     
 
 
