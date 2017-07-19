@@ -30,7 +30,7 @@ module Graphics.Rendering.Plot.Light (
   -- ** Element attributes
   LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..),
   -- ** SVG utilities
-  svgHeader,
+  svgHeader, translateSvg,
   -- * Types
   Frame(..), Point(..), LabeledPoint(..), labelPoint, Axis(..),
   -- * Geometry
