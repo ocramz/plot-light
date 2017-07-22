@@ -24,16 +24,18 @@ fname = "data/forex_small"
 
 xPlot = 800
 yPlot = 600
-fnameOut = "data/forex_plot_3.svg"
+fnameOut = "data/forex_plot_4.svg"
+
+fdat = FigureData xPlot yPlot 0.1 0.9 0.1 0.85 10
 
 
 main = do
   d <- T.readFile fname
   let pd = A.parseOnly parseFxDataset d
   case pd of Left e -> error e
-             Right d -> -- print $ tsAxis (toFloat . rateOpen) xPlot yPlot 3 C.blue (-45) d
+             Right d -> 
                do
-               let svg_t = svgHeader (mkFrameOrigin xPlot yPlot) $ tsAxis avgTs xPlot yPlot 3 C.black C.red (-45) d
+               let svg_t = svgHeader (mkFrameOrigin xPlot yPlot) $ tsAxis fdat 2 C.black C.red (-45) Nothing Nothing ( tspToLP avgTs (\ _ x -> show x) <$> d)
                -- putStrLn $ renderSvg svg_t
                T.writeFile fnameOut $ T.pack $ renderSvg svg_t
 

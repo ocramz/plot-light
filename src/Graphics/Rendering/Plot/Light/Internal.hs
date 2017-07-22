@@ -209,10 +209,24 @@ toPlot
      -> t (LabeledPoint l a) -- ^ Data
      -> Svg 
 toPlot fd flabelx flabely rotx roty sw col1 tickxe tickye plotf dat = do
-  axis oSvg X (right - left) sw col1 0.05 Continuous fontsize rotx TAEnd flabelx (V2 (-10) 0) tickx
-  axis oSvg Y (top - bot) sw col1 0.05 Continuous fontsize roty TAEnd flabely (V2 (-10) 0) ticky
+  axis oSvg X (width to) sw col1 0.05 Continuous fontsize rotx TAEnd flabelx (V2 (-10) 0) tickx
+  axis oSvg Y (negate $ height to) sw col1 0.05 Continuous fontsize roty TAEnd flabely (V2 (-10) 0) ticky
   plotf dat'
   where
+    fontsize = figLabelFontSize fd
+    from = frameFromPoints $ _lp <$> dat
+    to = frameFromFigData fd
+    datf = toSvgFrameLP from to False -- data mapping function    
+    dat' = datf <$> dat
+    tickDefault ti d = case ti of Just t -> datf <$> t
+                                  Nothing -> d
+    tickx = tickDefault tickxe dat'
+    ticky = tickDefault tickye dat'
+    oSvg = Point (xmin to) (ymax to)
+
+
+frameFromFigData :: Num a => FigureData a -> Frame a
+frameFromFigData fd = mkFrame oTo p2To where
     fontsize = figLabelFontSize fd
     wfig = figWidth fd
     hfig = figHeight fd
@@ -220,15 +234,6 @@ toPlot fd flabelx flabely rotx roty sw col1 tickxe tickye plotf dat = do
     (top, bot) = (figTopMFrac fd * hfig, figBottomMFrac fd * hfig)
     oTo = Point left top
     p2To = Point right bot
-    from = frameFromPoints $ _lp <$> dat
-    to = mkFrame oTo p2To
-    datf = toSvgFrameLP from to False -- data mapping function    
-    dat' = datf <$> dat
-    tickDefault ti d = case ti of Just t -> datf <$> t
-                                  Nothing -> d
-    tickx = tickDefault tickxe dat'
-    ticky = tickDefault tickye dat'
-    oSvg = Point left bot
 
 
 -- | Create Axis labels from
