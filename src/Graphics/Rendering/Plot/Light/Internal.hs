@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameFromPoints, width, height, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint,  Axis(..), svgHeader, rect, rectCentered, circle, line, tick, ticks, axis, toPlot, text, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointV2Frames, toSvgFrame, toSvgFrameLP, e1, e2) where
+module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameFromPoints, width, height, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint,  Axis(..), svgHeader, rect, rectCentered, circle, line, tick, ticks, axis, toPlot, text, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointV2Frames, translateSvg, toSvgFrame, toSvgFrameLP, e1, e2) where
 
 import Data.Monoid ((<>))
 import qualified Data.Foldable as F (toList)
@@ -63,7 +63,7 @@ svgHeader fd =
 -- > > putStrLn $ renderSvg $ rect (Point 100 200) 30 60 2 Nothing (Just C.aquamarine)
 -- > <rect x="100.0" y="200.0" width="30.0" height="60.0" fill="#7fffd4" stroke="none" stroke-width="2.0" />
 rect :: (Show a, RealFrac a) =>
-     Point a                 -- ^ Center coordinates           
+     Point a                 -- ^ Corner point coordinates           
   -> a                       -- ^ Width
   -> a                       -- ^ Height
   -> a                       -- ^ Stroke width
@@ -85,10 +85,13 @@ rectCentered :: (Show a, RealFrac a) =>
   -> Maybe (C.Colour Double) -- ^ Stroke colour
   -> Maybe (C.Colour Double) -- ^ Fill colour  
   -> Svg
-rectCentered (Point x0 y0) wid hei sw scol fcol = S.g ! SA.transform (S.translate x0c y0c) $ 
-  S.rect ! SA.width (vd wid) ! SA.height (vd hei) ! colourFillOpt fcol ! colourStrokeOpt scol ! SA.strokeWidth (vd sw) where
+rectCentered p@(Point x0 y0) wid hei sw scol fcol =
+  translateSvg (Point x0c y0c) $ rect p wid hei sw scol fcol where
    x0c = x0 - (wid / 2)
    y0c = y0 - (hei / 2)   
+
+
+
 
 
 -- | Line segment between two `Point`s
@@ -402,6 +405,20 @@ strokeLineJoin slj = SA.strokeLinejoin (S.toValue str) where
       | slj == Round = "round"
       | slj == Bevel = "bevel"
       | otherwise = "inherit"
+
+
+
+
+
+
+
+-- | Move a Svg entity to a new position
+translateSvg :: Show a => Point a -> Svg -> Svg
+translateSvg (Point x y) svg = S.g ! SA.transform (S.translate x y) $ svg
+
+
+
+
 
 
 -- | Move point to the SVG frame of reference (for which the origing is a the top-left corner of the screen)
