@@ -87,8 +87,8 @@ ymax = _py . _fpmax
 
 -- | The `width` is the extent in the `x` direction and `height` is the extent in the `y` direction
 width, height :: Num a => Frame a -> a
-width f = xmax f - xmin f
-height f = ymax f - ymin f
+width f = abs $ xmax f - xmin f
+height f = abs $ ymax f - ymin f
 
 
 

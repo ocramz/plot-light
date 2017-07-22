@@ -10,6 +10,7 @@ import Data.Scientific
 import qualified Data.Text as T
 
 import Graphics.Rendering.Plot.Light.Internal
+import Graphics.Rendering.Plot.Light.Internal.Utils
 import Data.TimeSeries
 
 -- For debugging
@@ -77,45 +78,14 @@ tspToLP fy g = LabeledPoint <$> pf <*> lf where
   lf = g <$> _tick <*> _val
   
   
-tickToFractional :: Fractional b => TsPoint a -> b
-tickToFractional = fromRational . fromTick . _tick
-
--- | Map a Tick onto the rationals
-fromTick :: Tick -> Rational
-fromTick (Tick d t) = fromIntegral (toModifiedJulianDay d) + timeOfDayToDayFraction t
-    
--- | Map a rational onto a Tick
-toTick :: Rational -> Tick
-toTick n = Tick d t where
-  t = dayFractionToTimeOfDay dec
-  d = ModifiedJulianDay wh
-  (wh, dec) = wholeDecimal n
-
-
-hourTick, halfHourTick, quarterHourTick :: Double
-hourTick = 1/24
-halfHourTick = 1/2 * hourTick
-quarterHourTick = 1/4 * hourTick
-
-
-tickRange :: Tick -> Tick -> Rational -> [Tick]
-tickRange t1 t2 dt = toTick <$> [td1, td1 + dt .. td2] where
-  td1 = fromTick t1
-  td2 = fromTick t2
 
 
 
-
--- * Misc helpers
-
--- | Separate whole and decimal part of a fractional number
--- e.g.
---
--- > > wholeDecimal 
-wholeDecimal :: (Integral a, RealFrac b) => b -> (a, b)
-wholeDecimal x = (w, d) where
-  w = floor x
-  d = x - fromIntegral w
+labeledTsPointRange n p t1 q dt = zipWith LabeledPoint p_ t_
+  where
+    t_ = toTick <$> [td1, td1 + dt .. ]
+    p_ = pointRange n p q
+    td1 = fromTick t1
 
 
 
@@ -124,12 +94,11 @@ wholeDecimal x = (w, d) where
 
 
 
--- | Create a Tick from valid (year, month, day, hour, minute, second)
-mkTick :: Integer -> Int -> Int -> Int -> Int -> Pico -> Maybe Tick
-mkTick yy mm dd hr mi se = do
-   tim <- makeTimeOfDayValid hr mi se
-   let d = fromGregorian yy mm dd
-   return $ Tick d tim
+
+
+
+
+
 
 
 
