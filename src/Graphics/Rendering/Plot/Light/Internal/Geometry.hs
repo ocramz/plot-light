@@ -39,6 +39,7 @@ data LabeledPoint l a =
 mkLabeledPoint :: Point a -> l -> LabeledPoint l a
 mkLabeledPoint = LabeledPoint
 
+-- | Given a labelling function and a `Point` `p`, returned a `LabeledPoint` containing `p` and the computed label
 labelPoint :: (Point a -> l) -> Point a -> LabeledPoint l a
 labelPoint lf p = LabeledPoint p (lf p)
 

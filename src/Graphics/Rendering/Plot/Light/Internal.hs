@@ -231,6 +231,15 @@ toPlot fd flabelx flabely rotx roty sw col1 tickxe tickye plotf dat = do
     oSvg = Point left bot
 
 
+-- | Create Axis labels from
+-- * fig.data (axis ranges)
+-- * label font size
+-- * a container of `LabeledPoint`s
+-- mkAxisLabels figdata fontsize lps = undefined
+--   where
+--     laxis = 
+
+
 
 
 

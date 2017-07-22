@@ -44,10 +44,14 @@ tsAxis fval wfig hfig sw col1 col2 rot ps = do
 
 
 
-tsAxisTest fd sw colAxis colData rot ps =
-  toPlot fd T.pack T.pack rot 0 sw colAxis (Just ptx) (Just pty) fplot ps where
-  fplot lps = polyline (_lp <$> lps) sw Continuous Round colData
+tsAxis1 fd sw colAxis colData rot plabx plaby ps =
+  toPlot fd T.pack T.pack rot 0 sw colAxis plabx plaby fplot ps where
+    fplot lps = polyline (_lp <$> lps) sw Continuous Round colData
   
+
+svg1 = renderSvg $ tsAxis1 fdat 2 C.black C.red (-45) (Just ptx) (Just pty) dat1
+
+svg2 = renderSvg $ tsAxis1 fdat 2 C.black C.red (-45) Nothing (Just pty) dat1
 
 
 fdat = FigureData 400 300 0.1 0.9 0.1 0.85 10
