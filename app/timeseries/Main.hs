@@ -67,25 +67,6 @@ avgTs x = 0.5 * (h + l) where
 
 
 
-space, comma :: A.Parser Char
-space = A.char ' '
-comma = A.char ','
-
--- | Parse a row of numbers, separated by `sep`
-rowNums :: A.Parser s -> A.Parser [Scientific]
-rowNums sep = A.sepBy A.scientific sep
-
-rowNumSpace :: A.Parser [Scientific]
-rowNumSpace = rowNums space
-
--- | parse a grid of numbers, separated by `sep`
-gridNum :: A.Parser s -> A.Parser [[Scientific]]
-gridNum sep = A.sepBy (rowNums sep) A.endOfLine
-
-
-
-
-
 
 
 
