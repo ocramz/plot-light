@@ -6,15 +6,18 @@ import Test.Hspec.QuickCheck
 import Test.QuickCheck
 
 import Graphics.Rendering.Plot.Light
+import Data.TimeSeries
 
 main :: IO ()
 main = hspec spec
 
 spec :: Spec
-spec =
+spec = do
+  describe "Data.Timeseries" $ 
+    it "correctly converts between `Tick`s and `Fractional`s" $ do
+      let t0 = 57957.475
+      fromTick (toTick t0) `shouldBe` t0
   describe "Graphics.Rendering.Plot.Light" $ do
-    -- it "works" $ 
-    --   True `shouldBe` True
     prop "V2 : additive group [Float]" $ \(v :: V2r Float) ->
       prop_V2_additiveGroup v `shouldBe` True
     prop "V2 : additive group [Double]" $ \(v :: V2 Double) ->
@@ -32,7 +35,6 @@ spec =
       -- p2 `shouldBe` Point 3 3
       norm2 (p2 -. Point 3 3) ~= 0 `shouldBe` True
       
-
 
 
 

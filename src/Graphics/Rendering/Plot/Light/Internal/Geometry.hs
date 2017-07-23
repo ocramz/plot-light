@@ -310,6 +310,17 @@ flipLR01 (V2 a b) = V2 (1 - a) b
 flipUD01 (V2 a b) = V2 a (1 - b)
 
 
+-- | Map function values across frames
+frameToFrameValue :: Fractional t =>
+      Frame t  -- ^ Initial frame
+   -> Frame t  -- ^ Final frame
+   -> t        -- ^ Initial value
+   -> t
+frameToFrameValue from to x = (x01 * rto) + ymin to where
+  x01 = (x - ymin from)/rfrom
+  rfrom = height from
+  rto = height to
+
 
 
 moveLabeledPointV2Frames ::

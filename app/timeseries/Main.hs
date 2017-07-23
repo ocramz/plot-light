@@ -35,9 +35,18 @@ main = do
   case pd of Left e -> error e
              Right d -> 
                do
-               let svg_t = svgHeader (mkFrameOrigin xPlot yPlot) $ tsAxis fdat 2 C.black C.red (-45) Nothing Nothing ( tspToLP avgTs (\ _ x -> show x) <$> d)
-               -- putStrLn $ renderSvg svg_t
-               T.writeFile fnameOut $ T.pack $ renderSvg svg_t
+               let
+                 figure = tsAxis fdat fop fcl fhi flo 1 C.black (-45) Nothing Nothing ( tspToLP fhi (\_ x -> x) <$> d)
+                 -- figure = tsAxis fdat 2 C.black C.red (-45) Nothing Nothing ( tspToLP fplot (\ti _ -> show ti) <$> d)
+                 svg_t = svgHeader (mkFrameOrigin xPlot yPlot) figure
+                 -- svg_t = svgHeader (mkFrameOrigin xPlot yPlot) $ tsAxis fdat 2 C.black C.red (-45) Nothing Nothing ( tspToLP fplot (\ti _ -> show ti) <$> d)
+               putStrLn $ renderSvg svg_t
+               -- T.writeFile fnameOut $ T.pack $ renderSvg svg_t
+                 where
+                   fhi = toFloat . rateHigh
+                   flo = toFloat . rateLow
+                   fop = toFloat . rateOpen
+                   fcl = toFloat . rateClose
 
 toFloat :: Scientific -> Float
 toFloat x = toRealFloat x :: Float
@@ -55,12 +64,7 @@ avgTs x = 0.5 * (h + l) where
 -- Forex time series parsers - related
 
 
-data FxRow a  = FxRow {
-    rateOpen :: a
-  , rateHigh :: a
-  , rateLow :: a
-  , rateClose :: a
-               } deriving (Eq, Show)
+
 
 
 space, comma :: A.Parser Char

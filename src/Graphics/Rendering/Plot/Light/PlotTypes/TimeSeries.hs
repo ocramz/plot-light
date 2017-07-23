@@ -2,6 +2,8 @@
 {-# language FlexibleContexts #-}
 module Graphics.Rendering.Plot.Light.PlotTypes.TimeSeries where
 
+import Control.Monad (forM, forM_)
+
 import GHC.Real
 import Data.Fixed (Pico)
 import Data.Time
@@ -44,21 +46,40 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
     
 
 
+-- tsAxis
+--   :: (Functor t, Foldable t, Show a, RealFrac a) =>
+--      FigureData a
+--      -> a
+--      -> C.Colour Double
+--      -> C.Colour Double
+--      -> a
+--      -> Maybe (t (LabeledPoint String a))
+--      -> Maybe (t (LabeledPoint String a))
+--      -> t (LabeledPoint String a)
+--      -> Svg
+-- tsAxis fd sw colAxis colData rot plabx plaby ps =
+--   toPlot fd T.pack T.pack rot 0 sw colAxis plabx plaby fplot ps where
+--     fplot lps = polyline  sw Continuous Round colData (_lp <$> lps)
+  
 tsAxis
   :: (Functor t, Foldable t, Show a, RealFrac a) =>
      FigureData a
+     -> (l -> a)
+     -> (l -> a)
+     -> (l -> a)
+     -> (l -> a)
      -> a
      -> C.Colour Double
-     -> C.Colour Double
      -> a
-     -> Maybe (t (LabeledPoint String a))
-     -> Maybe (t (LabeledPoint String a))
-     -> t (LabeledPoint String a)
+     -> Maybe (t (LabeledPoint l a))
+     -> Maybe (t (LabeledPoint l a))
+     -> t (LabeledPoint l a)
      -> Svg
-tsAxis fd sw colAxis colData rot plabx plaby ps =
-  toPlot fd T.pack T.pack rot 0 sw colAxis plabx plaby fplot ps where
-    fplot lps = polyline (_lp <$> lps) sw Continuous Round colData
-  
+tsAxis fd fsela fselb fselc fseld sw colAxis rot plabx plaby ps =
+  toPlot fd baz baz rot 0 sw colAxis plabx plaby fplot ps where
+    baz = const (T.pack "")
+    fplot lps =
+      forM_ lps (candlestick (>) fsela fselb fselc fseld 5 1 C.green C.red colAxis)
 
 
 
@@ -93,22 +114,32 @@ labeledTsPointRange n p t1 q dt = zipWith LabeledPoint p_ t_
 
 
 
+frameToFrameFxRow from to fxr = f <$> fxr
+  where
+    f = frameToFrameValue from to
 
 
 
 
+data FxRow a  = FxRow {
+    rateOpen :: a
+  , rateHigh :: a
+  , rateLow :: a
+  , rateClose :: a
+               } deriving (Eq, Show)
 
+instance Functor FxRow where
+  fmap f (FxRow o h l c) = FxRow (f o) (f h) (f l) (f c)
 
-
-
+c1 = FxRow 1.0876 1.0880 1.0872 1.0874
 
 
 
 -- test data
 
-svg1 = renderSvg $ tsAxis fdat1 2 C.black C.red (-45) (Just ptx) (Just pty) dat1
+-- svg1 = renderSvg $ tsAxis fdat1 2 C.black C.red (-45) (Just ptx) (Just pty) dat1
 
-svg2 = renderSvg $ tsAxis fdat1 2 C.black C.red (-45) Nothing (Just pty) dat1
+-- svg2 = renderSvg $ tsAxis fdat1 2 C.black C.red (-45) Nothing (Just pty) dat1
 
 
 fdat1 = FigureData 400 300 0.1 0.9 0.1 0.85 10

@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameFromPoints, width, height, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint,  Axis(..), svgHeader, rect, rectCentered, circle, line, tick, ticks, axis, toPlot, text, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointV2Frames, translateSvg, toSvgFrame, toSvgFrameLP, e1, e2) where
+module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, xmin,xmax,ymin,ymax, width, height, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint,  Axis(..), svgHeader, rect, rectCentered, circle, line, tick, ticks, axis, toPlot, text, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointV2Frames, translateSvg, toSvgFrame, toSvgFrameLP, e1, e2) where
 
 import Data.Monoid ((<>))
 import qualified Data.Foldable as F (toList)
@@ -311,14 +311,14 @@ circle (Point x y) r sw scol fcol =
 -- > > putStrLn $ renderSvg (polyline [Point 100 50, Point 120 20, Point 230 50] 4 (Dashed [3, 5]) Round C.blueviolet)
 -- > <polyline points="100.0,50.0 120.0,20.0 230.0,50.0" fill="none" stroke="#8a2be2" stroke-width="4.0" stroke-linejoin="round" stroke-dasharray="3.0, 5.0" />
 polyline :: (Foldable t, Show a1, Show a, RealFrac a, RealFrac a1) =>
-            t (Point a)     -- ^ Data
-         -> a1              -- ^ Stroke width
+            a1              -- ^ Stroke width
          -> LineStroke_ a   -- ^ Stroke type 
          -> StrokeLineJoin_ -- ^ Stroke join type 
          -> C.Colour Double -- ^ Stroke colour
+         -> t (Point a)     -- ^ Data         
          -> Svg
-polyline lis sw Continuous slj col = S.polyline ! SA.points (S.toValue $ unwords $ map show $ F.toList lis) ! SA.fill none ! SA.stroke (colourAttr col ) ! SA.strokeWidth (vd sw) ! strokeLineJoin slj
-polyline lis sw (Dashed d) slj col = S.polyline ! SA.points (S.toValue $ unwords $ map show $ F.toList lis) ! SA.fill none ! SA.stroke (colourAttr col ) ! SA.strokeWidth (vd sw) ! strokeLineJoin slj ! strokeDashArray d
+polyline sw Continuous slj col lis = S.polyline ! SA.points (S.toValue $ unwords $ map show $ F.toList lis) ! SA.fill none ! SA.stroke (colourAttr col ) ! SA.strokeWidth (vd sw) ! strokeLineJoin slj
+polyline sw (Dashed d) slj col lis = S.polyline ! SA.points (S.toValue $ unwords $ map show $ F.toList lis) ! SA.fill none ! SA.stroke (colourAttr col ) ! SA.strokeWidth (vd sw) ! strokeLineJoin slj ! strokeDashArray d
 
 none :: S.AttributeValue
 none = S.toValue ("none" :: String)
@@ -369,11 +369,11 @@ filledBand col opac ftop fbot lis0 = filledPolyline col opac (lis1 <> lis2) wher
 -- By convention, the `candlestick` colour depends on the derivative sign of one such quantity (e.g. it is green if the market closes higher than it opened, and red otherwise).
 candlestick
   :: (Show a, RealFrac a) =>
-     (LabeledPoint l a -> Bool)       -- ^ If True, fill the box with the first colour, otherwise with the second
-     -> (LabeledPoint l a -> a) -- ^ Box maximum value
-     -> (LabeledPoint l a -> a) -- ^ Box minimum value
-     -> (LabeledPoint l a -> a) -- ^ Line maximum value 
-     -> (LabeledPoint l a -> a) -- ^ Line minimum value
+     (a -> a -> Bool)       -- ^ If True, fill the box with the first colour, otherwise with the second
+     -> (l -> a) -- ^ Box maximum value
+     -> (l -> a) -- ^ Box minimum value
+     -> (l -> a) -- ^ Line maximum value 
+     -> (l -> a) -- ^ Line minimum value
      -> a                       -- ^ Box width
      -> a                       -- ^ Stroke width
      -> C.Colour Double         -- ^ First box colour
@@ -386,10 +386,11 @@ candlestick fdec fboxmin fboxmax fmin fmax wid sw col1 col2 colstroke lp = do
   rectCentered p wid hei sw (Just colstroke) (Just col)
     where
     p = _lp lp
-    pmin = setPointY (fmin lp) p
-    pmax = setPointY (fmax lp) p
-    hei = fboxmax lp - fboxmin lp
-    col | fdec lp = col1
+    lab = _lplabel lp
+    pmin = setPointY (fmin lab) p
+    pmax = setPointY (fmax lab) p
+    hei = fboxmax lab - fboxmin lab
+    col | fdec (fboxmax lab) (fboxmin lab) = col1
         | otherwise = col2
 
 
