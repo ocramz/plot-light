@@ -294,13 +294,13 @@ textAnchor TAEnd = SA.textAnchor (vs "end")
 -- > <circle cx="20.0" cy="30.0" r="15.0" fill="#ff0000" stroke="#0000ff" />
 circle
   :: (Real a1, Real a) =>
-     Point a1                   -- ^ Center
-     -> a                       -- ^ Radius
+        a                       -- ^ Radius
      -> a                       -- ^ Stroke width
      -> Maybe (C.Colour Double) -- ^ Stroke colour
      -> Maybe (C.Colour Double) -- ^ Fill colour
+     -> Point a1                   -- ^ Center     
   -> Svg
-circle (Point x y) r sw scol fcol =
+circle  r sw scol fcol (Point x y) =
   S.circle ! SA.cx (vd x) ! SA.cy (vd y) ! SA.r (vd r) ! colourFillOpt fcol ! colourStrokeOpt scol ! SA.strokeWidth (vd sw) 
 
 
@@ -351,14 +351,14 @@ filledPolyline col opac lis = S.polyline ! SA.points (S.toValue $ unwords $ map 
 filledBand :: (Foldable t, Real o, Show a) =>
     C.Colour Double          -- ^ Fill colour
            -> o              -- ^ Fill opacity
-           -> (LabeledPoint l a -> a) -- ^ Band maximum value
-           -> (LabeledPoint l a -> a) -- ^ Band minimum value
+           -> (l -> a) -- ^ Band maximum value
+           -> (l -> a) -- ^ Band minimum value
            -> t (LabeledPoint l a)    -- ^ Centerline points
            -> Svg
 filledBand col opac ftop fbot lis0 = filledPolyline col opac (lis1 <> lis2) where
   lis = F.toList lis0
-  f1 lp = setPointY (ftop lp) $ _lp lp
-  f2 lp = setPointY (fbot lp) $ _lp lp
+  f1 lp = setPointY (ftop $ _lplabel lp) $ _lp lp
+  f2 lp = setPointY (fbot $ _lplabel lp) $ _lp lp
   lis1 = f1  <$> lis
   lis2 = f2  <$> reverse lis
 
