@@ -20,6 +20,8 @@
 -- @import qualified Data.Colour.Names as C@
 
 module Graphics.Rendering.Plot.Light (
+  -- * Plot types
+  heatmap,
   -- * Plot elements
   -- ** Geometrical primitives
   rect, rectCentered, circle, line, text, polyline, filledPolyline,
@@ -66,7 +68,7 @@ module Graphics.Rendering.Plot.Light (
 -- import qualified Data.Colour.SRGB as C
 
 import Graphics.Rendering.Plot.Light.Internal
-
+import Graphics.Rendering.Plot.Light.PlotTypes
 
 
 
