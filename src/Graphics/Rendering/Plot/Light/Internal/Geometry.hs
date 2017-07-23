@@ -36,6 +36,7 @@ data LabeledPoint l a =
    _lplabel :: l
    } deriving (Eq, Show)
 
+
 mkLabeledPoint :: Point a -> l -> LabeledPoint l a
 mkLabeledPoint = LabeledPoint
 
@@ -45,6 +46,10 @@ labelPoint lf p = LabeledPoint p (lf p)
 
 moveLabeledPoint :: (Point a -> Point b) -> LabeledPoint l a -> LabeledPoint l b
 moveLabeledPoint f (LabeledPoint p l) = LabeledPoint (f p) l
+
+-- | Apply a function to the label
+mapLabel :: (l1 -> l2) -> LabeledPoint l1 a -> LabeledPoint l2 a
+mapLabel f (LabeledPoint p l) = LabeledPoint p (f l)
 
 -- | A frame, i.e. a bounding box for objects
 data Frame a = Frame {
@@ -323,7 +328,7 @@ frameToFrameValue from to x = (x01 * rto) + ymin to where
 
 
 
-moveLabeledPointV2Frames ::
+moveLabeledPointBwFrames ::
   Fractional a =>
      Frame a          -- ^ Initial frame
   -> Frame a          -- ^ Final frame
@@ -331,7 +336,7 @@ moveLabeledPointV2Frames ::
   -> Bool             -- ^ Flip U-D in [0,1] x [0,1]
   -> LabeledPoint l a -- ^ Initial `LabeledPoint`
   -> LabeledPoint l a
-moveLabeledPointV2Frames from to fliplr flipud lp = LabeledPoint p' (_lplabel lp)
+moveLabeledPointBwFrames from to fliplr flipud lp = LabeledPoint p' (_lplabel lp)
   where
     vlp = v2fromPoint $ _lp lp -- vector associated with starting point
     vlp' = frameToFrame from to fliplr flipud vlp -- vector associated w new point

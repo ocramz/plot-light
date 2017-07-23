@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, xmin,xmax,ymin,ymax, width, height, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint,  Axis(..), svgHeader, rect, rectCentered, circle, line, tick, ticks, axis, toPlot, text, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointV2Frames, translateSvg, toSvgFrame, toSvgFrameLP, e1, e2) where
+module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel, Axis(..), svgHeader, rect, rectCentered, circle, line, tick, ticks, axis, toPlot, text, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, toSvgFrame, toSvgFrameLP, e1, e2, toFloat, wholeDecimal) where
 
 import Data.Monoid ((<>))
 import qualified Data.Foldable as F (toList)
@@ -26,6 +26,7 @@ import qualified Data.Colour.SRGB as C
 import GHC.Real
 
 import Graphics.Rendering.Plot.Light.Internal.Geometry
+import Graphics.Rendering.Plot.Light.Internal.Utils
 
 
 -- | Figure data
@@ -63,14 +64,14 @@ svgHeader fd =
 -- > > putStrLn $ renderSvg $ rect (Point 100 200) 30 60 2 Nothing (Just C.aquamarine)
 -- > <rect x="100.0" y="200.0" width="30.0" height="60.0" fill="#7fffd4" stroke="none" stroke-width="2.0" />
 rect :: (Show a, RealFrac a) =>
-     Point a                 -- ^ Corner point coordinates           
-  -> a                       -- ^ Width
+     a                       -- ^ Width
   -> a                       -- ^ Height
   -> a                       -- ^ Stroke width
   -> Maybe (C.Colour Double) -- ^ Stroke colour
-  -> Maybe (C.Colour Double) -- ^ Fill colour  
+  -> Maybe (C.Colour Double) -- ^ Fill colour
+  -> Point a                 -- ^ Corner point coordinates  
   -> Svg
-rect (Point x0 y0) wid hei sw scol fcol = S.rect ! SA.x (vd x0) ! SA.y (vd y0) ! SA.width (vd wid) ! SA.height (vd hei) ! colourFillOpt fcol ! colourStrokeOpt scol ! SA.strokeWidth (vd sw)
+rect wid hei sw scol fcol (Point x0 y0) = S.rect ! SA.x (vd x0) ! SA.y (vd y0) ! SA.width (vd wid) ! SA.height (vd hei) ! colourFillOpt fcol ! colourStrokeOpt scol ! SA.strokeWidth (vd sw)
 
 
 -- | A rectangle, defined by its center coordinates and side lengths
@@ -78,15 +79,15 @@ rect (Point x0 y0) wid hei sw scol fcol = S.rect ! SA.x (vd x0) ! SA.y (vd y0) !
 -- > > putStrLn $ renderSvg $ rectCentered (Point 20 30) 15 30 (Just C.blue) (Just C.red)
 -- > <g transform="translate(12.5 15.0)"><rect width="15.0" height="30.0" fill="#ff0000" stroke="#0000ff" /></g>
 rectCentered :: (Show a, RealFrac a) =>
-     Point a                 -- ^ Center coordinates           
-  -> a                       -- ^ Width
+     a                       -- ^ Width
   -> a                       -- ^ Height
   -> a                       -- ^ Stroke width
   -> Maybe (C.Colour Double) -- ^ Stroke colour
-  -> Maybe (C.Colour Double) -- ^ Fill colour  
+  -> Maybe (C.Colour Double) -- ^ Fill colour
+  -> Point a                 -- ^ Center coordinates     
   -> Svg
-rectCentered p@(Point x0 y0) wid hei sw scol fcol =
-  translateSvg (Point x0c y0c) $ rect p wid hei sw scol fcol where
+rectCentered  wid hei sw scol fcol p@(Point x0 y0) =
+  translateSvg (Point x0c y0c) $ rect wid hei sw scol fcol p where
    x0c = x0 - (wid / 2)
    y0c = y0 - (hei / 2)   
 
@@ -383,7 +384,7 @@ candlestick
      -> Svg
 candlestick fdec fboxmin fboxmax fmin fmax wid sw col1 col2 colstroke lp = do
   line pmin pmax sw Continuous colstroke
-  rectCentered p wid hei sw (Just colstroke) (Just col)
+  rectCentered wid hei sw (Just colstroke) (Just col) p
     where
     p = _lp lp
     lab = _lplabel lp

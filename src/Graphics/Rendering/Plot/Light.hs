@@ -32,7 +32,7 @@ module Graphics.Rendering.Plot.Light (
   -- ** SVG utilities
   svgHeader, translateSvg,
   -- * Types
-  Frame(..), Point(..), LabeledPoint(..), labelPoint, Axis(..),
+  Frame(..), Point(..), LabeledPoint(..), labelPoint, mapLabel, Axis(..),
   -- * Geometry
   -- ** Vectors
   V2(..),
@@ -45,13 +45,15 @@ module Graphics.Rendering.Plot.Light (
   -- ** Vector construction
   v2fromEndpoints, v2fromPoint,
   -- ** Operations on points
-  movePoint, moveLabeledPointV2, (-.), toSvgFrame, toSvgFrameLP, pointRange,
+  movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, (-.), toSvgFrame, toSvgFrameLP, pointRange,
   -- ** Operations on vectors
   frameToFrame, 
   -- ** Operations on frames
-  frameFromPoints, mkFrame, mkFrameOrigin, width, height,
+  frameFromPoints, frameFromFigData, mkFrame, mkFrameOrigin, width, height,
   -- ** Typeclasses
-  AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..)
+  AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..),
+  -- ** Helpers
+  toFloat, wholeDecimal
   ) where
 
 -- import qualified Data.Text as T

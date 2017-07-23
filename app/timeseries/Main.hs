@@ -30,8 +30,8 @@ fdat = FigureData xPlot yPlot 0.1 0.9 0.1 0.85 10
 
 
 main = do
-  d <- T.readFile fname
-  let pd = A.parseOnly parseFxDataset d
+  dat <- T.readFile fname
+  let pd = A.parseOnly parseFxDataset dat
   case pd of Left e -> error e
              Right d -> 
                do
@@ -48,8 +48,7 @@ main = do
                    fop = toFloat . rateOpen
                    fcl = toFloat . rateClose
 
-toFloat :: Scientific -> Float
-toFloat x = toRealFloat x :: Float
+
 
 
 avgTs :: FxRow Scientific -> Float

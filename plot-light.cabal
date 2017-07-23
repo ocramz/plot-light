@@ -71,6 +71,7 @@ executable heatmap
                      , time
                      , text
                      , colour
+                     , palette
                      , blaze-svg
                      , scientific                     
 
