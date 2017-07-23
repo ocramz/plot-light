@@ -6,6 +6,10 @@ import Data.Scientific (Scientific, toRealFloat)
 -- * Misc helpers
 
 
+
+
+-- ** Numeric formats
+
 toFloat :: Scientific -> Float
 toFloat x = toRealFloat x :: Float
 

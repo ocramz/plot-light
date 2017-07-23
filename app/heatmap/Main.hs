@@ -22,8 +22,8 @@ import qualified Data.Colour.Palette.BrewerSet as CP
 
 fname = "data/heatmap-bw"
 
-xPlot = 800
-yPlot = 600
+xPlot = 300
+yPlot = 300
 fnameOut = "data/heatmap-1.svg"
 
 fdat = FigureData xPlot yPlot 0.1 0.9 0.1 0.85 10
@@ -48,8 +48,9 @@ main = do
 --                -- putStrLn $ renderSvg svg_t
                T.writeFile fnameOut $ T.pack $ renderSvg svg_t   
 
--- remap :: Fractional a =>
---     Frame a -> Frame a -> LabeledPoint Scientific Rational -> LabeledPoint Float a
+toFigFrame
+  :: Fractional a =>
+     Frame a -> Frame a -> LabeledPoint l Rational -> LabeledPoint l a
 toFigFrame from to = moveLabeledPointBwFrames from to False False . fromRationalLP
 
 fromRationalLP :: Fractional a => LabeledPoint l Rational -> LabeledPoint l a
