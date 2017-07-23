@@ -41,25 +41,29 @@ main = do
                let (nh, nw, vmin, vmax, d') = prepData d
                    w = xPlot / nw
                    h = yPlot / nh
-                   from = Frame (Point 0 0) (Point 1 1) :: Frame (Ratio Integer)
-                   to = frameFromFigData fdat :: Frame (Ratio Integer)
-               -- return $ moveLabeledPointBwFrames from to False False . mapLabel toFloat . fromRationalLP <$> d'
---                    
-                   pixels = forM_ d' (mkPixel w h vmin vmax . remap from to)
-               -- return pixels
+                   from = Frame (Point 0 0) (Point 1 1)
+                   to = frameFromFigData fdat
+                   pixels = forM_ d' (mkPixel w h vmin vmax . toFigFrame from to)
                    svg_t = svgHeader (mkFrameOrigin xPlot yPlot) pixels
 --                -- putStrLn $ renderSvg svg_t
                T.writeFile fnameOut $ T.pack $ renderSvg svg_t   
 
 -- remap :: Fractional a =>
 --     Frame a -> Frame a -> LabeledPoint Scientific Rational -> LabeledPoint Float a
-remap from to = moveLabeledPointBwFrames from to False False . fromRationalLP
+toFigFrame from to = moveLabeledPointBwFrames from to False False . fromRationalLP
 
 fromRationalLP :: Fractional a => LabeledPoint l Rational -> LabeledPoint l a
 fromRationalLP (LabeledPoint (Point x y) l) = LabeledPoint (Point (fromRational x) (fromRational y)) l
 
--- mkPixel :: (RealFrac t, RealFrac a, Show a) =>
---                  a -> a -> t -> t -> LabeledPoint t a -> Svg
+
+mkPixel
+  :: (Show a, RealFrac a) =>
+     a
+     -> a
+     -> Scientific
+     -> Scientific
+     -> LabeledPoint Scientific a
+     -> Svg
 mkPixel w h vmin vmax (LabeledPoint p l) = rect w h 0 Nothing (Just col) p where
   col = pickColor (toFloat vmin) (toFloat vmax) (toFloat l)
   
@@ -72,11 +76,9 @@ pickColor xmin xmax x = palette !! i
 
 
 
-  
-  
 
-
--- prepData :: [[l]] -> (Rational, Rational, [LabeledPoint l Rational])
+prepData ::
+  Ord t => [[t]] -> (Rational, Rational, t, t, [LabeledPoint t Rational])
 prepData ll = (nh, nw, valMin, valMax, d')
   where
     nh = toRational $ length ll
