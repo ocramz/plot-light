@@ -441,6 +441,11 @@ toSvgFrameLP ::
 toSvgFrameLP from to fliplr (LabeledPoint p lab) = LabeledPoint (toSvgFrame from to fliplr p) lab
 
 
+-- withToSvgFrame figdata dat = datf
+--   where
+--     from = frameFromPoints $ _lp <$> dat
+--     to = frameFromFigData figdata
+--     datf = toSvgFrameLP from to False -- data mapping function   
 
 
 

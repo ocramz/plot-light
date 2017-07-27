@@ -20,11 +20,11 @@ import Data.Time (Day, TimeOfDay)
 
 
 
-fname = "data/forex_small"
+fname = "data/forex_mini"
 
-xPlot = 800
-yPlot = 600
-fnameOut = "data/forex_plot_4.svg"
+xPlot = 400
+yPlot = 300
+fnameOut = "data/forex_plot_5.svg"
 
 fdat = FigureData xPlot yPlot 0.1 0.9 0.1 0.85 10
 
@@ -40,8 +40,8 @@ main = do
                  -- figure = tsAxis fdat 2 C.black C.red (-45) Nothing Nothing ( tspToLP fplot (\ti _ -> show ti) <$> d)
                  svg_t = svgHeader (mkFrameOrigin xPlot yPlot) figure
                  -- svg_t = svgHeader (mkFrameOrigin xPlot yPlot) $ tsAxis fdat 2 C.black C.red (-45) Nothing Nothing ( tspToLP fplot (\ti _ -> show ti) <$> d)
-               putStrLn $ renderSvg svg_t
-               -- T.writeFile fnameOut $ T.pack $ renderSvg svg_t
+               -- putStrLn $ renderSvg svg_t
+               T.writeFile fnameOut $ T.pack $ renderSvg svg_t
                  where
                    fhi = toFloat . rateHigh
                    flo = toFloat . rateLow

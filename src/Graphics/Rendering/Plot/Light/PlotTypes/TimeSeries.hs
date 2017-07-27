@@ -75,11 +75,21 @@ tsAxis
      -> Maybe (t (LabeledPoint l a))
      -> t (LabeledPoint l a)
      -> Svg
-tsAxis fd fsela fselb fselc fseld sw colAxis rot plabx plaby ps =
+tsAxis fd fboxmin fboxmax fmin fmax sw colAxis rot plabx plaby ps =
   toPlot fd baz baz rot 0 sw colAxis plabx plaby fplot ps where
+    from = frameFromPoints $ _lp <$> ps
+    to = frameFromFigData fd
+    fdat = frameToFrameValue from to
     baz = const (T.pack "")
     fplot lps =
-      forM_ lps (candlestick (>) fsela fselb fselc fseld 5 1 C.green C.red colAxis)
+      forM_ lps (candlestick (>) fboxmin' fboxmax' fmin' fmax' 5 1 C.green C.red colAxis)
+    fboxmin' = fdat . fboxmin
+    fboxmax' = fdat . fboxmax
+    fmin' = fdat . fmin
+    fmax' = fdat . fmax
+
+
+
 
 
 
