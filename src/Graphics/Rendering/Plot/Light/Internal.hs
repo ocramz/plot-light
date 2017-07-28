@@ -390,7 +390,7 @@ candlestick fdec fboxmin fboxmax fmin fmax wid sw col1 col2 colstroke lp = do
     lab = _lplabel lp
     pmin = setPointY (fmin lab) p
     pmax = setPointY (fmax lab) p
-    hei = fboxmax lab - fboxmin lab
+    hei = abs $ fboxmax lab - fboxmin lab
     col | fdec (fboxmax lab) (fboxmin lab) = col1
         | otherwise = col2
 

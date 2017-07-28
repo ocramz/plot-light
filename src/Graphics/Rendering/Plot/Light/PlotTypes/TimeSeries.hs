@@ -90,6 +90,17 @@ tsAxis fd fboxmin fboxmax fmin fmax sw colAxis rot plabx plaby ps =
 
 
 
+tsAxis' figdata fmin fmax col lps =
+  toPlot figdata l0 l0 (-45) 0 5 C.black Nothing Nothing fplot lps where
+  l0 = const (T.pack "")
+  from = frameFromPoints $ _lp <$> lps
+  to = frameFromFigData figdata
+  fdat = frameToFrameValue from to
+  fplot = filledBand col 0.4 fmax' fmin'
+  fmax' = fdat . fmax
+  fmin' = fdat . fmin
+
+
 
 
 
