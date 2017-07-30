@@ -1,11 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel, Axis(..), svgHeader, rect, rectCentered, circle, line, tick, ticks, axis, toPlot, text, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, toSvgFrame, toSvgFrameLP, e1, e2, toFloat, wholeDecimal) where
+module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, figFWidth, figFHeight, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel, Axis(..), svgHeader, rect, rectCentered, circle, line, tick, ticks, axis, toPlot, text, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, toSvgFrame, toSvgFrameLP, e1, e2, toFloat, wholeDecimal) where
 
 import Data.Monoid ((<>))
 import qualified Data.Foldable as F (toList)
 import Data.List
 -- import Control.Arrow ((&&&), (***))
 import Control.Monad (forM, forM_)
+import Control.Monad.State
 -- import Data.Semigroup (Min(..), Max(..))
 import Data.Scientific (Scientific, toRealFloat)
 
@@ -29,6 +30,7 @@ import Graphics.Rendering.Plot.Light.Internal.Geometry
 import Graphics.Rendering.Plot.Light.Internal.Utils
 
 
+
 -- | Figure data
 data FigureData a = FigureData {
   -- | Figure width
@@ -43,9 +45,14 @@ data FigureData a = FigureData {
   , figTopMFrac :: a
   -- | Bottom margin fraction (w.r.t figure height)  
   , figBottomMFrac :: a
+  -- -- | Axis stroke width
+  -- , figAxisStrokeWidth :: a
   -- | Tick label font size
   , figLabelFontSize :: Int
                        } deriving (Eq, Show)
+
+
+
 
 
 
@@ -239,6 +246,9 @@ frameFromFigData fd = mkFrame oTo p2To where
     oTo = Point left top
     p2To = Point right bot
 
+figFWidth, figFHeight :: Num a => FigureData a -> a
+figFWidth = width . frameFromFigData
+figFHeight = height . frameFromFigData
 
 -- | Create Axis labels from
 -- * fig.data (axis ranges)

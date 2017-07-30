@@ -23,8 +23,8 @@ heatmap
      -> Svg
 heatmap fdat palette d = do
   let (nh, nw, vmin, vmax, d') = prepData d
-      w = figWidth fdat / nw
-      h = figHeight fdat / nh
+      w = figFWidth fdat / nw
+      h = figFHeight fdat / nh
       from = Frame (Point 0 0) (Point 1 1)
       to = frameFromFigData fdat
   forM_ d' (mkPixel palette w h vmin vmax . toFigFrame from to) 

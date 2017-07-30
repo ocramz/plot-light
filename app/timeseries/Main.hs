@@ -17,7 +17,7 @@ import qualified Data.Colour.Names as C
 import Control.Applicative ((<|>))
 import Data.Time (Day, TimeOfDay)
 
-fname = "data/forex_mini"
+fname = "data/forex"
 
 xPlot = 400
 yPlot = 300
@@ -33,8 +33,8 @@ main = do
              Right d -> 
                do
                let
-                 -- figure = tsAxis fdat fop fcl fhi flo 1 C.black (-45) Nothing Nothing ( tspToLP fhi (\_ x -> x) <$> d)
                  lps =  tspToLP fhi (\_ x -> x) <$> d
+                 -- figure = tsAxis fdat fop fcl fhi flo 1 C.black (-45) Nothing Nothing lps       
                  figure = tsAxis' fdat flo fhi C.magenta lps
                  svg_t = svgHeader (mkFrameOrigin xPlot yPlot) figure
                -- putStrLn $ renderSvg svg_t

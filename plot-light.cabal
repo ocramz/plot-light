@@ -33,6 +33,7 @@ library
                        Graphics.Rendering.Plot.Light.Internal.Utils
                        Data.Parsers
   build-depends:       base >= 4.7 && < 5
+                     , mtl
                      , time
                      , scientific
                      , text

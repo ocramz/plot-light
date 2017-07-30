@@ -22,6 +22,7 @@ import qualified Data.Colour.Names as C
 import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 
+
 -- | Compute the plotting coordinates of a timeseries point
 
 -- | Preprocess the dataset for plotting 
