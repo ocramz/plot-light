@@ -60,6 +60,9 @@ pickColor palette xmin xmax x = palette !! i
     nColors = length palette
 
 
+colorBar palette xmin xmax n =
+  pickColor palette xmin xmax <$> subdivSegment xmin xmax n
+
 
 -- | `prepData d` assumes the input lists correspond to evenly sampled values of a scalar-valued field.
 --
@@ -82,7 +85,7 @@ prepData ll = (nh, nw, valMin, valMax, d')
 
 toCoord :: (Num i, Enum i) => [[c]] -> [(i, i, c)]
 toCoord ll = concat $ reverse $ go 0 ll [] where
-  go i (x:xs) acc = go (i + 1) xs $ zip3 (repeat i) [0 ..] x : acc
+  go i (x:xs) acc = go (i + 1) xs $ zip3 [0 ..] (repeat i) x : acc
   go _ [] acc = acc
 
 toUnitFramedLP :: (Fractional t) =>
@@ -92,3 +95,23 @@ toUnitFramedLP w h (i, j, x) = LabeledPoint p x
 
 
 
+
+plotFun2 :: Functor f => (t -> t -> b) -> f (Point t) -> f b
+plotFun2 f = fmap f' where
+  f' (Point x y) = f x y
+
+
+xyGrid :: (Enum a2, Ord a2, Integral a, Integral a1,
+                 Fractional a2) =>
+                (a2, a2) -> (a2, a2) -> a1 -> a -> [Point a2]
+xyGrid (xmin, xmax) (ymin, ymax) nx ny =
+  [Point x y |
+      x <- subdivSegment xmin xmax nx,
+      y <- subdivSegment ymin ymax ny]
+
+subdivSegment
+  :: (Enum t, Ord t, Fractional t, Integral a) => t -> t -> a -> [t]
+subdivSegment x1 x2 n = [xmin, xmin + (l/fromIntegral n) ..] where
+  xmin = min x1 x2
+  xmax = max x1 x2
+  l = xmax - xmin

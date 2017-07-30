@@ -11,14 +11,20 @@
 --
 -- == Usage
 --
--- To use this project you just need @import Graphics.Rendering.Plot.Light@. If GHC complains of name clashes you can import the module in "qualified" form.
+-- To incorporate this library in your projects you just need @import Graphics.Rendering.Plot.Light@. If GHC complains of name clashes you can import the module in "qualified" form.
 --
--- If you wish to try out the examples in this page, you will need to have these additional import statements:
+--
+-- == Examples
+-- 
+-- If you wish to try out the examples in this page, you will need to have these additional statements :
 --
 -- @import Text.Blaze.Svg.Renderer.String (renderSvg)@
 -- 
 -- @import qualified Data.Colour.Names as C@
-
+-- 
+-- === Heatmap plot
+--
+-- > > dat = [[1,2,3], [2,3,4], [3,4,5]]
 
 module Graphics.Rendering.Plot.Light (
   -- * Plot types
