@@ -6,7 +6,7 @@
 -- License     :  BSD3
 -- Maintainer  :  Marco Zocca <zocca marco gmail>
 --
--- `plot-light` provides functionality for rendering vector
+-- @plot-light@ provides functionality for rendering vector
 -- graphics in SVG format. It is geared in particular towards scientific plotting, and it is termed "light" because it only requires a few common Haskell dependencies and no external libraries.
 --
 -- == Usage
@@ -18,6 +18,7 @@
 -- @import Text.Blaze.Svg.Renderer.String (renderSvg)@
 -- 
 -- @import qualified Data.Colour.Names as C@
+
 
 module Graphics.Rendering.Plot.Light (
   -- * Plot types

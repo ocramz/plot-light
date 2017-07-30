@@ -5,11 +5,11 @@ This module provides functionality for working with affine transformations (i.e.
 -}
 module Graphics.Rendering.Plot.Light.Internal.Geometry where
 
--- import Data.Monoid ((<>))
+import Data.Monoid ((<>))
 
 
 
--- | A `Point` defines a point in R2
+-- | A `Point` object defines a point in the plane
 data Point a = Point { _px :: a,
                        _py :: a } deriving (Eq)
 
@@ -18,6 +18,12 @@ instance Show a => Show (Point a) where
 
 mkPoint :: a -> a -> Point a
 mkPoint = Point
+
+lift2Point f (Point a b) (Point c d) = Point (f a c) (f b d)
+
+pointMin, pointMax :: (Ord a) => Point a -> Point a -> Point a
+pointMin = lift2Point min
+pointMax = lift2Point max
 
 -- | Overwrite either coordinate of a Point, to e.g. project on an axis
 setPointCoord :: Axis -> a -> Point a -> Point a
@@ -56,6 +62,10 @@ data Frame a = Frame {
    _fpmin :: Point a,
    _fpmax :: Point a
    } deriving (Eq, Show)
+
+instance (Ord a, Num a) => Monoid (Frame a) where
+  mempty = Frame (Point 0 0) (Point 0 0)
+  mappend (Frame p1min p1max) (Frame p2min p2max) = Frame (pointMin p1min p2min) (pointMax p1max p2max)
 
 mkFrame :: Point a -> Point a -> Frame a
 mkFrame = Frame
