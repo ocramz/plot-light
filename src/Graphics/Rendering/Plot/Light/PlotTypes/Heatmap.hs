@@ -14,9 +14,8 @@ import Data.Colour.Palette.BrewerSet
 -- import Text.Blaze.Svg
 
 
--- | A 2D heatmap plot
---
--- `heatmap` assumes the input data corresponds to evenly sampled values of a scalar-valued field, and it maps the data values onto the provided `palette` (which can be created e.g. with `brewerSet`).
+
+-- | `heatmap` assumes the input data corresponds to evenly sampled values of a scalar-valued field, and it maps the data values onto the provided `palette` (which can be created e.g. with `brewerSet`).
 heatmap
   :: FigureData Rational   -- ^ Figure data
      -> [C.Colour Double]  -- ^ Colour palette
@@ -30,21 +29,20 @@ heatmap fdat palette d = do
       to = frameFromFigData fdat
   forM_ d' (mkPixel palette w h vmin vmax . toFigFrame from to) 
 
+-- | `heatmap'` renders one SVG pixel for every `LabeledPoint` supplied as input. The `LabeledPoint`s must be bounded by the `Frame`.
 heatmap'
   :: (Foldable f, Functor f, Show a, RealFrac a, RealFrac t) =>
-     FigureData a
-     -> [C.Colour Double]
-     -> Frame a
-     -> a
-     -> a
-     -> f (LabeledPoint t a)
+     FigureData a         -- ^ Figure data
+     -> [C.Colour Double] -- ^ Colour palette
+     -> Frame a           -- ^ Frame containing the data
+     -> a                 -- ^ Number of points along x axis
+     -> a                 -- ^ " y axis
+     -> f (LabeledPoint t a) -- ^ Data
      -> Svg
 heatmap' fdat palette from nw nh lp = do
   let
     w = figFWidth fdat / nw
     h = figFHeight fdat / nh
-    -- from = Frame (Point 0 0) (Point 1 1)
-    -- from = frameFromPoints $ _lp <$> lp
     to = frameFromFigData fdat
     (vmin, vmax) = (minimum &&& maximum) (_lplabel <$> lp)
   forM_ lp (mkPixel' palette w h vmin vmax . moveLabeledPointBwFrames from to False False)
@@ -102,9 +100,7 @@ prepData ::
 prepData ll = (nh, nw, valMin, valMax, d')
   where
     nh = fromIntegral $ length ll
-    nw = fromIntegral $ length (head ll)
-    -- nh = toRational $ length ll
-    -- nw = toRational $ length (head ll)    
+    nw = fromIntegral $ length (head ll) 
     d' = toUnitFramedLP nw nh <$> toCoord ll
     valMin = minimum $ _lplabel <$> d'
     valMax = maximum $ _lplabel <$> d'
@@ -123,7 +119,7 @@ toUnitFramedLP w h (i, j, x) = LabeledPoint p x
 
 
 
-
+-- | Plot a scalar function `f` of points in the plane (i.e. `f : R^2 -> R`)
 plotFun2
   :: Functor f =>
      (t -> t -> l) -> f (Point t) -> f (LabeledPoint l t)

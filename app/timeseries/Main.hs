@@ -36,7 +36,7 @@ main = do
                  lps =  tspToLP fhi (\_ x -> x) <$> d
                  -- figure = tsAxis fdat fop fcl fhi flo 1 C.black (-45) Nothing Nothing lps       
                  figure = tsAxis' fdat flo fhi C.magenta lps
-                 svg_t = svgHeader (mkFrameOrigin xPlot yPlot) figure
+                 svg_t = svgHeader xPlot yPlot figure
                -- putStrLn $ renderSvg svg_t
                T.writeFile fnameOut $ T.pack $ renderSvg svg_t
                  where

@@ -288,23 +288,20 @@ pointRange n p q = [ movePoint (fromIntegral x .* vnth) p | x <- [0 .. n]]
 --
 -- NB: Only the minimum x, y coordinate point is included in the output mesh. This is intentional, since the output from this can be used as an input to functions that use a corner rather than the center point as refernce (e.g. `rect`)
 meshGrid
-  :: (Enum a, Ord a, Fractional a) =>
-     Point a  -- ^ Minimum x, y coordinate
-  -> Point a  -- ^ Maximum x, y coordinate
+  :: (Enum a, RealFrac a) =>
+     Frame a  
   -> a      -- ^ Number of points along x axis
   -> a      -- ^ " y axis
   -> [Point a]
-meshGrid (Point xmi ymi) (Point xma yma) nx ny =
+meshGrid (Frame (Point xmi ymi) (Point xma yma)) nx ny =
   [Point x y |
       x <- subdivSegment xmi xma nx,
       y <- subdivSegment ymi yma ny]
 
--- subdivSegment
---   :: (Enum t, Ord t, Fractional t) => t -> t -> Int -> [t]
 subdivSegment
-  :: (Ord a, Fractional a, Enum a) => a -> a -> a -> [a]
+  :: (Enum a, RealFrac a) => a -> a -> a -> [a]
 subdivSegment x1 x2 n = [xmin, xmin + dx .. xmax - dx] where
-  dx = l / n
+  dx = fromRational . toRational $ l / n
   xmin = min x1 x2
   xmax = max x1 x2
   l = xmax - xmin

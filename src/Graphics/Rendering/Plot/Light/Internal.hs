@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, figFWidth, figFHeight, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel, Axis(..), meshGrid, subdivSegment, svgHeader, rect, rectCentered, squareCentered, circle, line, tick, ticks, axis, toPlot, text, plusGlyph, crossGlyph, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, toSvgFrame, toSvgFrameLP, e1, e2, toFloat, wholeDecimal) where
+module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, figFWidth, figFHeight, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel, Axis(..), meshGrid, subdivSegment, svgHeader, rect, rectCentered, squareCentered, circle, line, tick, ticks, axis, toPlot, text, plusGlyph, crossGlyph, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, toSvgFrame, toSvgFrameLP, e1, e2, toFloat, wholeDecimal, blendTwo, palette) where
 
 import Data.Monoid ((<>))
 import qualified Data.Foldable as F (toList)
@@ -56,14 +56,19 @@ data FigureData a = FigureData {
 
 
 
--- | Create the SVG header from a `Frame`
-svgHeader :: Real a => Frame a -> Svg -> Svg
-svgHeader fd =
+-- | Create the SVG header
+svgHeader :: Real a =>
+     a   -- ^ Image width (X axis)
+  -> a   -- ^ Image height (Y axis)
+  -> Svg -- ^ Image content
+  -> Svg
+svgHeader w h  =
   S.docTypeSvg
   ! SA.version "1.1"
-  ! SA.width (vd $ width fd)
-  ! SA.height (vd $ height fd)
-  ! SA.viewbox (vds [xmin fd, ymin fd, xmax fd, ymax fd])
+  ! SA.width (vd w)
+  ! SA.height (vd h)
+  ! SA.viewbox (vds [xmin fd, ymin fd, xmax fd, ymax fd]) where
+     fd = mkFrameOrigin w h
 
 
 -- | A rectangle, defined by its anchor point coordinates and side lengths

@@ -22,13 +22,48 @@
 -- 
 -- @import qualified Data.Colour.Names as C@
 -- 
--- === Heatmap plot
+-- === 1. Heatmap plot of generated data
 --
--- > > dat = [[1,2,3], [2,3,4], [3,4,5]]
+-- > import qualified Data.Text.IO as T (readFile, writeFile)
+-- > import qualified Data.Text as T
+-- >
+-- > xPlot = 400
+-- > yPlot = 300
+-- >
+-- > fdat :: FigureData Rational
+-- > fdat = FigureData xPlot yPlot 0.1 0.8 0.1 0.9 10
+-- >
+-- > palette0 = palette [C.red, C.white, C.blue] 15
+-- > 
+-- > plotFun2ex1 = do
+-- >  let 
+-- >    p1 = Point (-2) (-2)
+-- >    p2 = Point 2 2
+-- >    frame = mkFrame p1 p2
+-- >    nx = 50 
+-- >    ny = 50
+-- >    f x y = cos ( pi * theta ) * sin r 
+-- >      where
+-- >        r = x'**2 + y'**2
+-- >        theta = atan2 y' x'
+-- >        (x', y') = (fromRational x, fromRational y)
+-- >    lps = plotFun2 f $ meshGrid frame nx ny
+-- >    pixels = heatmap' fdat palette0 frame nx ny lps
+-- >    svg_t = svgHeader xPlot yPlot pixels
+-- >  T.writeFile "heatmap.svg" $ T.pack $ renderSvg svg_t
+--
+-- This example demonstrates how to plot a 2D scalar function and write the output to SVG file.
+--
+-- First, we define a `Frame` that bounds the rendering canvas. This is discretized in `nx` by `ny` pixels, and the function `f` is computed at the _intersections_ of the mesh
+--
+-- The function (represented in this case as a list of `LabeledPoint`s, in which the "label" carries the function value) is then mapped onto the given colour palette and drawn to the SVG canvas as a mesh of filled rectangles (Caution: do not exceed resolutions of ~ hundred pixels per side).
+--
+-- As a last step, the SVG content is wrapped in the appropriate markdown by `svgHeader` and written to file.
 
 module Graphics.Rendering.Plot.Light (
   -- * Plot types
-  heatmap,
+  -- ** Heatmap
+  heatmap, heatmap', plotFun2,
   -- * Plot elements
   -- ** Geometrical primitives
   rect, rectCentered, squareCentered, circle, line, text, polyline, filledPolyline,
@@ -38,6 +73,8 @@ module Graphics.Rendering.Plot.Light (
   toPlot, FigureData(..),
   -- ** Element attributes
   LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..),
+  -- ** Colour utilities
+  blendTwo, palette, 
   -- ** SVG utilities
   svgHeader, translateSvg,
   -- * Types
