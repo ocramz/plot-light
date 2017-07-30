@@ -1,4 +1,4 @@
-module Graphics.Rendering.Plot.Light.PlotTypes.Heatmap (heatmap) where
+module Graphics.Rendering.Plot.Light.PlotTypes.Heatmap (heatmap, plotFun2, xyGrid) where
 
 import Data.Scientific (Scientific, toRealFloat)
 import Graphics.Rendering.Plot.Light.Internal
@@ -50,6 +50,9 @@ mkPixel
      -> Svg
 mkPixel palette w h vmin vmax (LabeledPoint p l) = rect w h 0 Nothing (Just col) p where
   col = pickColor palette (toFloat vmin) (toFloat vmax) (toFloat l)
+
+mkPixel' palette w h vmin vmax (LabeledPoint p l) = rect w h 0 Nothing (Just col) p where
+  col = pickColor palette vmin vmax l
   
 
 pickColor :: RealFrac t => [C.Colour Double] -> t -> t -> t -> C.Colour Double
@@ -96,22 +99,23 @@ toUnitFramedLP w h (i, j, x) = LabeledPoint p x
 
 
 
-plotFun2 :: Functor f => (t -> t -> b) -> f (Point t) -> f b
+plotFun2
+  :: Functor f =>
+     (t -> t -> l) -> f (Point t) -> f (LabeledPoint l t)
 plotFun2 f = fmap f' where
-  f' (Point x y) = f x y
+  f' p@(Point x y) = LabeledPoint p (f x y)
 
 
-xyGrid :: (Enum a2, Ord a2, Integral a, Integral a1,
-                 Fractional a2) =>
-                (a2, a2) -> (a2, a2) -> a1 -> a -> [Point a2]
+xyGrid :: (Enum a, Ord a, Fractional a) =>
+                (a, a) -> (a, a) -> Int -> Int -> [Point a]
 xyGrid (xmin, xmax) (ymin, ymax) nx ny =
   [Point x y |
       x <- subdivSegment xmin xmax nx,
       y <- subdivSegment ymin ymax ny]
 
 subdivSegment
-  :: (Enum t, Ord t, Fractional t, Integral a) => t -> t -> a -> [t]
-subdivSegment x1 x2 n = [xmin, xmin + (l/fromIntegral n) ..] where
+  :: (Enum t, Ord t, Fractional t) => t -> t -> Int -> [t]
+subdivSegment x1 x2 n = [xmin, xmin + (l/fromIntegral n) .. xmax] where
   xmin = min x1 x2
   xmax = max x1 x2
   l = xmax - xmin

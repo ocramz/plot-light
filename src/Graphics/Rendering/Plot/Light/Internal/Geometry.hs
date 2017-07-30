@@ -83,6 +83,7 @@ mkFrameOrigin w h = Frame origin (Point w h)
 -- | Create a `Frame` from a container of `Point`s `P`, i.e. construct two points `p1` and `p2` such that :
 --
 -- p1 := inf(x,y) P
+--
 -- p2 := sup(x,y) P
 frameFromPoints :: (Ord a, Foldable t, Functor t) =>
                          t (Point a) -> Frame a

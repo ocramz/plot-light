@@ -27,6 +27,7 @@ library
   other-modules:       Graphics.Rendering.Plot.Light.Internal
                        Graphics.Rendering.Plot.Light.PlotTypes.Heatmap
                        Graphics.Rendering.Plot.Light.PlotTypes.Scatter
+                       Graphics.Rendering.Plot.Light.PlotTypes.Histogram
                        Graphics.Rendering.Plot.Light.PlotTypes.TimeSeries
                        Graphics.Rendering.Plot.Light.PlotTypes.TimeSeries.Candlestick
                        Graphics.Rendering.Plot.Light.Internal.Geometry
