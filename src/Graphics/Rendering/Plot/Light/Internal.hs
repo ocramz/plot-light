@@ -568,7 +568,7 @@ colBarPx
      -> LabeledPoint t a
      -> Svg
 colBarPx fdat pal w h vmin vmax (LabeledPoint p val) = do
-  text 0 (figLabelFontSize fdat) C.black TAStart (T.pack $ show val) (V2 (0.7*w) 0) p
+  text 0 (figLabelFontSize fdat) C.black TAStart (T.pack $ show val) (V2 (0*w) 0) p
   rectCentered w h 0 Nothing (Just $ pickColour pal vmin vmax val) p
   
 

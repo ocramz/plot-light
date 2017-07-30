@@ -50,36 +50,48 @@ plotFun2ex1 = do
     frame = mkFrame p1 p2
     nx = 50 
     ny = 50
-    f x y = x'**2 - y'**2 where
-      (x', y') = (fromRational x, fromRational y)
-    lps = plotFun2 f $ meshGrid frame nx ny
-    pixels = heatmap' fdat palette0 frame nx ny lps
-    svg_t = svgHeader xPlot yPlot pixels
-  T.writeFile "data/heatmap-2.svg" $ T.pack $ renderSvg svg_t  
-  
-
-plotFun2ex1_1 = 
-  let 
-    p1 = Point (-2) (-2)
-    p2 = Point 2 2
-    nx = 50 
-    ny = 50
+    -- f x y = x'**2 - y'**2 where
+    --   (x', y') = (fromRational x, fromRational y)
     f x y = cos ( pi * theta ) * sin r 
       where
       r = x'**2 + y'**2
-      theta = atan2 y'  x'
-      (x', y') = (fromRational x, fromRational y)
-    fname = "data/heatmap-3.svg"
-  in
-    withMeshGrid p1 p2 nx ny $ \fr gr -> do
-      let
-        lps = plotFun2 f gr
-        vmin = minimum $ _lplabel <$> lps
-        vmax = maximum $ _lplabel <$> lps        
-        pixels = heatmap' fdat palette0 fr nx ny lps
-        cbar = colourBar fdat palette0 50 vmin vmax 10 (Point 250 20) (Point 250 50)
-        svg_t = svgHeader xPlot yPlot pixels
-      T.writeFile fname $ T.pack $ renderSvg svg_t  
+      theta = atan2 y' x'
+      (x', y') = (fromRational x, fromRational y)      
+    lps = plotFun2 f $ meshGrid frame nx ny
+    vmin = minimum $ _lplabel <$> lps
+    vmax = maximum $ _lplabel <$> lps       
+    pixels = heatmap' fdat palette0 frame nx ny lps
+    cbar = colourBar fdat palette0 10 vmin vmax 10 (Point 250 20) (Point 250 50)
+    svg_t = svgHeader xPlot yPlot $ do
+      pixels
+      cbar
+  T.writeFile "data/heatmap-3.svg" $ T.pack $ renderSvg svg_t  
+  
+
+-- plotFun2ex1_1 = 
+--   let 
+--     p1 = Point (-2) (-2)
+--     p2 = Point 2 2
+--     nx = 50 
+--     ny = 50
+--     f x y = cos ( pi * theta ) * sin r 
+--       where
+--       r = x'**2 + y'**2
+--       theta = atan2 y' x'
+--       (x', y') = (fromRational x, fromRational y)
+--     fname = "data/heatmap-3.svg"
+--   in
+--     withMeshGrid p1 p2 nx ny $ \fr gr -> do
+--       let
+--         lps = plotFun2 f gr
+--         vmin = minimum $ _lplabel <$> lps
+--         vmax = maximum $ _lplabel <$> lps        
+--         pixels = heatmap' fdat palette0 fr nx ny lps
+--         cbar = colourBar fdat palette0 10 vmin vmax 10 (Point 250 20) (Point 250 50)
+--         svg_t = svgHeader xPlot yPlot $ do
+--           pixels
+--           cbar
+--       T.writeFile fname $ T.pack $ renderSvg svg_t  
         
 
 withMeshGrid :: (RealFrac a, Enum a) =>
