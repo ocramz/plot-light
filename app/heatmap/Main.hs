@@ -21,11 +21,11 @@ import qualified Data.Colour.Palette.BrewerSet as CP
 
 fname = "data/heatmap-bw"
 
-xPlot = 300
+xPlot = 400
 yPlot = 300
 fnameOut = "data/heatmap-1.svg"
 
-fdat = FigureData xPlot yPlot 0.1 0.9 0.1 0.85 10
+fdat = FigureData xPlot yPlot 0.1 0.8 0.1 0.9 10
 
 
 nColors = 9  -- 3 - 9

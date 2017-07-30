@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, figFWidth, figFHeight, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel, Axis(..), svgHeader, rect, rectCentered, circle, line, tick, ticks, axis, toPlot, text, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, toSvgFrame, toSvgFrameLP, e1, e2, toFloat, wholeDecimal) where
+module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, figFWidth, figFHeight, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel, Axis(..), svgHeader, rect, rectCentered, squareCentered, circle, line, tick, ticks, axis, toPlot, text, plusGlyph, crossGlyph, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, toSvgFrame, toSvgFrameLP, e1, e2, toFloat, wholeDecimal) where
 
 import Data.Monoid ((<>))
 import qualified Data.Foldable as F (toList)
@@ -100,6 +100,17 @@ rectCentered  wid hei sw scol fcol p@(Point x0 y0) =
 
 
 
+squareCentered
+  :: (Show a, RealFrac a) =>
+     a
+     -> a
+     -> Maybe (C.Colour Double)
+     -> Maybe (C.Colour Double)
+     -> Point a
+     -> Svg
+squareCentered w = rectCentered w w
+
+
 
 
 -- | Line segment between two `Point`s
@@ -134,6 +145,38 @@ tick ax len sw col (Point x y) = line (Point x1 y1) (Point x2 y2) sw Continuous 
   (x1, y1, x2, y2)
     | ax == Y = (x, y-lh, x, y+lh)
     | otherwise = (x-lh, y, x+lh, y)
+
+
+plusGlyph, crossGlyph
+  :: (Show a, RealFrac a) =>
+     a
+     -> a
+     -> C.Colour Double
+     -> Point a
+     -> Svg
+plusGlyph w sw col (Point x y) = do
+  line pl pr sw Continuous col
+  line pt pb sw Continuous col
+  where
+    wh = w / 2
+    pl = Point (x-wh) y
+    pr = Point (x+wh) y
+    pt = Point x (y-wh)
+    pb = Point x (y+wh)
+
+crossGlyph w sw col (Point x y) = do
+  line pa pb sw Continuous col
+  line pc pd sw Continuous col
+  where
+    wh = 1.4142 * w
+    pa = Point (x+wh) (x+wh)
+    pb = Point (x-wh) (x-wh)
+    pc = Point (x+wh) (x-wh)
+    pd = Point (x-wh) (x+wh)
+    
+
+
+    
 
 
 labeledTick

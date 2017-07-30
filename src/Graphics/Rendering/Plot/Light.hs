@@ -24,7 +24,7 @@ module Graphics.Rendering.Plot.Light (
   heatmap,
   -- * Plot elements
   -- ** Geometrical primitives
-  rect, rectCentered, circle, line, text, polyline, filledPolyline,
+  rect, rectCentered, squareCentered, circle, line, text, polyline, filledPolyline,
   -- ** Composite plot elements
   filledBand, candlestick,
   -- ** Plot utilities
