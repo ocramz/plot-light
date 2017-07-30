@@ -19,6 +19,8 @@ instance Show a => Show (Point a) where
 mkPoint :: a -> a -> Point a
 mkPoint = Point
 
+-- | A binary operation on the components of two `Point`s
+lift2Point :: (a -> b -> c) -> Point a -> Point b -> Point c
 lift2Point f (Point a b) (Point c d) = Point (f a c) (f b d)
 
 pointMin, pointMax :: (Ord a) => Point a -> Point a -> Point a
@@ -38,7 +40,9 @@ setPointY = setPointCoord Y
 -- | A `LabeledPoint` carries a "label" (i.e. any additional information such as a text tag, or any other data structure), in addition to position information. Data points on a plot are `LabeledPoint`s.
 data LabeledPoint l a =
   LabeledPoint {
+  -- | The coordinates of the `LabeledPoint` (i.e. where in the figure it will be rendered)
    _lp :: Point a,
+   -- | Data associated with the `LabeledPoint`
    _lplabel :: l
    } deriving (Eq, Show)
 
@@ -63,6 +67,7 @@ data Frame a = Frame {
    _fpmax :: Point a
    } deriving (Eq, Show)
 
+-- | The semigroup operation (`mappend`) applied on two `Frames` results in a new `Frame` that bounds both.
 instance (Ord a, Num a) => Monoid (Frame a) where
   mempty = Frame (Point 0 0) (Point 0 0)
   mappend (Frame p1min p1max) (Frame p2min p2max) = Frame (pointMin p1min p2min) (pointMax p1max p2max)
