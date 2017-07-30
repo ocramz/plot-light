@@ -25,12 +25,14 @@ xPlot = 400
 yPlot = 300
 fnameOut = "data/heatmap-1.svg"
 
+-- fdat :: Num a => FigureData a
+fdat :: FigureData Rational
 fdat = FigureData xPlot yPlot 0.1 0.8 0.1 0.9 10
 
 
-nColors = 9  -- 3 - 9
+nColors = 11  -- 3 - 9
 palette :: [C.Colour Double]
-palette = CP.brewerSet CP.GnBu nColors
+palette = CP.brewerSet CP.Spectral nColors
 
 main :: IO ()
 main = do
@@ -43,6 +45,21 @@ main = do
                   -- putStrLn $ renderSvg svg_t
                   T.writeFile fnameOut $ T.pack $ renderSvg svg_t      
 
+
+main' = do
+  let 
+    p1 = Point (-2) (-1.5)
+    p2 = Point 2 1.5
+    frame = mkFrame p1 p2
+    nx = 100 
+    ny = 75
+    f x y = x'**2 - sin y' where
+      (x', y') = (fromRational x, fromRational y)
+    lps = plotFun2 f (meshGrid p1 p2 nx ny)
+    pixels = heatmap' fdat palette frame nx ny lps
+    svg_t = svgHeader (mkFrameOrigin xPlot yPlot) pixels
+  T.writeFile "data/heatmap-2.svg" $ T.pack $ renderSvg svg_t  
+  
 
 
 -- parsers

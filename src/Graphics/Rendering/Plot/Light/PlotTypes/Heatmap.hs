@@ -1,4 +1,4 @@
-module Graphics.Rendering.Plot.Light.PlotTypes.Heatmap (heatmap, plotFun2) where
+module Graphics.Rendering.Plot.Light.PlotTypes.Heatmap (heatmap, heatmap', plotFun2) where
 
 import Data.Scientific (Scientific, toRealFloat)
 import Graphics.Rendering.Plot.Light.Internal
@@ -30,15 +30,24 @@ heatmap fdat palette d = do
       to = frameFromFigData fdat
   forM_ d' (mkPixel palette w h vmin vmax . toFigFrame from to) 
 
-
-heatmap' fdat palette nw nh lp = do
+heatmap'
+  :: (Foldable f, Functor f, Show a, RealFrac a, RealFrac t) =>
+     FigureData a
+     -> [C.Colour Double]
+     -> Frame a
+     -> a
+     -> a
+     -> f (LabeledPoint t a)
+     -> Svg
+heatmap' fdat palette from nw nh lp = do
   let
     w = figFWidth fdat / nw
     h = figFHeight fdat / nh
-    from = Frame (Point 0 0) (Point 1 1)    
+    -- from = Frame (Point 0 0) (Point 1 1)
+    -- from = frameFromPoints $ _lp <$> lp
     to = frameFromFigData fdat
     (vmin, vmax) = (minimum &&& maximum) (_lplabel <$> lp)
-  forM_ lp (mkPixel' palette w h vmin vmax . toFigFrame from to)
+  forM_ lp (mkPixel' palette w h vmin vmax . moveLabeledPointBwFrames from to False False)
 
   
 
@@ -64,6 +73,9 @@ mkPixel
 mkPixel palette w h vmin vmax (LabeledPoint p l) = rect w h 0 Nothing (Just col) p where
   col = pickColor palette (toFloat vmin) (toFloat vmax) (toFloat l)
 
+mkPixel'
+  :: (Show a, RealFrac a, RealFrac t) =>
+     [C.Colour Double] -> a -> a -> t -> t -> LabeledPoint t a -> Svg
 mkPixel' palette w h vmin vmax (LabeledPoint p l) = rect w h 0 Nothing (Just col) p where
   col = pickColor palette vmin vmax l
   

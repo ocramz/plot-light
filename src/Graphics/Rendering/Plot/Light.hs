@@ -62,7 +62,7 @@ module Graphics.Rendering.Plot.Light (
   -- ** Typeclasses
   AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..),
   -- ** Helpers
-  toFloat, wholeDecimal
+  meshGrid, toFloat, wholeDecimal
   ) where
 
 -- import qualified Data.Text as T

@@ -291,18 +291,20 @@ meshGrid
   :: (Enum a, Ord a, Fractional a) =>
      Point a  -- ^ Minimum x, y coordinate
   -> Point a  -- ^ Maximum x, y coordinate
-  -> Int      -- ^ Number of points along x axis
-  -> Int      -- ^ " y axis
+  -> a      -- ^ Number of points along x axis
+  -> a      -- ^ " y axis
   -> [Point a]
 meshGrid (Point xmi ymi) (Point xma yma) nx ny =
   [Point x y |
       x <- subdivSegment xmi xma nx,
       y <- subdivSegment ymi yma ny]
 
+-- subdivSegment
+--   :: (Enum t, Ord t, Fractional t) => t -> t -> Int -> [t]
 subdivSegment
-  :: (Enum t, Ord t, Fractional t) => t -> t -> Int -> [t]
+  :: (Ord a, Fractional a, Enum a) => a -> a -> a -> [a]
 subdivSegment x1 x2 n = [xmin, xmin + dx .. xmax - dx] where
-  dx = l / fromIntegral n
+  dx = l / n
   xmin = min x1 x2
   xmax = max x1 x2
   l = xmax - xmin
