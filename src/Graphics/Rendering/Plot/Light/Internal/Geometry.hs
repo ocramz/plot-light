@@ -284,6 +284,29 @@ pointRange n p q = [ movePoint (fromIntegral x .* vnth) p | x <- [0 .. n]]
 
 
 
+-- | A list of `nx` by `ny` points in the plane arranged on the vertices of a rectangular mesh.
+--
+-- NB: Only the minimum x, y coordinate point is included in the output mesh. This is intentional, since the output from this can be used as an input to functions that use a corner rather than the center point as refernce (e.g. `rect`)
+meshGrid
+  :: (Enum a, Ord a, Fractional a) =>
+     Point a  -- ^ Minimum x, y coordinate
+  -> Point a  -- ^ Maximum x, y coordinate
+  -> Int      -- ^ Number of points along x axis
+  -> Int      -- ^ " y axis
+  -> [Point a]
+meshGrid (Point xmi ymi) (Point xma yma) nx ny =
+  [Point x y |
+      x <- subdivSegment xmi xma nx,
+      y <- subdivSegment ymi yma ny]
+
+subdivSegment
+  :: (Enum t, Ord t, Fractional t) => t -> t -> Int -> [t]
+subdivSegment x1 x2 n = [xmin, xmin + dx .. xmax - dx] where
+  dx = l / fromIntegral n
+  xmin = min x1 x2
+  xmax = max x1 x2
+  l = xmax - xmin
+
 
 
 fromFrame :: Fractional a => Frame a -> V2 a -> V2 a

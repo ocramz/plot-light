@@ -1,4 +1,4 @@
-module Graphics.Rendering.Plot.Light.PlotTypes.Heatmap (heatmap, plotFun2, xyGrid) where
+module Graphics.Rendering.Plot.Light.PlotTypes.Heatmap (heatmap, plotFun2) where
 
 import Data.Scientific (Scientific, toRealFloat)
 import Graphics.Rendering.Plot.Light.Internal
@@ -38,7 +38,7 @@ heatmap' fdat palette nw nh lp = do
     from = Frame (Point 0 0) (Point 1 1)    
     to = frameFromFigData fdat
     (vmin, vmax) = (minimum &&& maximum) (_lplabel <$> lp)
-  forM_ lp (mkPixel palette w h vmin vmax . toFigFrame from to)
+  forM_ lp (mkPixel' palette w h vmin vmax . toFigFrame from to)
 
   
 
@@ -119,16 +119,4 @@ plotFun2 f = fmap f' where
   f' p@(Point x y) = LabeledPoint p (f x y)
 
 
-xyGrid :: (Enum a, Ord a, Fractional a) =>
-                (a, a) -> (a, a) -> Int -> Int -> [Point a]
-xyGrid (xmin, xmax) (ymin, ymax) nx ny =
-  [Point x y |
-      x <- subdivSegment xmin xmax nx,
-      y <- subdivSegment ymin ymax ny]
 
-subdivSegment
-  :: (Enum t, Ord t, Fractional t) => t -> t -> Int -> [t]
-subdivSegment x1 x2 n = [xmin, xmin + (l/fromIntegral n) .. xmax] where
-  xmin = min x1 x2
-  xmax = max x1 x2
-  l = xmax - xmin
