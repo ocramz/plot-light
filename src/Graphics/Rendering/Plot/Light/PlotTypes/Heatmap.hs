@@ -5,6 +5,7 @@ import Graphics.Rendering.Plot.Light.Internal
 
 import Text.Blaze.Svg
 
+import Control.Arrow ((***), (&&&))
 import Control.Monad (forM_)
 
 -- import qualified Data.Colour.Names as C
@@ -28,6 +29,18 @@ heatmap fdat palette d = do
       from = Frame (Point 0 0) (Point 1 1)
       to = frameFromFigData fdat
   forM_ d' (mkPixel palette w h vmin vmax . toFigFrame from to) 
+
+
+heatmap' fdat palette nw nh lp = do
+  let
+    w = figFWidth fdat / nw
+    h = figFHeight fdat / nh
+    from = Frame (Point 0 0) (Point 1 1)    
+    to = frameFromFigData fdat
+    (vmin, vmax) = (minimum &&& maximum) (_lplabel <$> lp)
+  forM_ lp (mkPixel palette w h vmin vmax . toFigFrame from to)
+
+  
 
 
 toFigFrame
