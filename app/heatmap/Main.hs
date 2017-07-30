@@ -74,7 +74,10 @@ plotFun2ex1_1 =
     withMeshGrid p1 p2 nx ny $ \fr gr -> do
       let
         lps = plotFun2 f gr
+        vmin = minimum $ _lplabel <$> lps
+        vmax = maximum $ _lplabel <$> lps        
         pixels = heatmap' fdat palette0 fr nx ny lps
+        cbar = colourBar fdat palette0 50 vmin vmax 10 (Point 250 20) (Point 250 50)
         svg_t = svgHeader xPlot yPlot pixels
       T.writeFile fname $ T.pack $ renderSvg svg_t  
         

@@ -24,6 +24,8 @@
 -- 
 -- === 1. Heatmap plot of generated data
 --
+-- <<>>
+--
 -- > import qualified Data.Text.IO as T (readFile, writeFile)
 -- > import qualified Data.Text as T
 -- >
@@ -63,10 +65,10 @@
 module Graphics.Rendering.Plot.Light (
   -- * Plot types
   -- ** Heatmap
-  heatmap, heatmap', plotFun2,
+  heatmap, heatmap', plotFun2, colourBar, 
   -- * Plot elements
   -- ** Geometrical primitives
-  rect, rectCentered, squareCentered, circle, line, text, polyline, filledPolyline,
+  rect, rectCentered, squareCentered, circle, line, text, polyline, filledPolyline, pixel, pixel', 
   -- ** Composite plot elements
   filledBand, candlestick,
   -- ** Plot utilities
@@ -74,7 +76,7 @@ module Graphics.Rendering.Plot.Light (
   -- ** Element attributes
   LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..),
   -- ** Colour utilities
-  blendTwo, palette, 
+  blendTwo, palette, pickColour, 
   -- ** SVG utilities
   svgHeader, translateSvg,
   -- * Types

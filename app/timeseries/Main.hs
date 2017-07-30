@@ -40,7 +40,6 @@ main = do
                -- putStrLn $ renderSvg svg_t
                T.writeFile fnameOut $ T.pack $ renderSvg svg_t
                  where
-                   
                    fhi = toFloat . rateHigh
                    flo = toFloat . rateLow
                    fop = toFloat . rateOpen

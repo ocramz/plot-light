@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, figFWidth, figFHeight, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel, Axis(..), meshGrid, subdivSegment, svgHeader, rect, rectCentered, squareCentered, circle, line, tick, ticks, axis, toPlot, text, plusGlyph, crossGlyph, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, toSvgFrame, toSvgFrameLP, e1, e2, toFloat, wholeDecimal, blendTwo, palette) where
+module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, figFWidth, figFHeight, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel, Axis(..), meshGrid, subdivSegment, svgHeader, rect, rectCentered, squareCentered, circle, line, tick, ticks, axis, toPlot, text, pixel, pixel', pickColour, colourBar, plusGlyph, crossGlyph, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, toSvgFrame, toSvgFrameLP, e1, e2, toFloat, wholeDecimal, blendTwo, palette) where
 
 import Data.Monoid ((<>))
 import qualified Data.Foldable as F (toList)
@@ -509,6 +509,70 @@ toSvgFrameLP from to fliplr (LabeledPoint p lab) = LabeledPoint (toSvgFrame from
 
 
 
+
+
+pixel
+  :: (Show a, RealFrac a) =>
+     [C.Colour Double]
+     -> a
+     -> a
+     -> Scientific
+     -> Scientific
+     -> LabeledPoint Scientific a
+     -> Svg
+pixel pal w h vmin vmax (LabeledPoint p l) = rect w h 0 Nothing (Just col) p where
+  col = pickColour pal (toFloat vmin) (toFloat vmax) (toFloat l)
+
+pixel'
+  :: (Show a, RealFrac a, RealFrac t) =>
+     [C.Colour Double] -> a -> a -> t -> t -> LabeledPoint t a -> Svg
+pixel' pal w h vmin vmax (LabeledPoint p l) = rect w h 0 Nothing (Just col) p where
+  col = pickColour pal vmin vmax l
+  
+
+pickColour :: RealFrac t => [C.Colour Double] -> t -> t -> t -> C.Colour Double
+pickColour pal xmin xmax x = pal !! i
+  where
+    i = floor (x01 * fromIntegral (nColors - 1))
+    x01 = (x-xmin)/(xmax - xmin)
+    nColors = length pal
+
+
+colourBar
+  :: (Floating a, Show a, Show t, RealFrac a, RealFrac t, Enum t) =>
+     FigureData a1
+     -> [C.Colour Double]
+     -> a
+     -> t
+     -> t
+     -> Int
+     -> Point a
+     -> Point a
+     -> Svg
+colourBar fdat pal w vmin vmax n p1 p2 = forM_ lps (colBarPx fdat pal w h vmin vmax) where
+  lps = zipWith LabeledPoint (pointRange n p1 p2) v_
+  h = norm2 (p1 -. p2) / fromIntegral n
+  v_ = take n [vmin, vmin + dv ..]
+  dv = (vmax - vmin)/fromIntegral n
+
+
+
+colBarPx
+  :: (Show a, Show t, RealFrac a, RealFrac t) =>
+     FigureData a1
+     -> [C.Colour Double]
+     -> a
+     -> a
+     -> t
+     -> t
+     -> LabeledPoint t a
+     -> Svg
+colBarPx fdat pal w h vmin vmax (LabeledPoint p val) = do
+  text 0 (figLabelFontSize fdat) C.black TAStart (T.pack $ show val) (V2 (0.7*w) 0) p
+  rectCentered w h 0 Nothing (Just $ pickColour pal vmin vmax val) p
+  
+
+
   
 -- * Helpers
 
@@ -545,16 +609,3 @@ vds = S.toValue . unwords . map (show . real)
 
 
 
-
-
-
---       S.rect ! A.width "1" ! A.height "2" ! A.fill "#d2232c"
---       -- S.path ! A.d makePath
-
--- makePath :: S.AttributeValue
--- makePath = mkPath $ do
---   l 2 3
---   m 4 5
-
--- makeTransform :: S.AttributeValue
--- makeTransform = translate 1 1 -- rotate 50

@@ -27,7 +27,7 @@ heatmap fdat palette d = do
       h = figFHeight fdat / nh
       from = Frame (Point 0 0) (Point 1 1)
       to = frameFromFigData fdat
-  forM_ d' (mkPixel palette w h vmin vmax . toFigFrame from to) 
+  forM_ d' (pixel palette w h vmin vmax . toFigFrame from to) 
 
 -- | `heatmap'` renders one SVG pixel for every `LabeledPoint` supplied as input. The `LabeledPoint`s must be bounded by the `Frame`.
 heatmap'
@@ -45,7 +45,7 @@ heatmap' fdat palette from nw nh lp = do
     h = figFHeight fdat / nh
     to = frameFromFigData fdat
     (vmin, vmax) = (minimum &&& maximum) (_lplabel <$> lp)
-  forM_ lp (mkPixel' palette w h vmin vmax . moveLabeledPointBwFrames from to False False)
+  forM_ lp (pixel' palette w h vmin vmax . moveLabeledPointBwFrames from to False False)
 
   
 
@@ -59,35 +59,7 @@ fromRationalLP :: Fractional a => LabeledPoint l Rational -> LabeledPoint l a
 fromRationalLP (LabeledPoint (Point x y) l) = LabeledPoint (Point (fromRational x) (fromRational y)) l
 
 
-mkPixel
-  :: (Show a, RealFrac a) =>
-     [C.Colour Double]
-     -> a
-     -> a
-     -> Scientific
-     -> Scientific
-     -> LabeledPoint Scientific a
-     -> Svg
-mkPixel palette w h vmin vmax (LabeledPoint p l) = rect w h 0 Nothing (Just col) p where
-  col = pickColor palette (toFloat vmin) (toFloat vmax) (toFloat l)
 
-mkPixel'
-  :: (Show a, RealFrac a, RealFrac t) =>
-     [C.Colour Double] -> a -> a -> t -> t -> LabeledPoint t a -> Svg
-mkPixel' palette w h vmin vmax (LabeledPoint p l) = rect w h 0 Nothing (Just col) p where
-  col = pickColor palette vmin vmax l
-  
-
-pickColor :: RealFrac t => [C.Colour Double] -> t -> t -> t -> C.Colour Double
-pickColor palette xmin xmax x = palette !! i
-  where
-    i = floor (x01 * fromIntegral (nColors - 1))
-    x01 = (x-xmin)/(xmax - xmin)
-    nColors = length palette
-
-
-colorBar palette xmin xmax n =
-  pickColor palette xmin xmax <$> subdivSegment xmin xmax n
 
 
 -- | `prepData d` assumes the input lists correspond to evenly sampled values of a scalar-valued field.
