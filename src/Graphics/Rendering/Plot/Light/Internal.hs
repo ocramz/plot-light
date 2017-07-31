@@ -89,8 +89,8 @@ rect wid hei sw scol fcol (Point x0 y0) = S.rect ! SA.x (vd x0) ! SA.y (vd y0) !
 
 -- | A rectangle, defined by its center coordinates and side lengths
 --
--- > > putStrLn $ renderSvg $ rectCentered (Point 20 30) 15 30 (Just C.blue) (Just C.red)
--- > <g transform="translate(12.5 15.0)"><rect width="15.0" height="30.0" fill="#ff0000" stroke="#0000ff" /></g>
+-- > > putStrLn $ renderSvg $ rectCentered 15 30 1 (Just C.blue) (Just C.red) (Point 20 30)
+-- > <rect x="12.5" y="15.0" width="15.0" height="30.0" fill="#ff0000" stroke="#0000ff" stroke-width="1.0" />
 rectCentered :: (Show a, RealFrac a) =>
      a                       -- ^ Width
   -> a                       -- ^ Height

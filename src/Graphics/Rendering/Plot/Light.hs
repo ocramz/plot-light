@@ -24,7 +24,15 @@
 -- 
 -- === 1. Heatmap plot of a 2D function
 --
--- <<doc/fig/heatmap.png#diagram=heatmap&height=200&width=266>>
+-- <<doc/fig/heatmap.png>>
+--
+-- This example renders the function
+--
+-- \[
+-- {f(x, y) = \cos(\pi \theta) \sin( \rho^2) }
+-- \]
+-- where
+-- \( \rho = x^2 + y^2 \) and \( \theta = \arctan(y/x) \).
 --
 -- > import qualified Data.Text.IO as T (readFile, writeFile)
 -- > import qualified Data.Text as T
