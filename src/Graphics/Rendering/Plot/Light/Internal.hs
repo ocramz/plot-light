@@ -548,14 +548,15 @@ posCoeff :: Fractional a => LegendPosition_ -> (a, a)
 posCoeff pos =
   case pos of
     TopLeft -> (0.1, 0.1)
-    TopRight -> (0.1, 0.9)
-    BottomLeft -> (0.9, 0.1)
+    TopRight -> (0.9, 0.1)
+    BottomLeft -> (0.1, 0.9)
     BottomRight -> (0.9, 0.9)
 
 
+
 colourBar
-  :: (Show a, RealFrac a, RealFrac t, Enum t, Floating a) =>
-     FigureData a
+  :: (RealFrac t, RealFrac a, Show a, Enum t, Floating a) =>
+     FigureData (Ratio Integer)
      -> [C.Colour Double]
      -> a
      -> t
@@ -566,10 +567,10 @@ colourBar
      -> Svg
 colourBar fdat pal w vmin vmax n legpos legh = forM_ lps (colBarPx fdat pal w h vmin vmax) where
   (legx, legy) = posCoeff legpos
-  legendX = figWidth fdat * legx
-  legendY = figHeight fdat * legy
-  p1 = Point legendX legendY
-  p2 = Point legendX (legendY - legh)
+  legendX = fromRational $ figWidth fdat * legx 
+  legendY = fromRational $ figHeight fdat * legy
+  p1 = Point legendX (legendY + legh)
+  p2 = Point legendX legendY
   lps = zipWith LabeledPoint (pointRange n p1 p2) v_
   h = norm2 (p1 -. p2) / fromIntegral n
   v_ = take n [vmin, vmin + dv ..]
@@ -577,16 +578,16 @@ colourBar fdat pal w vmin vmax n legpos legh = forM_ lps (colBarPx fdat pal w h 
 
 
 
-colBarPx
-  :: (Show a, RealFrac a, RealFrac t) =>
-     FigureData a1
-     -> [C.Colour Double]
-     -> a
-     -> a
-     -> t
-     -> t
-     -> LabeledPoint t a
-     -> Svg
+-- colBarPx
+--   :: (Show a, RealFrac a, RealFrac t) =>
+--      FigureData a1
+--      -> [C.Colour Double]
+--      -> a
+--      -> a
+--      -> t
+--      -> t
+--      -> LabeledPoint t a
+--      -> Svg
 colBarPx fdat pal w h vmin vmax (LabeledPoint p val) = do
   text 0 (figLabelFontSize fdat) C.black TAStart (T.pack $ show (rr val :: Fixed E3)) (V2 (1.1*w) (0.5*h)) p
   rectCentered w h 0 Nothing (Just $ pickColour pal vmin vmax val) p

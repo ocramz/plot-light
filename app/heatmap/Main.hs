@@ -25,33 +25,33 @@ xPlot = 400
 yPlot = 300
 fnameOut = "data/heatmap-1.svg"
 
--- fdat :: FigureData Rational
+-- fdat :: FigureData Double
 fdat = FigureData xPlot yPlot 0.05 0.8 0.05 0.95 10
 
 palette0 = palette [C.blue, C.white, C.red] 15
 
 
-main :: IO ()
+-- main :: IO ()
+-- main = do
+--   dat <- T.readFile fname
+--   let pd = A.parseOnly (gridNum space) dat
+--   case pd of Left e -> error e
+--              Right d -> do
+--                   let pixels = heatmap fdat palette0 d
+--                       svg_t = svgHeader xPlot yPlot pixels
+--                   -- putStrLn $ renderSvg svg_t
+--                   T.writeFile fnameOut $ T.pack $ renderSvg svg_t 
+    
+  
+
+
 main = do
-  dat <- T.readFile fname
-  let pd = A.parseOnly (gridNum space) dat
-  case pd of Left e -> error e
-             Right d -> do
-                  let pixels = heatmap fdat palette0 d
-                      svg_t = svgHeader xPlot yPlot pixels
-                  -- putStrLn $ renderSvg svg_t
-                  T.writeFile fnameOut $ T.pack $ renderSvg svg_t      
-
-
-plotFun2ex1 = do
   let 
     p1 = Point (-2) (-2)
     p2 = Point 2 2
     frame = mkFrame p1 p2
     nx = 50 
     ny = 50
-    -- f x y = x'**2 - y'**2 where
-    --   (x', y') = (fromRational x, fromRational y)
     f x y = cos ( pi * theta ) * sin r 
       where
       r = x'**2 + y'**2
