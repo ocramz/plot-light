@@ -12,7 +12,7 @@ category:            Graphics
 build-type:          Simple
 extra-source-files:  README.md
 extra-doc-files:     doc/fig/*.png
-cabal-version:       >=1.10
+cabal-version:       >=1.18
 tested-with:         GHC == 8.0.2
 data-dir:            data
 data-files:          forex
