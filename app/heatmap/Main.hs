@@ -25,10 +25,10 @@ xPlot = 400
 yPlot = 300
 fnameOut = "data/heatmap-1.svg"
 
-fdat :: FigureData Rational
-fdat = FigureData xPlot yPlot 0.1 0.8 0.1 0.9 10
+-- fdat :: FigureData Rational
+fdat = FigureData xPlot yPlot 0.05 0.8 0.05 0.95 10
 
-palette0 = palette [C.red, C.white, C.blue] 15
+palette0 = palette [C.blue, C.white, C.red] 15
 
 
 main :: IO ()
@@ -56,52 +56,27 @@ plotFun2ex1 = do
       where
       r = x'**2 + y'**2
       theta = atan2 y' x'
-      (x', y') = (fromRational x, fromRational y)      
+      (x', y') = (fromRational x, fromRational y)
     lps = plotFun2 f $ meshGrid frame nx ny
     vmin = minimum $ _lplabel <$> lps
     vmax = maximum $ _lplabel <$> lps       
     pixels = heatmap' fdat palette0 frame nx ny lps
-    cbar = colourBar fdat palette0 10 vmin vmax 10 (Point 250 20) (Point 250 50)
+    cbar = colourBar fdat palette0 10 vmin vmax 10 TopRight 100
     svg_t = svgHeader xPlot yPlot $ do
       pixels
       cbar
-  T.writeFile "data/heatmap-3.svg" $ T.pack $ renderSvg svg_t  
+  T.writeFile "data/heatmap-3.svg" $ T.pack $ renderSvg svg_t
   
-
--- plotFun2ex1_1 = 
---   let 
---     p1 = Point (-2) (-2)
---     p2 = Point 2 2
---     nx = 50 
---     ny = 50
---     f x y = cos ( pi * theta ) * sin r 
---       where
---       r = x'**2 + y'**2
---       theta = atan2 y' x'
---       (x', y') = (fromRational x, fromRational y)
---     fname = "data/heatmap-3.svg"
---   in
---     withMeshGrid p1 p2 nx ny $ \fr gr -> do
---       let
---         lps = plotFun2 f gr
---         vmin = minimum $ _lplabel <$> lps
---         vmax = maximum $ _lplabel <$> lps        
---         pixels = heatmap' fdat palette0 fr nx ny lps
---         cbar = colourBar fdat palette0 10 vmin vmax 10 (Point 250 20) (Point 250 50)
---         svg_t = svgHeader xPlot yPlot $ do
---           pixels
---           cbar
---       T.writeFile fname $ T.pack $ renderSvg svg_t  
         
 
-withMeshGrid :: (RealFrac a, Enum a) =>
-    Point a -> Point a -> a -> a -> (Frame a -> [Point a] -> t) -> t
-withMeshGrid p1 p2 nx ny f =
-  withFrame p1 p2 $ \fr -> let
-  grid = meshGrid fr nx ny in f fr grid 
+-- withMeshGrid :: (RealFrac a, Enum a) =>
+--     Point a -> Point a -> a -> a -> (Frame a -> [Point a] -> t) -> t
+-- withMeshGrid p1 p2 nx ny f =
+--   withFrame p1 p2 $ \fr -> let
+--   grid = meshGrid fr nx ny in f fr grid 
 
-withFrame p1 p2 f = f frame where
-  frame = mkFrame p1 p2
+-- withFrame p1 p2 f = f frame where
+--   frame = mkFrame p1 p2
 
 
 

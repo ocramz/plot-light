@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, figFWidth, figFHeight, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel, Axis(..), meshGrid, subdivSegment, svgHeader, rect, rectCentered, squareCentered, circle, line, tick, ticks, axis, toPlot, text, pixel, pixel', pickColour, colourBar, plusGlyph, crossGlyph, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, toSvgFrame, toSvgFrameLP, e1, e2, toFloat, wholeDecimal, blendTwo, palette) where
+module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, figFWidth, figFHeight, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel, Axis(..), meshGrid, subdivSegment, svgHeader, rect, rectCentered, squareCentered, circle, line, tick, ticks, axis, toPlot, text, pixel, pixel', pickColour, colourBar, plusGlyph, crossGlyph, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), LegendPosition_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, toSvgFrame, toSvgFrameLP, e1, e2, toFloat, wholeDecimal, blendTwo, palette) where
 
 import Data.Monoid ((<>))
 import qualified Data.Foldable as F (toList)
@@ -25,6 +25,7 @@ import qualified Data.Colour.Names as C
 import qualified Data.Colour.SRGB as C
 
 import GHC.Real
+import Data.Fixed
 
 import Graphics.Rendering.Plot.Light.Internal.Geometry
 import Graphics.Rendering.Plot.Light.Internal.Utils
@@ -98,10 +99,11 @@ rectCentered :: (Show a, RealFrac a) =>
   -> Maybe (C.Colour Double) -- ^ Fill colour
   -> Point a                 -- ^ Center coordinates     
   -> Svg
-rectCentered  wid hei sw scol fcol p@(Point x0 y0) =
-  translateSvg (Point x0c y0c) $ rect wid hei sw scol fcol p where
-   x0c = x0 - (wid / 2)
-   y0c = y0 - (hei / 2)   
+rectCentered  wid hei sw scol fcol (Point x0 y0) =
+  rect wid hei sw scol fcol p' where
+    p' = Point x0c y0c
+    x0c = x0 - (wid / 2)
+    y0c = y0 - (hei / 2)   
 
 
 
@@ -538,18 +540,36 @@ pickColour pal xmin xmax x = pal !! i
     nColors = length pal
 
 
+
+data LegendPosition_ =
+  TopLeft | TopRight | BottomLeft | BottomRight deriving (Eq, Show)
+
+posCoeff :: Fractional a => LegendPosition_ -> (a, a)
+posCoeff pos =
+  case pos of
+    TopLeft -> (0.1, 0.1)
+    TopRight -> (0.1, 0.9)
+    BottomLeft -> (0.9, 0.1)
+    BottomRight -> (0.9, 0.9)
+
+
 colourBar
-  :: (Floating a, Show a, Show t, RealFrac a, RealFrac t, Enum t) =>
-     FigureData a1
+  :: (Show a, RealFrac a, RealFrac t, Enum t, Floating a) =>
+     FigureData a
      -> [C.Colour Double]
      -> a
      -> t
      -> t
      -> Int
-     -> Point a
-     -> Point a
+     -> LegendPosition_
+     -> a
      -> Svg
-colourBar fdat pal w vmin vmax n p1 p2 = forM_ lps (colBarPx fdat pal w h vmin vmax) where
+colourBar fdat pal w vmin vmax n legpos legh = forM_ lps (colBarPx fdat pal w h vmin vmax) where
+  (legx, legy) = posCoeff legpos
+  legendX = figWidth fdat * legx
+  legendY = figHeight fdat * legy
+  p1 = Point legendX legendY
+  p2 = Point legendX (legendY - legh)
   lps = zipWith LabeledPoint (pointRange n p1 p2) v_
   h = norm2 (p1 -. p2) / fromIntegral n
   v_ = take n [vmin, vmin + dv ..]
@@ -558,7 +578,7 @@ colourBar fdat pal w vmin vmax n p1 p2 = forM_ lps (colBarPx fdat pal w h vmin v
 
 
 colBarPx
-  :: (Show a, Show t, RealFrac a, RealFrac t) =>
+  :: (Show a, RealFrac a, RealFrac t) =>
      FigureData a1
      -> [C.Colour Double]
      -> a
@@ -568,9 +588,10 @@ colBarPx
      -> LabeledPoint t a
      -> Svg
 colBarPx fdat pal w h vmin vmax (LabeledPoint p val) = do
-  text 0 (figLabelFontSize fdat) C.black TAStart (T.pack $ show val) (V2 (0*w) 0) p
+  text 0 (figLabelFontSize fdat) C.black TAStart (T.pack $ show (rr val :: Fixed E3)) (V2 (1.1*w) (0.5*h)) p
   rectCentered w h 0 Nothing (Just $ pickColour pal vmin vmax val) p
   
+
 
 
   
@@ -579,6 +600,13 @@ colBarPx fdat pal w h vmin vmax (LabeledPoint p val) = do
 -- | Render a Colour from `colour` into a `blaze` Attribute
 colourAttr :: C.Colour Double -> S.AttributeValue
 colourAttr = S.toValue . C.sRGB24show 
+
+
+-- **
+
+rr :: (Real a, Fractional c) => a -> c
+rr = fromRational . toRational
+
 
 
 -- ** Conversion from primitive numerical types to AttributeValue

@@ -11,7 +11,7 @@
 --
 -- == Usage
 --
--- To incorporate this library in your projects you just need @import Graphics.Rendering.Plot.Light@. If GHC complains of name clashes you can import the module in "qualified" form.
+-- To incorporate this library in your projects you just need @import Graphics.Rendering.Plot.Light@. If GHC complains of name collisions you must import the module in "qualified" form.
 --
 --
 -- == Examples
@@ -74,7 +74,7 @@ module Graphics.Rendering.Plot.Light (
   -- ** Plot utilities
   toPlot, FigureData(..),
   -- ** Element attributes
-  LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..),
+  LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), LegendPosition_(..),
   -- ** Colour utilities
   blendTwo, palette, pickColour, 
   -- ** SVG utilities
