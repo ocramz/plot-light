@@ -56,7 +56,6 @@ data FigureData a = FigureData {
 
 
 
-
 -- | Create the SVG header
 svgHeader :: Real a =>
      a   -- ^ Image width (X axis)
@@ -247,14 +246,15 @@ axis o@(Point ox oy) ax len sw col tickLenFrac ls fontsize lrot tanchor flab vla
             | otherwise = setPointX ox
 
 
--- -- | A pair of Cartesian axes
--- axes :: (Show a, RealFrac a) =>
---      FigureData a
---      -> a
---      -> C.Colour Double
---      -> Int
---      -> Int
---      -> Svg
+-- | A pair of Cartesian axes
+axes :: (Show a, RealFrac a) =>
+     FigureData a
+     -> Frame Rational
+     -> a
+     -> C.Colour Double
+     -> Int
+     -> Int
+     -> Svg
 axes fdat (Frame (Point xmi ymi) (Point xma yma)) sw col nx ny = do
   axis o X lenx sw col 0.01 Continuous fontsize (-45) TAEnd showlabf (V2 (-10) 0) plabx_
   axis o Y (- leny) sw col 0.01 Continuous fontsize 0 TAEnd showlabf (V2 (-10) 0) plaby_
@@ -596,16 +596,16 @@ colourBar fdat pal w vmin vmax n legpos legh = forM_ lps (colBarPx fdat pal w h 
 
 
 
--- colBarPx
---   :: (Show a, RealFrac a, RealFrac t) =>
---      FigureData a1
---      -> [C.Colour Double]
---      -> a
---      -> a
---      -> t
---      -> t
---      -> LabeledPoint t a
---      -> Svg
+colBarPx
+  :: (Show a, RealFrac a, RealFrac t) =>
+     FigureData a1
+     -> [C.Colour Double]
+     -> a
+     -> a
+     -> t
+     -> t
+     -> LabeledPoint t a
+     -> Svg
 colBarPx fdat pal w h vmin vmax (LabeledPoint p val) = do
   text 0 (figLabelFontSize fdat) C.black TAStart (T.pack $ show (rr val :: Fixed E6)) (V2 (1.1*w) (0.5*h)) p
   rectCentered w h 0 Nothing (Just $ pickColour pal vmin vmax val) p

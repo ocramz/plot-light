@@ -1,5 +1,7 @@
+{-# language RecordWildCards #-}
 module Graphics.Rendering.Plot.Light.PlotTypes.Heatmap (heatmap, heatmap', plotFun2) where
 
+import Control.Monad.State
 import Data.Scientific (Scientific, toRealFloat)
 import Graphics.Rendering.Plot.Light.Internal
 
@@ -8,10 +10,37 @@ import Text.Blaze.Svg
 import Control.Arrow ((***), (&&&))
 import Control.Monad (forM_)
 
--- import qualified Data.Colour.Names as C
+
 import qualified Data.Colour as C
+import qualified Data.Colour.Names as C
 import Data.Colour.Palette.BrewerSet
 -- import Text.Blaze.Svg
+
+
+
+data MeshGrid2d a = MeshGrid2d {
+    mgFrame :: Frame a
+  , mgNx :: Int
+  , mgNy :: Int
+                           } deriving (Eq, Show)
+
+data Heatmap a = Heatmap {
+    hmMesh :: MeshGrid2d a
+  , hmPalette :: [C.Colour Double]
+  , hmValMin :: a
+  , hmValMax :: a
+                         } deriving (Eq, Show)
+
+heatmapDefaults :: Num a => Heatmap a
+heatmapDefaults = Heatmap mesh pal 0 1
+  where
+    pal = palette [C.red, C.white, C.blue] 20
+    pmin = Point 0 0
+    pmax = Point 1 1
+    mesh = MeshGrid2d (Frame pmin pmax) 20 20
+
+  
+
 
 
 

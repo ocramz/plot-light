@@ -274,7 +274,7 @@ moveLabeledPointV2 :: Num a => V2 a -> LabeledPoint l a -> LabeledPoint l a
 moveLabeledPointV2 = moveLabeledPoint . movePoint
 
 
--- | `pointRange n p q` returns a list of `n+1` equi-spaced `Point`s between `p` and `q` (i.e. the input points are included as the first and last points in the list)
+-- | `pointRange n p q` returns a list of equi-spaced `Point`s between `p` and `q`.
 pointRange :: (Fractional a, Integral n) =>
      n -> Point a -> Point a -> [Point a]
 pointRange n p q = [ movePoint (fromIntegral x .* vnth) p | x <- [0 .. n]]
