@@ -22,9 +22,9 @@
 -- 
 -- @import qualified Data.Colour.Names as C@
 -- 
--- === 1. Heatmap plot of generated data
+-- === 1. Heatmap plot of a 2D function
 --
--- <<https://github.com/ocramz/plot-light/blob/master/doc/fig/heatmap.jpg>>
+-- <<doc/fig/heatmap.png#diagram=heatmap&height=200&width=266>>
 --
 -- > import qualified Data.Text.IO as T (readFile, writeFile)
 -- > import qualified Data.Text as T
@@ -32,7 +32,6 @@
 -- > xPlot = 400
 -- > yPlot = 300
 -- >
--- > fdat :: FigureData Rational
 -- > fdat = FigureData xPlot yPlot 0.1 0.8 0.1 0.9 10
 -- >
 -- > palette0 = palette [C.red, C.white, C.blue] 15
