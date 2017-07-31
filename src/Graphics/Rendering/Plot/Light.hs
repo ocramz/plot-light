@@ -72,7 +72,7 @@ module Graphics.Rendering.Plot.Light (
   -- ** Composite plot elements
   filledBand, candlestick,
   -- ** Plot utilities
-  toPlot, FigureData(..),
+  axes, toPlot, FigureData(..),
   -- ** Element attributes
   LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), LegendPosition_(..),
   -- ** Colour utilities

@@ -63,6 +63,7 @@ main = do
     pixels = heatmap' fdat palette0 frame nx ny lps
     cbar = colourBar fdat palette0 10 vmin vmax 10 TopRight 100
     svg_t = svgHeader xPlot yPlot $ do
+      axes fdat 2 C.black 10 10
       pixels
       cbar
   T.writeFile "data/heatmap-3.svg" $ T.pack $ renderSvg svg_t
