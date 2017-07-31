@@ -38,7 +38,7 @@ main = do
         l' = (l - vmin)/(vmax - vmin)
     dats' = moveLabeledPointBwFrames frameFrom frameTo False False <$> dats
     svg_t = svgHeader xPlot yPlot $ do
-      axes fdat frameTo 2 C.black 10 10
+      axes fdat frameFrom 2 C.black 10 10
       scatterLP f g h spdata dats'
   T.writeFile fnameOut $ T.pack $ renderSvg svg_t    
     
