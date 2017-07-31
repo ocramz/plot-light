@@ -548,7 +548,7 @@ posCoeff :: Fractional a => LegendPosition_ -> (a, a)
 posCoeff pos =
   case pos of
     TopLeft -> (0.1, 0.1)
-    TopRight -> (0.9, 0.1)
+    TopRight -> (0.83, 0.1)
     BottomLeft -> (0.1, 0.9)
     BottomRight -> (0.9, 0.9)
 
