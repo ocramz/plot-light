@@ -24,7 +24,7 @@
 -- 
 -- === 1. Heatmap plot of generated data
 --
--- <<https://github.com/ocramz/plot-light/blob/master/doc/fig/heatmap.png>>
+-- <<https://github.com/ocramz/plot-light/blob/master/doc/fig/heatmap.jpg>>
 --
 -- > import qualified Data.Text.IO as T (readFile, writeFile)
 -- > import qualified Data.Text as T
