@@ -298,14 +298,20 @@ meshGrid (Frame (Point xmi ymi) (Point xma yma)) nx ny =
       x <- take nx $ subdivSegment xmi xma nx,
       y <- take ny $ subdivSegment ymi yma ny]
 
-subdivSegment
-  :: (Enum a, RealFrac a) => a -> a -> Int -> [a]
-subdivSegment x1 x2 n = [xmin, xmin + dx ..] where
-  dx = fromRational . toRational $ l / fromIntegral n
+-- subdivSegment
+--   :: (Enum a, RealFrac a) => a -> a -> Int -> [a]
+-- subdivSegment x1 x2 n = [xmin, xmin + dx ..] where
+--   dx = fromRational . toRational $ l / fromIntegral n
+--   xmin = min x1 x2
+--   xmax = max x1 x2
+--   l = xmax - xmin
+
+subdivSegment :: (Real a, Enum b, RealFrac b) => a -> a -> Int -> [b]
+subdivSegment x1 x2 n = f <$> [0, 1 ..] where
   xmin = min x1 x2
   xmax = max x1 x2
-  l = xmax - xmin
-
+  l = fromRational $ toRational (xmax - xmin)
+  f x  = x * l/fromIntegral n + fromRational (toRational xmin)
 
 
 fromFrame :: Fractional a => Frame a -> V2 a -> V2 a

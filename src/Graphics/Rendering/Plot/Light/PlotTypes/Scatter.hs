@@ -10,6 +10,9 @@ import qualified Data.Colour.Palette.BrewerSet as CP
 import qualified Data.Colour.Names as C
 
 
+-- | Scatter plot
+--
+-- Every point in the plot has the same parameters, as declared in the `ScatterPointData` record
 scatter
   :: (Foldable t, Show a, RealFrac a) =>
      ScatterPointData a
@@ -18,6 +21,11 @@ scatter
 scatter (ScatterPointData glshape w sw fcol) ps = 
   forM_ ps $ glyph w sw glshape Nothing (Just fcol)
 
+-- | Parametric scatter plot
+--
+-- The parameters of every point in the scatter plot are modulated according to the label, using the three functions.
+--
+-- This can be used to produce rich infographics, in which e.g. the colour and size of the glyphs carry additional information.
 scatterLP
   :: (Foldable t, RealFrac a, Show a) =>
      (l -> b -> a)

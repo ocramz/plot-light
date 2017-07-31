@@ -267,7 +267,7 @@ axes fdat (Frame (Point xmi ymi) (Point xma yma)) sw col nx ny = do
     fontsize = figLabelFontSize fdat
     lenx = figFWidth fdat
     leny = figFHeight fdat
-    showlabf = T.pack . show . fromRational
+    showlabf x = T.pack $ show (fromRational x :: Fixed E2)
     
 
 
