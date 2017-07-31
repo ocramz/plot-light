@@ -61,7 +61,9 @@
 --
 -- This example demonstrates how to plot a 2D scalar function and write the output to SVG file.
 --
--- First, we define a `Frame` that bounds the rendering canvas using `mkFrame`. This is discretized in `nx` by `ny` pixels with `meshGrid`, and the function `f` is computed at the _intersections_ of the mesh.
+-- First, we define a `FigureData` object (which holds the SVG figure dimensions and parameters for the white margin around the rendering canvas) and a `palette`.
+--
+--Afterwards we declare a `Frame` that bounds the rendering canvas using `mkFrame`. This is discretized in `nx` by `ny` pixels with `meshGrid`, and the function `f` is computed at the /intersections/ of the mesh with `plotFun2`.
 --
 -- The `axes` function adds labeled axes to the figure; the user just needs to specify stroke width and color and how many ticks to display.
 --

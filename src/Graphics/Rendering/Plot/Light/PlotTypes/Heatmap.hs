@@ -91,7 +91,7 @@ toUnitFramedLP w h (i, j, x) = LabeledPoint p x
 
 
 
--- | Plot a scalar function `f` of points in the plane (i.e. `f : R^2 -> R`)
+-- | Plot a scalar function `f` of points in the plane (i.e. \(f : \mathbf{R}^2 \rightarrow \mathbf{R}\))
 plotFun2
   :: Functor f =>
      (t -> t -> l) -> f (Point t) -> f (LabeledPoint l t)
