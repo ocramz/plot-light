@@ -249,7 +249,7 @@ axis o@(Point ox oy) ax len sw col tickLenFrac ls fontsize lrot tanchor flab vla
 -- | A pair of Cartesian axes
 axes :: (Show a, RealFrac a) =>
      FigureData a
-     -> Frame Rational
+     -> Frame a
      -> a
      -> C.Colour Double
      -> Int
