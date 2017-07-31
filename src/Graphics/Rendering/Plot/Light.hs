@@ -64,7 +64,7 @@
 --
 -- First, we define a `Frame` that bounds the rendering canvas using `mkFrame`. This is discretized in `nx` by `ny` pixels with `meshGrid`, and the function `f` is computed at the _intersections_ of the mesh.
 --
--- The `axes` function adds labeled axes to the figure.
+-- The `axes` function adds labeled axes to the figure; the user just needs to specify stroke width and color and how many ticks to display.
 --
 -- The data to be plotted (represented in this case as a list of `LabeledPoint`s, in which the "label" carries the function value) are then mapped onto the given colour palette and drawn to the SVG canvas as a `heatmap'`, i.e. a mesh of filled rectangles (Caution: do not exceed resolutions of ~ hundred pixels per side).
 --
