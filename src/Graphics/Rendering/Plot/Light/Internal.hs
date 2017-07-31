@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, DeriveFunctor #-}
 module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, figFWidth, figFHeight, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel, Axis(..), axes, meshGrid, subdivSegment, svgHeader, rect, rectCentered, squareCentered, circle, line, tick, ticks, axis, toPlot, text, pixel, pixel', pickColour, colourBar, plusGlyph, crossGlyph, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), LegendPosition_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, toSvgFrame, toSvgFrameLP, e1, e2, toFloat, wholeDecimal, blendTwo, palette) where
 
 import Data.Monoid ((<>))
@@ -50,7 +50,7 @@ data FigureData a = FigureData {
   -- , figAxisStrokeWidth :: a
   -- | Tick label font size
   , figLabelFontSize :: Int
-                       } deriving (Eq, Show)
+                       } deriving (Eq, Show, Functor)
 
 
 
@@ -247,19 +247,27 @@ axis o@(Point ox oy) ax len sw col tickLenFrac ls fontsize lrot tanchor flab vla
             | otherwise = setPointX ox
 
 
-axes fdat sw col nx ny = do
+-- -- | A pair of Cartesian axes
+-- axes :: (Show a, RealFrac a) =>
+--      FigureData a
+--      -> a
+--      -> C.Colour Double
+--      -> Int
+--      -> Int
+--      -> Svg
+axes fdat (Frame (Point xmi ymi) (Point xma yma)) sw col nx ny = do
   axis o X lenx sw col 0.01 Continuous fontsize (-45) TAEnd showlabf (V2 (-10) 0) plabx_
-  axis o Y leny sw col 0.01 Continuous fontsize 0 TAEnd showlabf (V2 (-10) 0) plaby_
+  axis o Y (- leny) sw col 0.01 Continuous fontsize 0 TAEnd showlabf (V2 (-10) 0) plaby_
   where
     o = Point (figWidth fdat * figLeftMFrac fdat) (figHeight fdat * figBottomMFrac fdat)
     pxend = movePoint (V2 lenx 0) o
-    pyend = movePoint (V2 0 (-leny)) o
-    plabx_ = labelPoint _px <$> pointRange nx o pxend
-    plaby_ = labelPoint _py <$> pointRange ny o pyend
+    pyend = movePoint (V2 0 (- leny)) o
+    plabx_ = zipWith LabeledPoint (pointRange nx o pxend) (take (nx+1) $ subdivSegment xmi xma $ fromIntegral nx)
+    plaby_ = zipWith LabeledPoint (pointRange ny o pyend) (take (ny+1) $ subdivSegment ymi yma $ fromIntegral ny)
     fontsize = figLabelFontSize fdat
     lenx = figFWidth fdat
     leny = figFHeight fdat
-    showlabf = T.pack . show
+    showlabf = T.pack . show . fromRational
     
 
 
@@ -316,13 +324,7 @@ figFWidth, figFHeight :: Num a => FigureData a -> a
 figFWidth = width . frameFromFigData
 figFHeight = height . frameFromFigData
 
--- | Create Axis labels from
--- * fig.data (axis ranges)
--- * label font size
--- * a container of `LabeledPoint`s
--- mkAxisLabels figdata fontsize lps = undefined
---   where
---     laxis = 
+
 
 
 
@@ -564,22 +566,22 @@ posCoeff :: Fractional a => LegendPosition_ -> (a, a)
 posCoeff pos =
   case pos of
     TopLeft -> (0.1, 0.1)
-    TopRight -> (0.83, 0.1)
+    TopRight -> (0.83, 0.15)
     BottomLeft -> (0.1, 0.9)
     BottomRight -> (0.9, 0.9)
 
 
-
+-- | A colour bar legend, to be used within `heatmap`-style plots.
 colourBar
   :: (RealFrac t, RealFrac a, Show a, Enum t, Floating a) =>
-     FigureData (Ratio Integer)
-     -> [C.Colour Double]
-     -> a
-     -> t
-     -> t
-     -> Int
-     -> LegendPosition_
-     -> a
+     FigureData (Ratio Integer)  -- ^ Figure data
+     -> [C.Colour Double]        -- ^ Palette
+     -> a                        -- ^ Width
+     -> t                        -- ^ Value range minimum
+     -> t                        -- ^ Value range maximum
+     -> Int                      -- ^ Number of distinct values
+     -> LegendPosition_          -- ^ Legend position in the figure
+     -> a                        -- ^ Colour bar length
      -> Svg
 colourBar fdat pal w vmin vmax n legpos legh = forM_ lps (colBarPx fdat pal w h vmin vmax) where
   (legx, legy) = posCoeff legpos
@@ -589,7 +591,7 @@ colourBar fdat pal w vmin vmax n legpos legh = forM_ lps (colBarPx fdat pal w h 
   p2 = Point legendX legendY
   lps = zipWith LabeledPoint (pointRange n p1 p2) v_
   h = norm2 (p1 -. p2) / fromIntegral n
-  v_ = take n [vmin, vmin + dv ..]
+  v_ = take (n+1) [vmin, vmin + dv ..]
   dv = (vmax - vmin)/fromIntegral n
 
 
@@ -605,7 +607,7 @@ colourBar fdat pal w vmin vmax n legpos legh = forM_ lps (colBarPx fdat pal w h 
 --      -> LabeledPoint t a
 --      -> Svg
 colBarPx fdat pal w h vmin vmax (LabeledPoint p val) = do
-  text 0 (figLabelFontSize fdat) C.black TAStart (T.pack $ show (rr val :: Fixed E3)) (V2 (1.1*w) (0.5*h)) p
+  text 0 (figLabelFontSize fdat) C.black TAStart (T.pack $ show (rr val :: Fixed E6)) (V2 (1.1*w) (0.5*h)) p
   rectCentered w h 0 Nothing (Just $ pickColour pal vmin vmax val) p
   
 

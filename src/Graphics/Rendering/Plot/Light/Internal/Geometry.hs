@@ -290,18 +290,18 @@ pointRange n p q = [ movePoint (fromIntegral x .* vnth) p | x <- [0 .. n]]
 meshGrid
   :: (Enum a, RealFrac a) =>
      Frame a  
-  -> a      -- ^ Number of points along x axis
-  -> a      -- ^ " y axis
+  -> Int      -- ^ Number of points along x axis
+  -> Int      -- ^ " y axis
   -> [Point a]
 meshGrid (Frame (Point xmi ymi) (Point xma yma)) nx ny =
   [Point x y |
-      x <- subdivSegment xmi xma nx,
-      y <- subdivSegment ymi yma ny]
+      x <- take nx $ subdivSegment xmi xma nx,
+      y <- take ny $ subdivSegment ymi yma ny]
 
 subdivSegment
-  :: (Enum a, RealFrac a) => a -> a -> a -> [a]
-subdivSegment x1 x2 n = [xmin, xmin + dx .. xmax - dx] where
-  dx = fromRational . toRational $ l / n
+  :: (Enum a, RealFrac a) => a -> a -> Int -> [a]
+subdivSegment x1 x2 n = [xmin, xmin + dx ..] where
+  dx = fromRational . toRational $ l / fromIntegral n
   xmin = min x1 x2
   xmax = max x1 x2
   l = xmax - xmin

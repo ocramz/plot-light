@@ -26,7 +26,7 @@ yPlot = 300
 fnameOut = "data/heatmap-1.svg"
 
 -- fdat :: FigureData Double
-fdat = FigureData xPlot yPlot 0.05 0.8 0.05 0.95 10
+fdat = FigureData xPlot yPlot 0.1 0.8 0.1 0.9 10
 
 palette0 = palette [C.blue, C.white, C.red] 15
 
@@ -50,7 +50,7 @@ main = do
     p1 = Point (-2) (-2)
     p2 = Point 2 2
     frame = mkFrame p1 p2
-    nx = 50 
+    nx = 50
     ny = 50
     f x y = cos ( pi * theta ) * sin r 
       where
@@ -60,10 +60,10 @@ main = do
     lps = plotFun2 f $ meshGrid frame nx ny
     vmin = minimum $ _lplabel <$> lps
     vmax = maximum $ _lplabel <$> lps       
-    pixels = heatmap' fdat palette0 frame nx ny lps
+    pixels = heatmap' fdat palette0 frame (fromIntegral nx) (fromIntegral ny) lps
     cbar = colourBar fdat palette0 10 vmin vmax 10 TopRight 100
     svg_t = svgHeader xPlot yPlot $ do
-      axes fdat 2 C.black 10 10
+      axes fdat frame 2 C.black 10 10
       pixels
       cbar
   T.writeFile "data/heatmap-3.svg" $ T.pack $ renderSvg svg_t

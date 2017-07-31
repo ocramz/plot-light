@@ -50,15 +50,25 @@
 -- >        theta = atan2 y' x'
 -- >        (x', y') = (fromRational x, fromRational y)
 -- >    lps = plotFun2 f $ meshGrid frame nx ny
+-- >    vmin = minimum $ _lplabel <$> lps
+-- >    vmax = maximum $ _lplabel <$> lps   
 -- >    pixels = heatmap' fdat palette0 frame nx ny lps
--- >    svg_t = svgHeader xPlot yPlot pixels
+-- >    cbar = colourBar fdat palette0 10 vmin vmax 10 TopRight 100
+-- >    svg_t = svgHeader xPlot yPlot $ do
+-- >       axes fdat frame 2 C.black 10 10
+-- >       pixels
+-- >       cbar
 -- >  T.writeFile "heatmap.svg" $ T.pack $ renderSvg svg_t
 --
 -- This example demonstrates how to plot a 2D scalar function and write the output to SVG file.
 --
--- First, we define a `Frame` that bounds the rendering canvas. This is discretized in `nx` by `ny` pixels, and the function `f` is computed at the _intersections_ of the mesh
+-- First, we define a `Frame` that bounds the rendering canvas using `mkFrame`. This is discretized in `nx` by `ny` pixels with `meshGrid`, and the function `f` is computed at the _intersections_ of the mesh.
 --
--- The function (represented in this case as a list of `LabeledPoint`s, in which the "label" carries the function value) is then mapped onto the given colour palette and drawn to the SVG canvas as a mesh of filled rectangles (Caution: do not exceed resolutions of ~ hundred pixels per side).
+-- The `axes` function adds labeled axes to the figure.
+--
+-- The data to be plotted (represented in this case as a list of `LabeledPoint`s, in which the "label" carries the function value) are then mapped onto the given colour palette and drawn to the SVG canvas as a `heatmap'`, i.e. a mesh of filled rectangles (Caution: do not exceed resolutions of ~ hundred pixels per side).
+--
+-- Next, we create the legend; in this case this is a `colourBar` element that requires the data bounds `vmin`, `vmax`.
 --
 -- As a last step, the SVG content is wrapped in the appropriate markdown by `svgHeader` and written to file.
 
