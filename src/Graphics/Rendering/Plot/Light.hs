@@ -32,7 +32,7 @@
 -- {f(x, y) = \cos(\pi \theta) \sin( \rho^2) }
 -- \]
 -- where
--- \( \rho = x^2 + y^2 \) and \( \theta = \arctan(y/x) \).
+-- \( \rho^2 = x^2 + y^2 \) and \( \theta = \arctan(y/x) \).
 --
 -- > import qualified Data.Text.IO as T (readFile, writeFile)
 -- > import qualified Data.Text as T
