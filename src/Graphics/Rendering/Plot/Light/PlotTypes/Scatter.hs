@@ -74,9 +74,9 @@ scatterLPBar
      -> ScatterPointData b
      -> Svg
 scatterLPBar fdat w vmin vmax n legpos legh f g h spdat = legendBar fdat w vmin vmax n legpos legh fun where
-  fun _ _ hei _ _ lp@(LabeledPoint p val) = do
+  fun _ _ _ _ _ lp@(LabeledPoint p val) = do
     scatterLP1 f g h spdat lp
-    text 0 (figLabelFontSize fdat) C.black TAStart (T.pack $ show (rr val :: Fixed E6))   (V2 (1.1*w) (0.5*hei)) p
+    text 0 (figLabelFontSize fdat) C.black TAStart (T.pack $ show (rr val :: Fixed E6))   (V2 (1.1*w) 0) p
 
 
   
