@@ -32,7 +32,7 @@ main = do
     vmin = minimum $ _lplabel <$> dats
     vmax = maximum $ _lplabel <$> dats     
     f l sz = sz + l
-    g _ w = w
+    g _ w = tanh w
     h l col = C.blend l' C.blue col
       where
         l' = (l - vmin)/(vmax - vmin)
@@ -41,4 +41,6 @@ main = do
       -- axes fdat frameFrom 2 C.black 10 10
       -- scatterLP f g h spdata dats'
       scatterLPBar fdat 50 vmin vmax 3 TopRight 100 f g h spdata
-  T.writeFile fnameOut $ T.pack $ renderSvg svg_t    
+  putStrLn $ renderSvg svg_t
+  -- T.writeFile fnameOut $ T.pack $ renderSvg svg_t
+    
