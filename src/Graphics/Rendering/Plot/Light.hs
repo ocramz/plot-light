@@ -84,7 +84,9 @@
 module Graphics.Rendering.Plot.Light (
   -- * Plot types
   -- ** Heatmap
-  heatmap, heatmap', plotFun2, colourBar, 
+  heatmap, heatmap', plotFun2, colourBar,
+  -- ** Scatter
+  scatter, scatterLP, scatterBar, ScatterPointData(..), GlyphShape_(..),
   -- * Plot elements
   -- ** Geometrical primitives
   rect, rectCentered, squareCentered, circle, line, text, polyline, filledPolyline, pixel, pixel', 

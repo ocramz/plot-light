@@ -1,13 +1,16 @@
 module Graphics.Rendering.Plot.Light.PlotTypes.Scatter where
 
 import Graphics.Rendering.Plot.Light.Internal
+import Graphics.Rendering.Plot.Light.Internal.Utils
 
+import Data.Fixed
 import Data.Maybe (fromMaybe)
 import Control.Monad (forM_)
 import Text.Blaze.Svg
 import qualified Data.Colour as C
 import qualified Data.Colour.Palette.BrewerSet as CP
 import qualified Data.Colour.Names as C
+import qualified Data.Text as T
 
 
 -- | Scatter plot
@@ -20,6 +23,10 @@ scatter
      -> Svg
 scatter (ScatterPointData glshape w sw fcol) ps = 
   forM_ ps $ glyph w sw glshape Nothing (Just fcol)
+
+
+
+
 
 -- | Parametric scatter plot
 --
@@ -34,13 +41,47 @@ scatterLP
      -> ScatterPointData b
      -> t (LabeledPoint l a)
      -> Svg
-scatterLP f g h spdat lps = forM_ lps fun where
-  fun lp = glyph w' sw' sh Nothing (Just col') (_lp lp)
-   where
-    ScatterPointData sh w' sw' col' = modifyScatterPoint f g h spdat lp
-   
-      
+scatterLP f g h spdat lps = forM_ lps (scatterLP1 f g h spdat)
 
+
+scatterLP1
+  :: (Show a, RealFrac a) =>
+     (l -> b -> a)
+     -> (l -> b -> a)
+     -> (l -> C.Colour Double -> C.Colour Double)
+     -> ScatterPointData b
+     -> LabeledPoint l a
+     -> Svg
+scatterLP1 f g h spdat lp = glyph w' sw' sh Nothing (Just col') (_lp lp)
+ where
+    ScatterPointData sh w' sw' col' = modifyScatterPoint f g h spdat lp
+
+
+
+scatterLPBar
+  :: (Real t, Fractional t, Enum t, Floating t1, RealFrac t1,
+      Show t1) =>
+     FigureData t1
+     -> t1
+     -> t
+     -> t
+     -> Int
+     -> LegendPosition_
+     -> t1
+     -> (t -> b -> t1)
+     -> (t -> b -> t1)
+     -> (t -> C.Colour Double -> C.Colour Double)
+     -> ScatterPointData b
+     -> Svg
+scatterLPBar fdat w vmin vmax n legpos legh f g h spdat = legendBar fdat w vmin vmax n legpos legh fun where
+  fun _ _ hei _ _ lp@(LabeledPoint p val) = do
+    scatterLP1 f g h spdat lp
+    text 0 (figLabelFontSize fdat) C.black TAStart (T.pack $ show (rr val :: Fixed E6))   (V2 (1.1*w) (0.5*hei)) p
+
+
+  
+      
+-- | Parameters for a scatterplot glyph
 data ScatterPointData a = ScatterPointData
   {
     spGlyphShape :: GlyphShape_
@@ -63,7 +104,7 @@ modifyScatterPoint f g h (ScatterPointData glsh sz w col) lp =
     lab = _lplabel lp
 
 
-
+-- | Glyph shape
 data GlyphShape_ = Square | Circle | Cross | Plus deriving (Eq, Show, Enum)
 
 -- | Scatterplot glyph shapes

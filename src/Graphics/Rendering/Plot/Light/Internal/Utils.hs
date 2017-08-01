@@ -22,6 +22,9 @@ palette ll n = concatMap f l1 where
 
 -- ** Numeric formats
 
+rr :: (Real a, Fractional c) => a -> c
+rr = fromRational . toRational
+
 toFloat :: Scientific -> Float
 toFloat x = toRealFloat x :: Float
 

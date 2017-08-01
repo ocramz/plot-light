@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings, DeriveFunctor #-}
-module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, figFWidth, figFHeight, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel, Axis(..), axes, meshGrid, subdivSegment, svgHeader, rect, rectCentered, squareCentered, circle, line, tick, ticks, axis, toPlot, text, pixel, pixel', pickColour, colourBar, plusGlyph, crossGlyph, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), LegendPosition_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, toSvgFrame, toSvgFrameLP, e1, e2, toFloat, wholeDecimal, blendTwo, palette) where
+module Graphics.Rendering.Plot.Light.Internal (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, figFWidth, figFHeight, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel, Axis(..), axes, meshGrid, subdivSegment, svgHeader, rect, rectCentered, squareCentered, circle, line, tick, ticks, axis, toPlot, text, pixel, pixel', pickColour, colourBar, legendBar, plusGlyph, crossGlyph, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), LegendPosition_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, toSvgFrame, toSvgFrameLP, e1, e2, toFloat, wholeDecimal, blendTwo, palette) where
 
 import Data.Monoid ((<>))
 import qualified Data.Foldable as F (toList)
@@ -583,10 +583,25 @@ colourBar
      -> LegendPosition_          -- ^ Legend position in the figure
      -> a                        -- ^ Colour bar length
      -> Svg
-colourBar fdat pal w vmin vmax n legpos legh = forM_ lps (colBarPx fdat pal w h vmin vmax) where
+colourBar fdat pal w vmin vmax n legpos legh =
+  legendBar (fromRational <$> fdat) w vmin vmax n legpos legh (colBarPx pal)
+
+
+legendBar
+  :: (Fractional t, Monad m, Enum t, Floating t2) =>
+     FigureData t2
+     -> t1
+     -> t
+     -> t
+     -> Int
+     -> LegendPosition_
+     -> t2
+     -> (FigureData t2 -> t1 -> t2 -> t -> t -> LabeledPoint t t2 -> m b)
+     -> m ()
+legendBar fdat w vmin vmax n legpos legh fun = forM_ lps (fun fdat w h vmin vmax) where
   (legx, legy) = posCoeff legpos
-  legendX = fromRational $ figWidth fdat * legx 
-  legendY = fromRational $ figHeight fdat * legy
+  legendX = figWidth fdat * legx 
+  legendY = figHeight fdat * legy
   p1 = Point legendX (legendY + legh)
   p2 = Point legendX legendY
   lps = zipWith LabeledPoint (pointRange n p1 p2) v_
@@ -595,23 +610,25 @@ colourBar fdat pal w vmin vmax n legpos legh = forM_ lps (colBarPx fdat pal w h 
   dv = (vmax - vmin)/fromIntegral n
 
 
-
 colBarPx
   :: (Show a, RealFrac a, RealFrac t) =>
-     FigureData a1
-     -> [C.Colour Double]
+     [C.Colour Double]       
+     -> FigureData a1
      -> a
      -> a
      -> t
      -> t
      -> LabeledPoint t a
      -> Svg
-colBarPx fdat pal w h vmin vmax (LabeledPoint p val) = do
+colBarPx pal fdat w h vmin vmax (LabeledPoint p val) = do
   text 0 (figLabelFontSize fdat) C.black TAStart (T.pack $ show (rr val :: Fixed E6)) (V2 (1.1*w) (0.5*h)) p
   rectCentered w h 0 Nothing (Just $ pickColour pal vmin vmax val) p
   
 
 
+
+
+    
 
   
 -- * Helpers
@@ -623,8 +640,7 @@ colourAttr = S.toValue . C.sRGB24show
 
 -- **
 
-rr :: (Real a, Fractional c) => a -> c
-rr = fromRational . toRational
+
 
 
 

@@ -19,8 +19,8 @@ fnameOut = "data/scatter-1.svg"
 fdat = FigureData xPlot yPlot 0.1 0.8 0.1 0.9 10
 
 dats = zipWith LabeledPoint p_ l_ where
-  l_ = [-4, -3 .. ]
-  p_ = zipWith Point [4,7,12,90,34,24,5,6,12,3] [43,23,1,23,8,17,25,4,5]
+  l_ = [-5, -4 .. ]
+  p_ = zipWith Point [4,7,12,23,90,34,24,5,6,12,3] [43,23,1,23,8,11,17,25,4,5]
 
 spdata = ScatterPointData Circle 3 3 C.red
 
