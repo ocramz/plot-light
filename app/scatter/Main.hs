@@ -31,16 +31,17 @@ main = do
     frameFrom = frameFromPoints $ _lp <$> dats
     vmin = minimum $ _lplabel <$> dats
     vmax = maximum $ _lplabel <$> dats     
-    f l sz = sz + l
-    g _ w = tanh w
+    f l sz = 10/(1 + exp(-(0.3 * x)))
+      where x = l + sz
+    g _ w = w
     h l col = C.blend l' C.blue col
       where
         l' = (l - vmin)/(vmax - vmin)
-    dats' = moveLabeledPointBwFrames frameFrom frameTo False False <$> dats
+    dats' = moveLabeledPointBwFrames frameFrom frameTo False True <$> dats
     svg_t = svgHeader xPlot yPlot $ do
-      -- axes fdat frameFrom 2 C.black 10 10
-      -- scatterLP f g h spdata dats'
+      axes fdat frameFrom 2 C.black 10 10
+      scatterLP f g h spdata dats'
       scatterLPBar fdat 50 vmin vmax 3 TopRight 100 f g h spdata
-  putStrLn $ renderSvg svg_t
-  -- T.writeFile fnameOut $ T.pack $ renderSvg svg_t
+  -- putStrLn $ renderSvg svg_t
+  T.writeFile fnameOut $ T.pack $ renderSvg svg_t
     

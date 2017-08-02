@@ -59,24 +59,24 @@ scatterLP1 f g h spdat lp = glyph w' sw' sh Nothing (Just col') (_lp lp)
 
 
 scatterLPBar
-  :: (Real t, Fractional t, Enum t, Floating t1, RealFrac t1,
-      Show t1) =>
-     FigureData t1
-     -> t1
+  :: (RealFrac t, Enum t, RealFrac b, Show b) =>
+     FigureData b
+     -> b
      -> t
      -> t
      -> Int
      -> LegendPosition_
-     -> t1
-     -> (t -> b -> t1)
-     -> (t -> b -> t1)
+     -> b
+     -> (t -> b -> b)
+     -> (t -> b -> b)
      -> (t -> C.Colour Double -> C.Colour Double)
      -> ScatterPointData b
      -> Svg
 scatterLPBar fdat w vmin vmax n legpos legh f g h spdat = legendBar fdat w vmin vmax n legpos legh fun where
+  wglyph = spSize spdat
   fun _ _ _ _ _ lp@(LabeledPoint p val) = do
     scatterLP1 f g h spdat lp
-    text 0 (figLabelFontSize fdat) C.black TAStart (T.pack $ show (rr val :: Fixed E6))   (V2 (1.1*w) 0) p
+    text 0 (figLabelFontSize fdat) C.black TAStart (T.pack $ show (rr val :: Fixed E3))   (V2 (2*wglyph) (0.5*wglyph)) p
 
 
   

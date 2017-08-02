@@ -588,26 +588,31 @@ colourBar fdat pal w vmin vmax n legpos legh =
 
 
 legendBar
-  :: (Fractional t, Monad m, Enum t, Floating t2) =>
-     FigureData t2
-     -> t1
+  :: (Monad m, Enum t, Fractional t, Fractional a) =>
+     FigureData a
+     -> a
      -> t
      -> t
      -> Int
      -> LegendPosition_
-     -> t2
-     -> (FigureData t2 -> t1 -> t2 -> t -> t -> LabeledPoint t t2 -> m b)
+     -> a
+     -> (FigureData a -> a -> a -> t -> t -> LabeledPoint t a -> m b)
      -> m ()
-legendBar fdat w vmin vmax n legpos legh fun = forM_ lps (fun fdat w h vmin vmax) where
-  (legx, legy) = posCoeff legpos
-  legendX = figWidth fdat * legx 
-  legendY = figHeight fdat * legy
-  p1 = Point legendX (legendY + legh)
-  p2 = Point legendX legendY
-  lps = zipWith LabeledPoint (pointRange n p1 p2) v_
-  h = norm2 (p1 -. p2) / fromIntegral n
-  v_ = take (n+1) [vmin, vmin + dv ..]
-  dv = (vmax - vmin)/fromIntegral n
+legendBar fdat w vmin vmax n legpos legh fun = do
+  -- rect wrect hrect 1 (Just C.black) (Just C.white) prect
+  forM_ lps (fun fdat w h vmin vmax) where
+    wrect = 0.95 * (1 - figRightMFrac fdat) * figWidth fdat
+    hrect = 1.5 * legh
+    prect = movePoint (V2 (-0.5 * w) (-0.5 * w)) p2
+    (legx, legy) = posCoeff legpos
+    legendX = figWidth fdat * legx 
+    legendY = figHeight fdat * legy
+    p1 = Point legendX (legendY + legh)
+    p2 = Point legendX legendY
+    lps = zipWith LabeledPoint (pointRange n p1 p2) v_
+    h = legh / fromIntegral n
+    v_ = take (n+1) [vmin, vmin + dv ..]
+    dv = (vmax - vmin)/fromIntegral n
 
 
 colBarPx
@@ -621,7 +626,7 @@ colBarPx
      -> LabeledPoint t a
      -> Svg
 colBarPx pal fdat w h vmin vmax (LabeledPoint p val) = do
-  text 0 (figLabelFontSize fdat) C.black TAStart (T.pack $ show (rr val :: Fixed E6)) (V2 (1.1*w) (0.5*h)) p
+  text 0 (figLabelFontSize fdat) C.black TAStart (T.pack $ show (rr val :: Fixed E3)) (V2 (1.1*w) (0.5*h)) p
   rectCentered w h 0 Nothing (Just $ pickColour pal vmin vmax val) p
   
 
