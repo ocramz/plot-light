@@ -35,21 +35,21 @@ scatter (ScatterPointData glshape w sw fcol) ps =
 -- This can be used to produce rich infographics, in which e.g. the colour and size of the glyphs carry additional information.
 scatterLP
   :: (Foldable t, RealFrac a, Show a) =>
-     (l -> b -> a)
-     -> (l -> b -> a)
-     -> (l -> C.Colour Double -> C.Colour Double)
-     -> ScatterPointData b
-     -> t (LabeledPoint l a)
+     (l -> b -> a)            -- ^ Modifies the glyph size
+     -> (l -> b -> a)         -- ^ Modifies the glyph stroke width
+     -> (l -> C.Colour Double -> C.Colour Double)  -- ^ Modifies the glyph colour     
+     -> ScatterPointData b    -- ^ Glyph style defaults
+     -> t (LabeledPoint l a) -- ^ Data
      -> Svg
 scatterLP f g h spdat lps = forM_ lps (scatterLP1 f g h spdat)
 
 
 scatterLP1
   :: (Show a, RealFrac a) =>
-     (l -> b -> a)
-     -> (l -> b -> a)
-     -> (l -> C.Colour Double -> C.Colour Double)
-     -> ScatterPointData b
+     (l -> b -> a)            -- ^ Modifies the glyph size
+     -> (l -> b -> a)         -- ^ Modifies the glyph stroke width
+     -> (l -> C.Colour Double -> C.Colour Double)  -- ^ Modifies the glyph colour
+     -> ScatterPointData b   
      -> LabeledPoint l a
      -> Svg
 scatterLP1 f g h spdat lp = glyph w' sw' sh Nothing (Just col') (_lp lp)
@@ -61,16 +61,16 @@ scatterLP1 f g h spdat lp = glyph w' sw' sh Nothing (Just col') (_lp lp)
 scatterLPBar
   :: (RealFrac t, Enum t, RealFrac b, Show b) =>
      FigureData b
-     -> b
-     -> t
-     -> t
-     -> Int
-     -> LegendPosition_
-     -> b
-     -> (t -> b -> b)
-     -> (t -> b -> b)
-     -> (t -> C.Colour Double -> C.Colour Double)
-     -> ScatterPointData b
+     -> b                 -- ^ Legend width
+     -> t                 -- ^ Data value lower bound
+     -> t                 -- ^ Data value upper bound
+     -> Int               -- ^ Number of legend entries
+     -> LegendPosition_   -- ^ Legend position in the figure
+     -> b                 -- ^ Legend length
+     -> (t -> b -> b)     -- ^ Modifies the glyph size
+     -> (t -> b -> b)     -- ^ Modifies the glyph stroke width
+     -> (t -> C.Colour Double -> C.Colour Double) -- ^ Modifies the glyph colour
+     -> ScatterPointData b    -- ^ Glyph style defaults
      -> Svg
 scatterLPBar fdat w vmin vmax n legpos legh f g h spdat = legendBar fdat w vmin vmax n legpos legh fun where
   wglyph = spSize spdat

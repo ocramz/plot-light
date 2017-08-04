@@ -1,5 +1,5 @@
 name:                plot-light
-version:             0.2.7
+version:             0.2.8
 synopsis:            A lightweight plotting library, exporting to SVG
 description:         This library provides drawing and plotting datastructures and functions; it is aimed in particular at scientific visualization, but it also exposes its plotting primitives and a general purpose 2D geometry library.
 homepage:            https://github.com/ocramz/plot-light
@@ -26,6 +26,7 @@ library
                        Data.TimeSeries
                        Graphics.Rendering.Plot.Light.PlotTypes
   other-modules:       Graphics.Rendering.Plot.Light.Internal
+                       Graphics.Rendering.Plot.Light.Internal.Layout
                        Graphics.Rendering.Plot.Light.PlotTypes.Heatmap
                        Graphics.Rendering.Plot.Light.PlotTypes.Scatter
                        Graphics.Rendering.Plot.Light.PlotTypes.Histogram
@@ -34,15 +35,16 @@ library
                        Graphics.Rendering.Plot.Light.Internal.Geometry
                        Graphics.Rendering.Plot.Light.Internal.Utils
                        Data.Parsers
-  build-depends:       base >= 4.7 && < 5
+  build-depends:       attoparsec
+                     , base >= 4.7 && < 5
+                     , blaze-svg
+                     , colour
+                     , containers >= 0.5.7.1
                      , mtl
-                     , time
+                     , palette
                      , scientific
                      , text
-                     , colour
-                     , palette
-                     , blaze-svg
-                     , attoparsec
+                     , time
                      -- , hspec    
                      -- , QuickCheck
                                           

@@ -13,6 +13,9 @@ import Data.Monoid ((<>))
 data Point a = Point { _px :: a,
                        _py :: a } deriving (Eq)
 
+instance Ord a => Ord (Point a) where
+  (Point x1 y1) <= (Point x2 y2) = x1 <= x2 && y1 <= y2
+
 instance Show a => Show (Point a) where
   show (Point x y) = show x ++ "," ++ show y
 
@@ -23,9 +26,11 @@ mkPoint = Point
 lift2Point :: (a -> b -> c) -> Point a -> Point b -> Point c
 lift2Point f (Point a b) (Point c d) = Point (f a c) (f b d)
 
-pointMin, pointMax :: (Ord a) => Point a -> Point a -> Point a
-pointMin = lift2Point min
-pointMax = lift2Point max
+pointInf, pointSup :: (Ord a) => Point a -> Point a -> Point a
+pointInf = lift2Point min
+pointSup = lift2Point max
+
+
 
 -- | Overwrite either coordinate of a Point, to e.g. project on an axis
 setPointCoord :: Axis -> a -> Point a -> Point a
@@ -70,7 +75,7 @@ data Frame a = Frame {
 -- | The semigroup operation (`mappend`) applied on two `Frames` results in a new `Frame` that bounds both.
 instance (Ord a, Num a) => Monoid (Frame a) where
   mempty = Frame (Point 0 0) (Point 0 0)
-  mappend (Frame p1min p1max) (Frame p2min p2max) = Frame (pointMin p1min p2min) (pointMax p1max p2max)
+  mappend (Frame p1min p1max) (Frame p2min p2max) = Frame (pointInf p1min p2min) (pointSup p1max p2max)
 
 mkFrame :: Point a -> Point a -> Frame a
 mkFrame = Frame

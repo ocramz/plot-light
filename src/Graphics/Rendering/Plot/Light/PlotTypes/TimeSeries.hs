@@ -29,24 +29,9 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 -- 1. Remap the figure data to fit within the FigData ranges, expressed in pixels
 -- 2. Flip the data along the y axis since the origin in SVG is the top-left corner of the screen
 
--- tsAxis fval wfig hfig sw col1 col2 rot ps = do                            
---   axis oSvg X (right - left) sw col1 0.01 Continuous 10 rot TAEnd (T.pack . fst) (V2 (-10) 0) dat'
---   axis oSvg Y (top - bot) sw col1 0.01 Continuous 10 0 TAEnd (T.pack . snd) (V2 (-10) 0) dat'
---   polyline (_lp <$> dat') sw Continuous Round col2
---   where
---     dat = tspToLP fval (\(Tick d t) v -> (show (d, t), show (fval v))) <$> ps
---     dat' = toSvgFrameLP from to False <$> dat  
---     (left, right) = (0.1 * wfig, 0.9 * wfig)
---     (top, bot) = (0.1 * hfig, 0.9 * hfig)
---     oTo = Point left top
---     p2To = Point right bot
---     from = frameFromPoints $ _lp <$> dat
---     to = mkFrame oTo p2To
---     oSvg = Point left bot
+
     
     
-
-
 -- tsAxis
 --   :: (Functor t, Foldable t, Show a, RealFrac a) =>
 --      FigureData a
