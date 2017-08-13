@@ -1,4 +1,4 @@
-{-# language DeriveFunctor #-}
+{-# language TypeFamilies, DeriveFunctor #-}
 module Graphics.Rendering.Plot.Light.Internal.Layout where
 
 import qualified Data.IntMap as IM
@@ -17,30 +17,16 @@ YADG : Yet another DSL for graphics
 Design :
 
 * add dataset to Plot
-* add Plot to WindowState (e.g. side by side plots, inset ...)
+* add Plot to WindowState (e.g. side by side plots, inset ... by specifying a RelativeFrame for it)
 * compute all viewpanes (i.e. `to` frames)
 * compute data transformations from viewpanes
 
 -}
 
+data PlotType = HeatMap | Scatter | TimeSeries 
 
 
-data PlotAxis a = PlotAxis
-  { axType :: Axis
-  , axColour :: C.Colour Double
-  , axLabelFontSize :: Int
-  , axRangeMin :: a
-  , axRangeMax :: a
-  , axNTicks :: Int
-  , axTicks :: a -> T.Text  -- `a` is position parameter `0 <= lambda <= 1`
-  }
 
-data Plot c a = Plot
-   { plRelativeFrame :: RelativeFrame a
-   , plAxisX :: PlotAxis a
-   , plAxisY :: PlotAxis a
-   , plContents :: c
-   }
 
 -- | A `RelativeFrame` is given by two set of parameters:
 --
@@ -53,23 +39,54 @@ data RelativeFrame a = RelFrame
   , rfHeight :: a
   } deriving (Eq, Show)
 
+mkRelativeFrame :: (Ord a, Num a) => a -> a -> a -> a -> RelativeFrame a
+mkRelativeFrame x y w h
+  | all bounded01 [x,y,w,h] = RelFrame x y w h
+  | otherwise = RelFrame 0 0 1 1
 
-data Window c a = W
-  { wWidth :: a
-  , wHeight :: a
-  , wState :: IM.IntMap (IM.IntMap (Plot c a))
-  }
+bounded01 :: (Ord a, Num a) => a -> Bool
+bounded01 x = 0 <= x && x <= 1
+    
 
-data Layout c a s =
-  AddPlot (Window c a) (RelativeFrame a) (Window c a -> s)
-  deriving Functor
+-- data PlotAxis a = PlotAxis
+--   { axType :: Axis
+--   , axColour :: C.Colour Double
+--   , axLabelFontSize :: Int
+--   , axRangeMin :: a
+--   , axRangeMax :: a
+--   , axNTicks :: Int
+--   , axTicks :: a -> T.Text  -- `a` is position parameter `0 <= lambda <= 1`
+--   }
+
+-- data Plot c a = Plot
+--    { plRelativeFrame :: RelativeFrame a
+--    , plAxisX :: PlotAxis a
+--    , plAxisY :: PlotAxis a
+--    , plContents :: c
+--    }
 
 
 
 
-addPlot
-  :: Window c a -> RelativeFrame a -> Free (Layout c a) (Window c a)
-addPlot w rf = liftF (AddPlot w rf id)
+
+
+
+-- data Window c a = W
+--   { wWidth :: a
+--   , wHeight :: a
+--   , wState :: IM.IntMap (IM.IntMap (Plot c a))
+--   }
+
+-- data Layout c a s =
+--   AddPlot (Window c a) (RelativeFrame a) (Window c a -> s)
+--   deriving Functor
+
+
+
+
+-- addPlot
+--   :: Window c a -> RelativeFrame a -> Free (Layout c a) (Window c a)
+-- addPlot w rf = liftF (AddPlot w rf id)
 
 
 
