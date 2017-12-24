@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses, TypeFamilies, FlexibleContexts, FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, TypeFamilies, FlexibleContexts, FlexibleInstances, DeriveGeneric #-}
 {- |
 This module provides functionality for working with affine transformations (i.e. in the unit square)
  
@@ -7,11 +7,15 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry where
 
 import Data.Monoid ((<>))
 
+import GHC.Generics
+import Data.Default
+
 
 
 -- | A `Point` object defines a point in the plane
 data Point a = Point { _px :: a,
-                       _py :: a } deriving (Eq)
+                       _py :: a } deriving (Eq, Generic)
+instance Default a => Default (Point a) where
 
 instance Ord a => Ord (Point a) where
   (Point x1 y1) <= (Point x2 y2) = x1 <= x2 && y1 <= y2
@@ -70,7 +74,9 @@ mapLabel f (LabeledPoint p l) = LabeledPoint p (f l)
 data Frame a = Frame {
    _fpmin :: Point a,
    _fpmax :: Point a
-   } deriving (Eq, Show)
+   } deriving (Eq, Show, Generic)
+
+instance Default a => Default (Frame a) where
 
 -- | The semigroup operation (`mappend`) applied on two `Frames` results in a new `Frame` that bounds both.
 instance (Ord a, Num a) => Monoid (Frame a) where
@@ -302,6 +308,12 @@ meshGrid (Frame (Point xmi ymi) (Point xma yma)) nx ny =
   [Point x y |
       x <- take nx $ subdivSegment xmi xma nx,
       y <- take ny $ subdivSegment ymi yma ny]
+
+data MeshGrid a = MeshGrid (Frame a) Int Int deriving (Eq, Show, Generic)
+
+instance Default a => Default (MeshGrid a) where
+  
+  
 
 -- subdivSegment
 --   :: (Enum a, RealFrac a) => a -> a -> Int -> [a]
