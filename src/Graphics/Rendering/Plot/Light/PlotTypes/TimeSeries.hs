@@ -2,24 +2,24 @@
 {-# language FlexibleContexts #-}
 module Graphics.Rendering.Plot.Light.PlotTypes.TimeSeries where
 
-import Control.Monad (forM, forM_)
+import Control.Monad (forM_)
 
-import GHC.Real
-import Data.Fixed (Pico)
-import Data.Time
-import Data.Scientific
+-- import GHC.Real
+-- import Data.Fixed (Pico)
+-- import Data.Time
+-- import Data.Scientific
 
 import qualified Data.Text as T
 
 import Graphics.Rendering.Plot.Light.Internal
-import Graphics.Rendering.Plot.Light.Internal.Utils
+-- import Graphics.Rendering.Plot.Light.Internal.Utils
 import Data.TimeSeries
 
 -- For debugging
 import Text.Blaze.Svg
 import qualified Data.Colour as C
 import qualified Data.Colour.Names as C
-import Text.Blaze.Svg.Renderer.String (renderSvg)
+-- import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 
 

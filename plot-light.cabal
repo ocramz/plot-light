@@ -1,5 +1,5 @@
 name:                plot-light
-version:             0.2.8
+version:             0.2.9
 synopsis:            A lightweight plotting library, exporting to SVG
 description:         This library provides drawing and plotting datastructures and functions; it is aimed in particular at scientific visualization, but it also exposes its plotting primitives and a general purpose 2D geometry library.
 homepage:            https://github.com/ocramz/plot-light
@@ -11,6 +11,7 @@ copyright:           2017 Marco Zocca
 category:            Graphics
 build-type:          Simple
 extra-source-files:  README.md
+                     CHANGELOG.md
 extra-doc-files:     doc/fig/*.png
 cabal-version:       >=1.18
 tested-with:         GHC == 8.0.2
@@ -72,7 +73,7 @@ executable timeseries
   build-depends:       base
                      , plot-light
                      , attoparsec
-                     , attoparsec-time
+                     , attoparsec-time >= 1
                      , time
                      , text
                      , colour
@@ -87,7 +88,6 @@ executable heatmap
   build-depends:       base
                      , plot-light
                      , attoparsec
-                     , attoparsec-time
                      , time
                      , text
                      , colour
