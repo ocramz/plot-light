@@ -13,7 +13,8 @@ category:            Graphics
 build-type:          Simple
 extra-source-files:  README.md
                      CHANGELOG.md
-extra-doc-files:     doc/fig/*.png
+extra-doc-files:     doc/fig/heatmap.png
+                     doc/fig/scatter.png
 cabal-version:       >=1.18
 tested-with:         GHC == 8.0.2, GHC == 8.4.1
 
