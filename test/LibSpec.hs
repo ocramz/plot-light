@@ -6,6 +6,7 @@ import Test.Hspec.QuickCheck
 import Test.QuickCheck
 
 import Graphics.Rendering.Plot.Light
+import Graphics.Rendering.Plot.Light.Internal.Geometry
 import Data.TimeSeries
 
 main :: IO ()

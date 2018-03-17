@@ -122,15 +122,31 @@ squareCentered
 squareCentered w = rectCentered w w
 
 
-newtype Col = Col (C.Colour Double) deriving (Eq, Show, Generic)
+newtype Col = Col { unCol :: C.Colour Double} deriving (Eq, Show, Generic)
 instance Default Col where
   def = Col C.blue
 
 data LineOptions a = LineOptions {
-    loStrokeWidth :: a
-  , loStrokeType :: LineStroke_ a
-  , loColour :: Col
+    loStrokeWidth :: a            -- ^ Stroke width 
+  , loStrokeType :: LineStroke_ a -- ^ Stroke type
+  , loColour :: Col               -- ^ Stroke colour
                                  } deriving (Eq, Show, Generic)
+
+-- | Line options "picker". Creates an unbounded stream of LineOptions, may be useful when plotting multiple timeseries (essentially imitating the Matlab behaviour)
+lineOptionCycle :: Fractional a => a -> [LineOptions a]
+lineOptionCycle lw =
+  let
+    strTys =
+      replicate 5 Continuous <>
+      replicate 5 (Dashed [0.2, 0.5]) <>
+      replicate 5 (Dashed [0.5, 0.2])       
+    cols = Col <$> [C.blue, C.green, C.red, C.black, C.purple]
+    nc = length cols
+  in
+  LineOptions <$>
+  repeat lw <*>
+  strTys <*>
+  cols
 
 instance (Default a, Num a) => Default (LineOptions a) where
   def = LineOptions 2 def def
@@ -150,8 +166,12 @@ line :: (Show a, RealFrac a) =>
   -> LineStroke_ a   -- ^ Stroke type
   -> C.Colour Double -- ^ Stroke colour
   -> Svg
-line (Point x1 y1) (Point x2 y2) sw Continuous col = S.line ! SA.x1 (vd x1) ! SA.y1 (vd y1) ! SA.x2 (vd x2)  ! SA.y2 (vd y2) ! SA.stroke (colourAttr col ) ! SA.strokeWidth (vd sw)
-line (Point x1 y1) (Point x2 y2) sw (Dashed d) col = S.line ! SA.x1 (vd x1) ! SA.y1 (vd y1) ! SA.x2 (vd x2)  ! SA.y2 (vd y2) ! SA.stroke (colourAttr col ) ! SA.strokeWidth (vd sw) ! strokeDashArray d
+line (Point x1 y1) (Point x2 y2) sw lstr col =
+  let
+    svg0 = S.line ! SA.x1 (vd x1) ! SA.y1 (vd y1) ! SA.x2 (vd x2)  ! SA.y2 (vd y2) ! SA.stroke (colourAttr col) ! SA.strokeWidth (vd sw)
+  in case lstr of Continuous -> svg0
+                  Dashed d -> svg0 ! strokeDashArray d
+
 
 strokeDashArray :: Real a => [a] -> S.Attribute
 strokeDashArray sz = SA.strokeDasharray (S.toValue str) where
@@ -415,8 +435,11 @@ polyline :: (Foldable t, Show a1, Show a, RealFrac a, RealFrac a1) =>
          -> C.Colour Double -- ^ Stroke colour
          -> t (Point a)     -- ^ Data         
          -> Svg
-polyline sw Continuous slj col lis = S.polyline ! SA.points (S.toValue $ unwords $ map show $ F.toList lis) ! SA.fill none ! SA.stroke (colourAttr col ) ! SA.strokeWidth (vd sw) ! strokeLineJoin slj
-polyline sw (Dashed d) slj col lis = S.polyline ! SA.points (S.toValue $ unwords $ map show $ F.toList lis) ! SA.fill none ! SA.stroke (colourAttr col ) ! SA.strokeWidth (vd sw) ! strokeLineJoin slj ! strokeDashArray d
+polyline sw strTy slj col lis =
+  let
+    svg0 = S.polyline ! SA.points (S.toValue $ unwords $ map show $ F.toList lis) ! SA.fill none ! SA.stroke (colourAttr col ) ! SA.strokeWidth (vd sw) ! strokeLineJoin slj
+  in case strTy of Continuous -> svg0
+                   Dashed d -> svg0 ! strokeDashArray d
 
 none :: S.AttributeValue
 none = S.toValue ("none" :: String)
