@@ -233,7 +233,7 @@ labeledTick
      -> Int               -- ^ Font size
      -> a                 -- ^ Label angle
      -> TextAnchor_     
-     -> (t -> T.Text)     -- ^ Label rendering
+     -> (t -> T.Text)     -- ^ Label rendering function
      -> V2 a              -- ^ Label shift 
      -> LabeledPoint t a
      -> Svg

@@ -11,7 +11,7 @@ A lightweight plotting library
 
 
 `plot-light` provides functionality for rendering 2D graphics. It is geared in particular towards scientific plotting, and it is called "light" because it only requires a few common Haskell dependencies.
-It builds upon `blaze-svg` and `JuicyPixels` by adding type-safe combinators, geometry primitives and high-level graphing functionality.
+It builds upon `blaze-svg` by adding type-safe combinators, geometry primitives and high-level graphing functionality.
 
 ## Usage
 
