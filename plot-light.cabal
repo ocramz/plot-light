@@ -37,6 +37,7 @@ library
                        Data.Parsers
   build-depends:       attoparsec
                      , base >= 4.7 && < 5
+                     , JuicyPixels
                      , blaze-svg
                      , colour
                      , containers >= 0.5.7.1

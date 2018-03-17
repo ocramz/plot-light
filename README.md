@@ -1,6 +1,6 @@
 # plot-light
 
-A lightweight plotting library, exporting to SVG
+A lightweight plotting library
 
 [![Build Status](https://travis-ci.org/ocramz/plot-light.png)](https://travis-ci.org/ocramz/plot-light)
 [![Hackage](https://img.shields.io/hackage/v/plot-light.svg)](https://hackage.haskell.org/package/plot-light)
@@ -10,9 +10,8 @@ A lightweight plotting library, exporting to SVG
 
 
 
-`plot-light` provides functionality for rendering vector graphics as SVG.
-It is geared in particular towards scientific plotting, and it is termed "light" because it only requires a few common Haskell dependencies and no external libraries.
-It builds upon `blaze-svg` by adding type-safe combinators, geometry primitives and functionality.
+`plot-light` provides functionality for rendering 2D graphics. It is geared in particular towards scientific plotting, and it is called "light" because it only requires a few common Haskell dependencies.
+It builds upon `blaze-svg` and `JuicyPixels` by adding type-safe combinators, geometry primitives and high-level graphing functionality.
 
 ## Usage
 
