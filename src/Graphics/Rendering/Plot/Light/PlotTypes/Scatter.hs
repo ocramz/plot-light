@@ -8,7 +8,7 @@ import Data.Maybe (fromMaybe)
 import Control.Monad (forM_)
 import Text.Blaze.Svg
 import qualified Data.Colour as C
-import qualified Data.Colour.Palette.BrewerSet as CP
+-- import qualified Data.Colour.Palette.BrewerSet as CP
 import qualified Data.Colour.Names as C
 import qualified Data.Text as T
 

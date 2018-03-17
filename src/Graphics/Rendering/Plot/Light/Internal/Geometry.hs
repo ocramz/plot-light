@@ -124,6 +124,42 @@ height f = abs $ ymax f - ymin f
 
 
 
+
+-- | Interpolation
+
+interpolateBilinear :: Fractional a => Frame a -> Point a -> (Point a -> a) -> a
+interpolateBilinear (Frame q11@(Point x1 y1) q22@(Point x2 y2)) (Point x y) f =
+  let
+    q12 = Point x1 y2
+    q21 = Point x2 y1
+    fq11 = f q11
+    fq22 = f q22
+    fq12 = f q12
+    fq21 = f q21
+    den1 = (x1 - x2) * (y1 - y2)
+    den2 = (x1 - x2) * (y2 - y1)
+    c111 = fq11/den1
+    c112 = fq11/den2
+    c121 = fq12/den1
+    c122 = fq12/den2
+    c211 = fq21/den1
+    c212 = fq21/den2
+    c221 = fq22/den1
+    c222 = fq22/den2
+    a0 = c111 * x2 * y2 + c122 * x2 * y1 + c212 * x1 * y2 + c221 * x1 * y1
+    a1 = c112 * y2      + c121 * y1      + c211 * y2      + c222 * y1
+    a2 = c112 * x2      + c121 * x2      + c211 * x1      + c222 * x1
+    a3 = c111           + c122           + c212           + c221
+  in a0 + a1 * x + a2 * y + a3 * x * y
+
+
+
+
+
+
+
+
+
 -- * Axis
 
 data Axis = X | Y deriving (Eq, Show)
@@ -295,6 +331,10 @@ pointRange n p q = [ movePoint (fromIntegral x .* vnth) p | x <- [0 .. n]]
 
 
 
+
+
+
+
 -- | A list of `nx` by `ny` points in the plane arranged on the vertices of a rectangular mesh.
 --
 -- NB: Only the minimum x, y coordinate point is included in the output mesh. This is intentional, since the output from this can be used as an input to functions that use a corner rather than the center point as refernce (e.g. `rect`)
@@ -439,6 +479,12 @@ instance Eps (V2 Double) where
   
 instance Eps (V2 Float) where
   v1 ~= v2 = norm2 (v1 ^-^ v2) <= 1e-2
+
+
+
+
+
+
 
 
 

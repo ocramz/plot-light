@@ -42,7 +42,7 @@ library
                      , colour
                      , containers >= 0.5.7.1
                      , mtl
-                     , palette
+                     -- , palette
                      , scientific
                      , text
                      , time
