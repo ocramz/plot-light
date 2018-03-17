@@ -1,7 +1,8 @@
 name:                plot-light
-version:             0.2.9
+version:             0.3
 synopsis:            A lightweight plotting library, exporting to SVG
-description:         This library provides drawing and plotting datastructures and functions; it is aimed in particular at scientific visualization, but it also exposes its plotting primitives and a general purpose 2D geometry library.
+description:         This library provides drawing and plotting datastructures and functions; it is aimed in particular at scientific visualization, but it also exposes its plotting primitives and a small but general purpose 2D geometry library.
+                     
 homepage:            https://github.com/ocramz/plot-light
 license:             BSD3
 license-file:        LICENSE
@@ -91,7 +92,7 @@ executable heatmap
                      , time
                      , text
                      , colour
-                     , palette
+                     -- , palette
                      , blaze-svg
                      , scientific                     
 

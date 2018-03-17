@@ -123,9 +123,9 @@ glyph w sw Cross _ fcol p = crossGlyph w sw (fromMaybe C.black fcol) p
 glyph w sw Plus _ fcol p = plusGlyph w sw (fromMaybe C.black fcol) p
 
 
--- | Utility function for cycling glyph colours and shapes (i.e. unique combinations of these make it easy to tell different datasets apart)
-cycleGlyphCols :: (CP.ColorCat, Int) -> Int -> [(CP.Kolor, GlyphShape_)]
-cycleGlyphCols (pal, n) nsets = take nsets $ zip (cycle $ CP.brewerSet pal n ) (cycle [Square, Circle ..])
+-- -- | Utility function for cycling glyph colours and shapes (i.e. unique combinations of these make it easy to tell different datasets apart)
+-- cycleGlyphCols :: (CP.ColorCat, Int) -> Int -> [(CP.Kolor, GlyphShape_)]
+-- cycleGlyphCols (pal, n) nsets = take nsets $ zip (cycle $ CP.brewerSet pal n ) (cycle [Square, Circle ..])
 
 
 
