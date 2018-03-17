@@ -3,7 +3,37 @@
 This module provides functionality for working with affine transformations (i.e. in the unit square)
  
 -}
-module Graphics.Rendering.Plot.Light.Internal.Geometry where
+module Graphics.Rendering.Plot.Light.Internal.Geometry
+  (
+  -- * Geometry
+  -- ** Point
+  Point(..), mkPoint, setPointX, setPointY,
+  -- ** LabeledPoint
+  LabeledPoint(..), mkLabeledPoint, labelPoint, moveLabeledPoint, mapLabel,
+  -- ** Frame
+  Frame(..), mkFrame, frameFromPoints,  mkFrameOrigin, height, width, xmin, xmax, ymin, ymax, 
+  -- ** Axis
+  Axis(..), otherAxis,
+  -- ** Vectors
+  V2(..), pointFromV2,
+  -- ** Matrices
+  Mat2(..), DiagMat2(..), diagMat2,
+  -- ** Primitive elements
+  origin, oneOne, e1, e2,
+  -- ** Vector norm operations 
+  norm2, normalize2,
+  -- ** Vector construction
+  v2fromEndpoints, v2fromPoint,
+  -- ** Operations on points
+  movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, (-.), pointRange,
+  -- ** Operations on vectors
+  frameToFrame, frameToFrameValue,
+  -- ** Typeclasses
+  AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..),
+  -- ** Utilities
+  meshGrid, subdivSegment, interpolateBilinear
+  )
+where
 
 import Data.Monoid ((<>))
 
@@ -373,14 +403,6 @@ data MeshGrid a = MeshGrid (Frame a) Int Int deriving (Eq, Show, Generic)
 instance Default a => Default (MeshGrid a) where
   
   
-
--- subdivSegment
---   :: (Enum a, RealFrac a) => a -> a -> Int -> [a]
--- subdivSegment x1 x2 n = [xmin, xmin + dx ..] where
---   dx = fromRational . toRational $ l / fromIntegral n
---   xmin = min x1 x2
---   xmax = max x1 x2
---   l = xmax - xmin
 
 subdivSegment :: (Real a, Enum b, RealFrac b) => a -> a -> Int -> [b]
 subdivSegment x1 x2 n = f <$> [0, 1 ..] where

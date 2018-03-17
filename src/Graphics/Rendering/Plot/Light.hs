@@ -139,33 +139,18 @@ module Graphics.Rendering.Plot.Light (
   axes, toPlot, FigureData(..),
   -- ** Element attributes
   LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), LegendPosition_(..),
+  -- ** Operations on frames
+  frameFromPoints, frameFromFigData, mkFrame, mkFrameOrigin, width, height, figFWidth, figFHeight,  
   -- ** Colour utilities
   blendTwo, palette, pickColour, 
   -- ** SVG utilities
-  svgHeader, translateSvg,
+  svgHeader, translateSvg, toSvgFrame, toSvgFrameLP,
   -- * Types
   Frame(..), Point(..), LabeledPoint(..), labelPoint, mapLabel, Axis(..),
-  -- * Geometry
-  -- ** Vectors
-  V2(..),
-  -- ** Matrices
-  Mat2(..), DiagMat2(..), diagMat2,
-  -- ** Primitive elements
-  origin, e1, e2,
-  -- ** Vector norm operations 
-  norm2, normalize2,
-  -- ** Vector construction
-  v2fromEndpoints, v2fromPoint,
-  -- ** Operations on points
-  movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, (-.), toSvgFrame, toSvgFrameLP, pointRange,
-  -- ** Operations on vectors
-  frameToFrame, 
-  -- ** Operations on frames
-  frameFromPoints, frameFromFigData, mkFrame, mkFrameOrigin, width, height, figFWidth, figFHeight,
-  -- ** Typeclasses
-  AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..),
   -- ** Helpers
-  meshGrid, toFloat, wholeDecimal
+  meshGrid,
+  -- *** Misc.
+  toFloat, wholeDecimal
   ) where
 
 -- import qualified Data.Text as T

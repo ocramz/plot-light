@@ -1,5 +1,5 @@
 name:                plot-light
-version:             0.3.1
+version:             0.3.2
 synopsis:            A lightweight plotting library, exporting to SVG
 description:         This library provides drawing and plotting datastructures and functions; it is aimed in particular at scientific visualization, but it also exposes its plotting primitives and a small but general purpose 2D geometry library.
                      
@@ -26,6 +26,7 @@ library
   exposed-modules:     Graphics.Rendering.Plot.Light
                        Data.TimeSeries
                        Graphics.Rendering.Plot.Light.PlotTypes
+                       Graphics.Rendering.Plot.Light.Internal.Geometry
   other-modules:       Graphics.Rendering.Plot.Light.Internal
                        Graphics.Rendering.Plot.Light.Internal.Layout
                        Graphics.Rendering.Plot.Light.PlotTypes.Heatmap
@@ -33,7 +34,6 @@ library
                        Graphics.Rendering.Plot.Light.PlotTypes.Histogram
                        Graphics.Rendering.Plot.Light.PlotTypes.TimeSeries
                        Graphics.Rendering.Plot.Light.PlotTypes.TimeSeries.Candlestick
-                       Graphics.Rendering.Plot.Light.Internal.Geometry
                        Graphics.Rendering.Plot.Light.Internal.Utils
                        Data.Parsers
   build-depends:       base >= 4.7 && < 5
