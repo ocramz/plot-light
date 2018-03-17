@@ -45,11 +45,11 @@ halfHourTick = 1/2 * hourTick
 quarterHourTick = 1/4 * hourTick
 
 
-locTime :: IO LocalTime
-locTime = do
-  tz <- getCurrentTimeZone
-  ct <- getCurrentTime
-  return $ utcToLocalTime tz ct
+-- locTime :: IO LocalTime
+-- locTime = do
+--   tz <- getCurrentTimeZone
+--   ct <- getCurrentTime
+--   return $ utcToLocalTime tz ct
 
 
 

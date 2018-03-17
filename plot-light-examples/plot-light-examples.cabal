@@ -22,8 +22,8 @@ executable scatter
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   hs-source-dirs:      app/scatter
   main-is:             Main.hs
-  build-depends:       base
-                     , plot-light 
+  build-depends:       base >= 4.7 && < 5
+                     , plot-light >= 0.2.9
                      , attoparsec
                      , text
                      , colour
@@ -35,8 +35,8 @@ executable timeseries
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   hs-source-dirs:      app/timeseries
   main-is:             Main.hs
-  build-depends:       base
-                     , plot-light 
+  build-depends:       base >= 4.7 && < 5
+                     , plot-light >= 0.2.9
                      , attoparsec
                      , attoparsec-time >= 1
                      , time
@@ -50,8 +50,8 @@ executable heatmap
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   hs-source-dirs:      app/heatmap
   main-is:             Main.hs
-  build-depends:       base
-                     , plot-light 
+  build-depends:       base >= 4.7 && < 5
+                     , plot-light >= 0.2.9
                      , attoparsec
                      , time
                      , text
