@@ -26,14 +26,29 @@ instance Show a => Show (Point a) where
 mkPoint :: a -> a -> Point a
 mkPoint = Point
 
--- | A binary operation on the components of two `Point`s
+-- | A binary operation on the components of two 'Point's
 lift2Point :: (a -> b -> c) -> Point a -> Point b -> Point c
 lift2Point f (Point a b) (Point c d) = Point (f a c) (f b d)
+
+-- | A unary operation on the components of a 'Point'
+lift1Point :: (a -> a -> b) -> Point a -> b
+lift1Point f (Point x y) = f x y
 
 pointInf, pointSup :: (Ord a) => Point a -> Point a -> Point a
 pointInf = lift2Point min
 pointSup = lift2Point max
 
+-- | The origin of the axes, point (0, 0)
+origin :: Num a => Point a
+origin = Point 0 0
+
+-- | The (1, 1) point
+oneOne :: Num a => Point a
+oneOne = Point 1 1
+
+-- | Cartesian distance from the origin
+norm2fromOrigin :: Floating a => Point a -> a
+norm2fromOrigin p = norm2 $ p -. origin
 
 
 -- | Overwrite either coordinate of a Point, to e.g. project on an axis
@@ -90,6 +105,12 @@ mkFrame = Frame
 mkFrameOrigin :: Num a => a -> a -> Frame a
 mkFrameOrigin w h = Frame origin (Point w h)
 
+-- | The unit square (0, 0) - (1, 1)
+unitFrame :: Num a => Frame a
+unitFrame = mkFrame origin oneOne
+
+
+
 
 -- | Create a `Frame` from a container of `Point`s `P`, i.e. construct two points `p1` and `p2` such that :
 --
@@ -121,6 +142,42 @@ ymax = _py . _fpmax
 width, height :: Num a => Frame a -> a
 width f = abs $ xmax f - xmin f
 height f = abs $ ymax f - ymin f
+
+
+
+
+-- | Interpolation
+
+interpolateBilinear :: Fractional a => Frame a -> Point a -> (Point a -> a) -> a
+interpolateBilinear (Frame q11@(Point x1 y1) q22@(Point x2 y2)) (Point x y) f =
+  let
+    q12 = Point x1 y2
+    q21 = Point x2 y1
+    fq11 = f q11
+    fq22 = f q22
+    fq12 = f q12
+    fq21 = f q21
+    den1 = (x1 - x2) * (y1 - y2)
+    den2 = (x1 - x2) * (y2 - y1)
+    c111 = fq11/den1
+    c112 = fq11/den2
+    c121 = fq12/den1
+    c122 = fq12/den2
+    c211 = fq21/den1
+    c212 = fq21/den2
+    c221 = fq22/den1
+    c222 = fq22/den2
+    a0 = c111 * x2 * y2 + c122 * x2 * y1 + c212 * x1 * y2 + c221 * x1 * y1
+    a1 = c112 * y2      + c121 * y1      + c211 * y2      + c222 * y1
+    a2 = c112 * x2      + c121 * x2      + c211 * x1      + c222 * x1
+    a3 = c111           + c122           + c212           + c221
+  in a0 + a1 * x + a2 * y + a3 * x * y
+
+
+
+
+
+
 
 
 
@@ -204,9 +261,7 @@ v2fromEndpoints, (-.) :: Num a => Point a -> Point a -> V2 a
 v2fromEndpoints (Point px py) (Point qx qy) = V2 (qx-px) (qy-py)
 (-.) = v2fromEndpoints
 
--- | The origin of the axes, point (0, 0)
-origin :: Num a => Point a
-origin = Point 0 0
+
 
 
 -- | A Mat2 can be seen as a linear operator that acts on points in the plane
@@ -292,6 +347,10 @@ pointRange n p q = [ movePoint (fromIntegral x .* vnth) p | x <- [0 .. n]]
   where
     v = p -. q
     vnth = (1/fromIntegral n) .* v
+
+
+
+
 
 
 
@@ -439,6 +498,12 @@ instance Eps (V2 Double) where
   
 instance Eps (V2 Float) where
   v1 ~= v2 = norm2 (v1 ^-^ v2) <= 1e-2
+
+
+
+
+
+
 
 
 

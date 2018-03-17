@@ -32,16 +32,24 @@ fromTick (Tick d t) = fromIntegral (toModifiedJulianDay d) + timeOfDayToDayFract
     
 -- | Map a rational onto a Tick
 toTick :: Rational -> Tick
-toTick n = Tick d t where
-  t = dayFractionToTimeOfDay dec
-  d = ModifiedJulianDay wh
-  (wh, dec) = wholeDecimal n
+toTick n = Tick d t
+  where
+    t = dayFractionToTimeOfDay dec
+    d = ModifiedJulianDay wh
+    (wh, dec) = wholeDecimal n
 
 
-hourTick, halfHourTick, quarterHourTick :: Double
+hourTick, halfHourTick, quarterHourTick :: Rational
 hourTick = 1/24
 halfHourTick = 1/2 * hourTick
 quarterHourTick = 1/4 * hourTick
+
+
+-- locTime :: IO LocalTime
+-- locTime = do
+--   tz <- getCurrentTimeZone
+--   ct <- getCurrentTime
+--   return $ utcToLocalTime tz ct
 
 
 

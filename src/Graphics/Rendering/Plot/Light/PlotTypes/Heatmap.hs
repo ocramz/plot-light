@@ -13,7 +13,7 @@ import Control.Monad (forM_)
 
 import qualified Data.Colour as C
 import qualified Data.Colour.Names as C
-import Data.Colour.Palette.BrewerSet
+-- import Data.Colour.Palette.BrewerSet
 -- import Text.Blaze.Svg
 
 
