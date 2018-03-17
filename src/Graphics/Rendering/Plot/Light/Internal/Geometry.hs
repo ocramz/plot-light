@@ -26,14 +26,29 @@ instance Show a => Show (Point a) where
 mkPoint :: a -> a -> Point a
 mkPoint = Point
 
--- | A binary operation on the components of two `Point`s
+-- | A binary operation on the components of two 'Point's
 lift2Point :: (a -> b -> c) -> Point a -> Point b -> Point c
 lift2Point f (Point a b) (Point c d) = Point (f a c) (f b d)
+
+-- | A unary operation on the components of a 'Point'
+lift1Point :: (a -> a -> b) -> Point a -> b
+lift1Point f (Point x y) = f x y
 
 pointInf, pointSup :: (Ord a) => Point a -> Point a -> Point a
 pointInf = lift2Point min
 pointSup = lift2Point max
 
+-- | The origin of the axes, point (0, 0)
+origin :: Num a => Point a
+origin = Point 0 0
+
+-- | The (1, 1) point
+oneOne :: Num a => Point a
+oneOne = Point 1 1
+
+-- | Cartesian distance from the origin
+norm2fromOrigin :: Floating a => Point a -> a
+norm2fromOrigin p = norm2 $ p -. origin
 
 
 -- | Overwrite either coordinate of a Point, to e.g. project on an axis
@@ -89,6 +104,12 @@ mkFrame = Frame
 -- | Build a frame rooted at the origin (0, 0)
 mkFrameOrigin :: Num a => a -> a -> Frame a
 mkFrameOrigin w h = Frame origin (Point w h)
+
+-- | The unit square (0, 0) - (1, 1)
+unitFrame :: Num a => Frame a
+unitFrame = mkFrame origin oneOne
+
+
 
 
 -- | Create a `Frame` from a container of `Point`s `P`, i.e. construct two points `p1` and `p2` such that :
@@ -240,9 +261,7 @@ v2fromEndpoints, (-.) :: Num a => Point a -> Point a -> V2 a
 v2fromEndpoints (Point px py) (Point qx qy) = V2 (qx-px) (qy-py)
 (-.) = v2fromEndpoints
 
--- | The origin of the axes, point (0, 0)
-origin :: Num a => Point a
-origin = Point 0 0
+
 
 
 -- | A Mat2 can be seen as a linear operator that acts on points in the plane
