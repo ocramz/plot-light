@@ -44,7 +44,7 @@ library
                      , scientific
                      , text
                      , time
-                     , data-default
+                     , data-default-class
                      -- -- * DEBUG
                      -- , hspec    
                      -- , QuickCheck

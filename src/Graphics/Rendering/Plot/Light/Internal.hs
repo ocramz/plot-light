@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, DeriveFunctor #-}
+{-# LANGUAGE OverloadedStrings, DeriveFunctor, DeriveGeneric #-}
 module Graphics.Rendering.Plot.Light.Internal
   (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, figFWidth, figFHeight, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel, Axis(..), axes, meshGrid, subdivSegment, svgHeader, rect, rectCentered, squareCentered, circle, line, tick, ticks, axis, toPlot, text, pixel, pixel', pickColour, colourBar, legendBar, plusGlyph, crossGlyph, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), LegendPosition_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, toSvgFrame, toSvgFrameLP, e1, e2, toFloat, wholeDecimal, blendTwo, palette, interpolateBilinear)
   where
@@ -27,7 +27,9 @@ import qualified Data.Colour.Names as C
 import qualified Data.Colour.SRGB as C
 
 import GHC.Real
+import GHC.Generics
 import Data.Fixed
+import Data.Default.Class
 
 import Graphics.Rendering.Plot.Light.Internal.Geometry
 import Graphics.Rendering.Plot.Light.Internal.Utils
@@ -52,9 +54,10 @@ data FigureData a = FigureData {
   -- , figAxisStrokeWidth :: a
   -- | Tick label font size
   , figLabelFontSize :: Int
-                       } deriving (Eq, Show, Functor)
+                       } deriving (Eq, Show, Functor, Generic)
 
-
+instance (Default a, Fractional a) => Default (FigureData a) where
+  def = FigureData 400 300 0.1 0.9 0.1 0.9 10
 
 
 
@@ -119,6 +122,18 @@ squareCentered
 squareCentered w = rectCentered w w
 
 
+newtype Col = Col (C.Colour Double) deriving (Eq, Show, Generic)
+instance Default Col where
+  def = Col C.blue
+
+data LineOptions a = LineOptions {
+    loStrokeWidth :: a
+  , loStrokeType :: LineStroke_ a
+  , loColour :: Col
+                                 } deriving (Eq, Show, Generic)
+
+instance (Default a, Num a) => Default (LineOptions a) where
+  def = LineOptions 2 def def
 
 
 -- | Line segment between two `Point`s
@@ -143,7 +158,9 @@ strokeDashArray sz = SA.strokeDasharray (S.toValue str) where
   str = intercalate ", " $ map (show . real) sz
 
 -- | Specify a continuous or dashed stroke
-data LineStroke_ a = Continuous | Dashed [a] deriving (Eq, Show)
+data LineStroke_ a = Continuous | Dashed [a] deriving (Eq, Show, Generic)
+instance Default (LineStroke_ a) where
+  def = Continuous
 
 
 

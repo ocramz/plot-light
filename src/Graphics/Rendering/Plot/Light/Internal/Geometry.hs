@@ -38,7 +38,7 @@ where
 import Data.Monoid ((<>))
 
 import GHC.Generics
-import Data.Default
+import Data.Default.Class
 
 
 
@@ -121,7 +121,8 @@ data Frame a = Frame {
    _fpmax :: Point a
    } deriving (Eq, Show, Generic)
 
-instance Default a => Default (Frame a) where
+instance (Default a, Num a) => Default (Frame a) where
+  def = unitFrame
 
 -- | The semigroup operation (`mappend`) applied on two `Frames` results in a new `Frame` that bounds both.
 instance (Ord a, Num a) => Monoid (Frame a) where
@@ -400,7 +401,7 @@ meshGrid (Frame (Point xmi ymi) (Point xma yma)) nx ny =
 
 data MeshGrid a = MeshGrid (Frame a) Int Int deriving (Eq, Show, Generic)
 
-instance Default a => Default (MeshGrid a) where
+instance (Default a, Num a) => Default (MeshGrid a) where
   
   
 
