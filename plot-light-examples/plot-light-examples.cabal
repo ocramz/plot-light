@@ -1,7 +1,7 @@
 name:                plot-light-examples
 version:             0.1.0.0
--- synopsis:
--- description:
+synopsis:            Example binaries for plot-light
+description:         Example binaries for plot-light
 homepage:            https://github.com/ocramz/plot-light-examples
 license:             BSD3
 license-file:        LICENSE
@@ -23,7 +23,7 @@ executable scatter
   hs-source-dirs:      app/scatter
   main-is:             Main.hs
   build-depends:       base
-                     , plot-light
+                     , plot-light 
                      , attoparsec
                      , text
                      , colour
@@ -36,7 +36,7 @@ executable timeseries
   hs-source-dirs:      app/timeseries
   main-is:             Main.hs
   build-depends:       base
-                     , plot-light
+                     , plot-light 
                      , attoparsec
                      , attoparsec-time >= 1
                      , time
@@ -51,7 +51,7 @@ executable heatmap
   hs-source-dirs:      app/heatmap
   main-is:             Main.hs
   build-depends:       base
-                     , plot-light
+                     , plot-light 
                      , attoparsec
                      , time
                      , text

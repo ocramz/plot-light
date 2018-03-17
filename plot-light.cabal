@@ -44,9 +44,9 @@ library
                      , text
                      , time
                      , data-default
-                     -- * DEBUG
-                     , hspec    
-                     , QuickCheck
+                     -- -- * DEBUG
+                     -- , hspec    
+                     -- , QuickCheck
                                           
 
           
