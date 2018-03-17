@@ -9,7 +9,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** Point
   Point(..), mkPoint, setPointX, setPointY,
   -- ** LabeledPoint
-  LabeledPoint(..), mkLabeledPoint, labelPoint, moveLabeledPoint, mapLabel,
+  LabeledPoint(..), mkLabeledPoint, labelPoint, moveLabeledPoint, moveLabeledPointBwFrames, mapLabel,
   -- ** Frame
   Frame(..), mkFrame, frameFromPoints,  mkFrameOrigin, height, width, xmin, xmax, ymin, ymax, 
   -- ** Axis

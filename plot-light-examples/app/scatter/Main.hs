@@ -10,7 +10,9 @@ import qualified Data.Text.IO as T (readFile, writeFile)
 import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 import Graphics.Rendering.Plot.Light
-import Graphics.Rendering.Plot.Light.PlotTypes
+import Graphics.Rendering.Plot.Light.Internal.Geometry
+
+import Data.Parsers
 
 xPlot = 400
 yPlot = 300

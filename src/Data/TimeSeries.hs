@@ -22,7 +22,6 @@ data TsPoint a =
     _val :: a
     } deriving (Eq, Show)
 
-
 tickToFractional :: Fractional b => TsPoint a -> b
 tickToFractional = fromRational . fromTick . _tick
 

@@ -17,6 +17,8 @@ import qualified Data.Colour.Names as C
 import Control.Applicative ((<|>))
 import Data.Time (Day, TimeOfDay)
 
+import Data.Parsers
+
 fname = "data/forex"
 
 xPlot = 400

@@ -4,7 +4,6 @@ module Main where
 -- import Data.Ratio
 
 import Graphics.Rendering.Plot.Light
-import Graphics.Rendering.Plot.Light.PlotTypes
 
 import qualified Data.Attoparsec.Text as A
 import qualified Data.Text as T 
@@ -15,9 +14,8 @@ import Text.Blaze.Svg
 
 import qualified Data.Colour.Names as C
 import qualified Data.Colour as C
--- import qualified Data.Colour.Palette.BrewerSet as CP
--- import qualified Data.Colour.Palette.Harmony as CH
 
+import Data.Parsers
 
 fname = "data/heatmap-bw"
 
@@ -94,3 +92,9 @@ rowNumSpace = rowNums space
 -- | parse a grid of numbers, separated by `sep`
 gridNum :: A.Parser s -> A.Parser [[Scientific]]
 gridNum sep = A.sepBy (rowNums sep) A.endOfLine
+
+
+
+
+
+

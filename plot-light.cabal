@@ -25,7 +25,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Graphics.Rendering.Plot.Light
                        Data.TimeSeries
-                       -- Graphics.Rendering.Plot.Light.PlotTypes
+                       Graphics.Rendering.Plot.Light.PlotTypes                       
                        Graphics.Rendering.Plot.Light.Internal.Geometry
   other-modules:       Graphics.Rendering.Plot.Light.Internal
                        Graphics.Rendering.Plot.Light.Internal.Layout
@@ -35,7 +35,6 @@ library
                        Graphics.Rendering.Plot.Light.PlotTypes.TimeSeries
                        Graphics.Rendering.Plot.Light.PlotTypes.TimeSeries.Candlestick
                        Graphics.Rendering.Plot.Light.Internal.Utils
-                       Data.Parsers
   build-depends:       base >= 4.7 && < 5
                      , blaze-svg
                      , colour
