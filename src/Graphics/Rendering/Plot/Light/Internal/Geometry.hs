@@ -9,7 +9,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** Point
   Point(..), mkPoint, setPointX, setPointY,
   -- ** LabeledPoint
-  LabeledPoint(..), mkLabeledPoint, labelPoint, moveLabeledPoint, moveLabeledPointBwFrames, mapLabel,
+  LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel,
   -- ** Frame
   Frame(..), mkFrame, frameFromPoints,  mkFrameOrigin, height, width, xmin, xmax, ymin, ymax, 
   -- ** Axis
@@ -25,7 +25,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** Vector construction
   v2fromEndpoints, v2fromPoint,
   -- ** Operations on points
-  movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, (-.), pointRange,
+  movePoint, moveLabeledPoint, moveLabeledPointV2, moveLabeledPointBwFrames, (-.), pointRange,
   -- ** Operations on vectors
   frameToFrame, frameToFrameValue,
   -- ** Typeclasses
@@ -39,7 +39,7 @@ import Data.Monoid ((<>))
 
 import GHC.Generics
 import Data.Default.Class
-
+import Data.Semigroup ()
 
 
 -- | A `Point` object defines a point in the plane
@@ -125,9 +125,13 @@ instance (Default a, Num a) => Default (Frame a) where
   def = unitFrame
 
 -- | The semigroup operation (`mappend`) applied on two `Frames` results in a new `Frame` that bounds both.
+
+instance (Ord a) => Semigroup (Frame a) where
+  (Frame p1min p1max) <> (Frame p2min p2max) = Frame (pointInf p1min p2min) (pointSup p1max p2max)
+  
 instance (Ord a, Num a) => Monoid (Frame a) where
   mempty = Frame (Point 0 0) (Point 0 0)
-  mappend (Frame p1min p1max) (Frame p2min p2max) = Frame (pointInf p1min p2min) (pointSup p1max p2max)
+
 
 mkFrame :: Point a -> Point a -> Frame a
 mkFrame = Frame
@@ -232,10 +236,12 @@ otherAxis _ = X
 -- | V2 is a vector in R^2
 data V2 a = V2 a a deriving (Eq, Show)
 
+instance Num a => Semigroup (V2 a) where
+  (V2 a b) <> (V2 c d) = V2 (a + c) (b + d)  
+
 -- | Vectors form a monoid w.r.t. vector addition
 instance Num a => Monoid (V2 a) where
   mempty = V2 0 0
-  (V2 a b) `mappend` (V2 c d) = V2 (a + c) (b + d)
 
 -- | Additive group :
 -- 
@@ -319,15 +325,19 @@ instance Num a => LinearMap (Mat2 a) (V2 a) where
 -- | Diagonal matrices in R2 behave as scaling transformations
 data DiagMat2 a = DMat2 a a deriving (Eq, Show)
 
+instance Num a => Semigroup (DiagMat2 a) where
+  (<>) = (##)
+
 -- | Diagonal matrices form a monoid w.r.t. matrix multiplication and have the identity matrix as neutral element
 instance Num a => Monoid (DiagMat2 a) where
   mempty = DMat2 1 1
-  mappend = (##)
+
+instance Num a => Semigroup (Mat2 a) where
+  (<>) = (##)
 
 -- | Matrices form a monoid w.r.t. matrix multiplication and have the identity matrix as neutral element
 instance Num a => Monoid (Mat2 a) where
   mempty = Mat2 1 0 0 1
-  mappend = (##)
 
 -- | Create a diagonal matrix
 diagMat2 :: Num a => a -> a -> DiagMat2 a

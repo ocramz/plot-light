@@ -25,13 +25,15 @@ palette ll n = concatMap f l1 where
 rr :: (Real a, Fractional c) => a -> c
 rr = fromRational . toRational
 
+-- | Convert a floating point value in 'Scientific' form to 'Float'
 toFloat :: Scientific -> Float
 toFloat x = toRealFloat x :: Float
 
 -- | Separate whole and decimal part of a fractional number
 -- e.g.
 --
--- > > wholeDecimal 
+-- > > wholeDecimal pi
+-- > (3,0.14159265358979312)
 wholeDecimal :: (Integral a, RealFrac b) => b -> (a, b)
 wholeDecimal x = (w, d) where
   w = floor x
