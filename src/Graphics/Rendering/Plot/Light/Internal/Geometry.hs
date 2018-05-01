@@ -39,7 +39,7 @@ import Data.Monoid ((<>))
 
 import GHC.Generics
 import Data.Default.Class
-import Data.Semigroup ()
+import Data.Semigroup (Semigroup(..))
 
 
 -- | A `Point` object defines a point in the plane

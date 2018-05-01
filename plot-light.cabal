@@ -1,5 +1,5 @@
 name:                plot-light
-version:             0.3.3
+version:             0.3.3.1
 synopsis:            A lightweight plotting library, exporting to SVG
 description:         This library provides drawing and plotting datastructures and functions; it is aimed in particular at scientific visualization, but it also exposes its plotting primitives and a small but general purpose 2D geometry library.
                      
@@ -21,7 +21,7 @@ tested-with:         GHC == 8.0.2, GHC == 8.2.2, GHC == 8.4.1, GHC == 8.4.2
 
 library
   default-language:    Haskell2010
-  ghc-options:         -Wall -Wno-missing-signatures -Wno-type-defaults -Wno-name-shadowing
+  ghc-options:         -Wno-missing-signatures -Wno-type-defaults -Wno-name-shadowing -Wno-unused-local-binds -Wno-unused-top-binds -Wno-unused-imports
   hs-source-dirs:      src
   exposed-modules:     Graphics.Rendering.Plot.Light
                        Data.TimeSeries
@@ -37,14 +37,14 @@ library
                        Graphics.Rendering.Plot.Light.Internal.Utils
                        Data.Parsers
   build-depends:       base >= 4.7 && < 5
-                     , blaze-svg
-                     , colour
+                     , blaze-svg >= 0.3.6.1
+                     , colour >= 2.3.4
                      , containers >= 0.5.7.1
                      , mtl
-                     , scientific
-                     , text
+                     , scientific >= 0.3.5.2
+                     , text >= 1.2.2.2
                      , time
-                     , data-default-class
+                     , data-default-class >= 0.1.2.0
                      -- -- * DEBUG
                      -- , hspec    
                      -- , QuickCheck
