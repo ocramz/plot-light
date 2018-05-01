@@ -35,7 +35,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   )
 where
 
-import Data.Monoid ((<>))
+-- import Data.Monoid ((<>))
 
 import GHC.Generics
 import Data.Default.Class
@@ -131,6 +131,7 @@ instance (Ord a) => Semigroup (Frame a) where
   
 instance (Ord a, Num a) => Monoid (Frame a) where
   mempty = Frame (Point 0 0) (Point 0 0)
+  mappend = (<>)
 
 
 mkFrame :: Point a -> Point a -> Frame a
@@ -242,6 +243,7 @@ instance Num a => Semigroup (V2 a) where
 -- | Vectors form a monoid w.r.t. vector addition
 instance Num a => Monoid (V2 a) where
   mempty = V2 0 0
+  mappend = (<>)
 
 -- | Additive group :
 -- 
@@ -331,6 +333,7 @@ instance Num a => Semigroup (DiagMat2 a) where
 -- | Diagonal matrices form a monoid w.r.t. matrix multiplication and have the identity matrix as neutral element
 instance Num a => Monoid (DiagMat2 a) where
   mempty = DMat2 1 1
+  mappend = (<>)
 
 instance Num a => Semigroup (Mat2 a) where
   (<>) = (##)
@@ -338,6 +341,7 @@ instance Num a => Semigroup (Mat2 a) where
 -- | Matrices form a monoid w.r.t. matrix multiplication and have the identity matrix as neutral element
 instance Num a => Monoid (Mat2 a) where
   mempty = Mat2 1 0 0 1
+  mappend = (<>)
 
 -- | Create a diagonal matrix
 diagMat2 :: Num a => a -> a -> DiagMat2 a

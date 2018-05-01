@@ -38,10 +38,10 @@ library
                        Data.Parsers
   build-depends:       base >= 4.7 && < 5
                      , blaze-svg >= 0.3.6.1
-                     , colour >= 2.3.4
+                     , colour >= 2.3.3
                      , containers >= 0.5.7.1
                      , mtl
-                     , scientific >= 0.3.5.2
+                     , scientific >= 0.3.5.1
                      , text >= 1.2.2.2
                      , time
                      , data-default-class >= 0.1.2.0
