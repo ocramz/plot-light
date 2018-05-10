@@ -20,8 +20,11 @@ histogram figdata = undefined
 
 
 -- | Uses the data range as binning range
-binDfromVG :: Foldable v => Int -> v Double -> H.BinD
-binDfromVG n v = H.binD mi n ma where
+binDfromData :: Foldable v => Int -> v Double -> H.BinD
+binDfromData n v = H.binD mi n ma where
   mi = minimum v
   ma = maximum v
   
+
+histo n vl = H.histogram (binDfromData n v) v where
+  v = V.fromList vl

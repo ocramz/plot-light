@@ -40,7 +40,7 @@ library
                      , blaze-svg >= 0.3.6.1
                      , colour >= 2.3.3
                      , containers >= 0.5.7.1
-                     , histogram-fill >= 0.9.0.0
+                     , histogram-fill >= 0.8.5.0
                      , exceptions
                      , mtl
                      , scientific >= 0.3.5.1
