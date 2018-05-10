@@ -1,5 +1,5 @@
 name:                plot-light
-version:             0.3.3.2
+version:             0.4
 synopsis:            A lightweight plotting library, exporting to SVG
 description:         This library provides drawing and plotting datastructures and functions; it is aimed in particular at scientific visualization, but it also exposes its plotting primitives and a small but general purpose 2D geometry library.
                      
@@ -44,7 +44,6 @@ library
                      , scientific >= 0.3.5.1
                      , text >= 1.2.2.2
                      , time
-                     , data-default-class >= 0.1.2.0
                      -- -- * DEBUG
                      -- , hspec    
                      -- , QuickCheck

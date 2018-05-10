@@ -91,15 +91,19 @@ bounded01 x = 0 <= x && x <= 1
 
 
 
-liftF :: Functor f => f r -> Free f r
-liftF x = Free (fmap Pure x)
 
-data Free f r = Free (f (Free f r)) | Pure r deriving Functor
+-- * Free
 
-instance Functor f => Applicative (Free f) where
-  pure = Pure
 
-instance (Functor f) => Monad (Free f) where
-    return = pure
-    (Free x) >>= f = Free (fmap (>>= f) x)
-    (Pure r) >>= f = f r
+-- liftF :: Functor f => f r -> Free f r
+-- liftF x = Free (fmap Pure x)
+
+-- data Free f r = Free (f (Free f r)) | Pure r deriving Functor
+
+-- instance Functor f => Applicative (Free f) where
+--   pure = Pure
+
+-- instance (Functor f) => Monad (Free f) where
+--     return = pure
+--     (Free x) >>= f = Free (fmap (>>= f) x)
+--     (Pure r) >>= f = f r

@@ -1,3 +1,7 @@
+	0.4
+
+	Remove data-default-*
+
 	0.3.3
 
 	Add Semigroup instances to everything that had Monoid instances (since from GHC 8.4.2 Semigroup m => Monoid m )

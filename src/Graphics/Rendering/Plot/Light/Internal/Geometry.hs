@@ -11,7 +11,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** LabeledPoint
   LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel,
   -- ** Frame
-  Frame(..), mkFrame, frameFromPoints,  mkFrameOrigin, height, width, xmin, xmax, ymin, ymax, 
+  Frame(..), mkFrame, unitFrame, frameFromPoints,  mkFrameOrigin, height, width, xmin, xmax, ymin, ymax, 
   -- ** Axis
   Axis(..), otherAxis,
   -- ** Vectors
@@ -38,14 +38,14 @@ where
 -- import Data.Monoid ((<>))
 
 import GHC.Generics
-import Data.Default.Class
+
 import Data.Semigroup (Semigroup(..))
 
 
 -- | A `Point` object defines a point in the plane
 data Point a = Point { _px :: a,
                        _py :: a } deriving (Eq, Generic)
-instance Default a => Default (Point a) where
+
 
 instance Ord a => Ord (Point a) where
   (Point x1 y1) <= (Point x2 y2) = x1 <= x2 && y1 <= y2
@@ -120,9 +120,6 @@ data Frame a = Frame {
    _fpmin :: Point a,
    _fpmax :: Point a
    } deriving (Eq, Show, Generic)
-
-instance (Default a, Num a) => Default (Frame a) where
-  def = unitFrame
 
 -- | The semigroup operation (`mappend`) applied on two `Frames` results in a new `Frame` that bounds both.
 
@@ -415,8 +412,7 @@ meshGrid (Frame (Point xmi ymi) (Point xma yma)) nx ny =
 
 data MeshGrid a = MeshGrid (Frame a) Int Int deriving (Eq, Show, Generic)
 
-instance (Default a, Num a) => Default (MeshGrid a) where
-  
+-- meshGridDefault = MeshGrid
   
 
 subdivSegment :: (Real a, Enum b, RealFrac b) => a -> a -> Int -> [b]

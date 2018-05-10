@@ -29,7 +29,6 @@ import qualified Data.Colour.SRGB as C
 import GHC.Real
 import GHC.Generics
 import Data.Fixed
-import Data.Default.Class
 
 import Graphics.Rendering.Plot.Light.Internal.Geometry
 import Graphics.Rendering.Plot.Light.Internal.Utils
@@ -56,8 +55,8 @@ data FigureData a = FigureData {
   , figLabelFontSize :: Int
                        } deriving (Eq, Show, Functor, Generic)
 
-instance (Default a, Fractional a) => Default (FigureData a) where
-  def = FigureData 400 300 0.1 0.9 0.1 0.9 10
+figureDataDefault = FigureData 400 300 0.1 0.9 0.1 0.9 10
+
 
 
 
@@ -121,16 +120,20 @@ squareCentered
      -> Svg
 squareCentered w = rectCentered w w
 
+lineColourDefault :: C.Colour Double
+lineColourDefault = C.blue
 
-newtype Col = Col { unCol :: C.Colour Double} deriving (Eq, Show, Generic)
-instance Default Col where
-  def = Col C.blue
+lineStrokeTypeDefault :: LineStroke_ a
+lineStrokeTypeDefault = Continuous
 
 data LineOptions a = LineOptions {
     loStrokeWidth :: a            -- ^ Stroke width 
   , loStrokeType :: LineStroke_ a -- ^ Stroke type
-  , loColour :: Col               -- ^ Stroke colour
+  , loColour :: C.Colour Double   -- ^ Stroke colour
                                  } deriving (Eq, Show, Generic)
+
+lineOptionsDefault :: Num a => LineOptions a
+lineOptionsDefault = LineOptions 2 lineStrokeTypeDefault lineColourDefault
 
 -- | Line options "picker". Creates an unbounded stream of LineOptions, may be useful when plotting multiple timeseries (essentially imitating the Matlab behaviour)
 lineOptionCycle :: Fractional a => a -> [LineOptions a]
@@ -140,7 +143,7 @@ lineOptionCycle lw =
       replicate 5 Continuous <>
       replicate 5 (Dashed [0.2, 0.5]) <>
       replicate 5 (Dashed [0.5, 0.2])       
-    cols = Col <$> [C.blue, C.green, C.red, C.black, C.purple]
+    cols = [C.blue, C.green, C.red, C.black, C.purple]
     nc = length cols
   in
   LineOptions <$>
@@ -148,8 +151,6 @@ lineOptionCycle lw =
   strTys <*>
   cols
 
-instance (Default a, Num a) => Default (LineOptions a) where
-  def = LineOptions 2 def def
 
 
 -- | Line segment between two `Point`s
@@ -179,8 +180,7 @@ strokeDashArray sz = SA.strokeDasharray (S.toValue str) where
 
 -- | Specify a continuous or dashed stroke
 data LineStroke_ a = Continuous | Dashed [a] deriving (Eq, Show, Generic)
-instance Default (LineStroke_ a) where
-  def = Continuous
+
 
 
 
@@ -253,6 +253,18 @@ ticks :: (Foldable t, Show a, RealFrac a) =>
 ticks ax len sw col ps = forM_ ps (tick ax len sw col)
 
 
+labeledTicks :: (Foldable t, Show a, RealFrac a) =>
+                Axis
+             -> a
+             -> a
+             -> C.Colour Double
+             -> Int
+             -> a
+             -> TextAnchor_
+             -> (t2 -> T.Text)
+             -> V2 a
+             -> t (LabeledPoint t2 a)
+             -> Svg
 labeledTicks ax len sw col fontsize lrot tanchor flab vlab ps =
   forM_ ps (labeledTick ax len sw col fontsize lrot tanchor flab vlab)
 
@@ -318,20 +330,19 @@ axes fdat (Frame (Point xmi ymi) (Point xma yma)) sw col nx ny = do
 -- * Renders the X, Y axes
 --
 -- * Renders the transformed dataset onto the newly created plot canvas
-toPlot
-  :: (Functor t, Foldable t, Show a, RealFrac a) =>
-     FigureData a     
-     -> (l -> T.Text)  -- ^ X tick label
-     -> (l -> T.Text)  -- ^ Y tick label
-     -> a   -- ^ X label rotation angle
-     -> a -- ^ Y label rotation angle
-     -> a -- ^ Stroke width
-     -> C.Colour Double -- ^ Stroke colour
-     -> Maybe (t (LabeledPoint l a))  -- ^ X axis labels
-     -> Maybe (t (LabeledPoint l a))  -- ^ Y axis labels
-     -> (t (LabeledPoint l a) -> Svg)  -- ^ Data rendering function
-     -> t (LabeledPoint l a) -- ^ Data
-     -> Svg 
+toPlot :: (Functor t, Foldable t, Show a, RealFrac a) =>
+          FigureData a     
+       -> (l -> T.Text)  -- ^ X tick label
+       -> (l -> T.Text)  -- ^ Y tick label
+       -> a   -- ^ X label rotation angle
+       -> a -- ^ Y label rotation angle
+       -> a -- ^ Stroke width
+       -> C.Colour Double -- ^ Stroke colour
+       -> Maybe (t (LabeledPoint l a))  -- ^ X axis labels
+       -> Maybe (t (LabeledPoint l a))  -- ^ Y axis labels
+       -> (t (LabeledPoint l a) -> Svg)  -- ^ Data rendering function
+       -> t (LabeledPoint l a) -- ^ Data
+       -> Svg 
 toPlot fd flabelx flabely rotx roty sw col1 tickxe tickye plotf dat = do
   axis oSvg X (width to) sw col1 0.05 Continuous fontsize rotx TAEnd flabelx (V2 (-10) 0) tickx
   axis oSvg Y (negate $ height to) sw col1 0.05 Continuous fontsize roty TAEnd flabely (V2 (-10) 0) ticky
