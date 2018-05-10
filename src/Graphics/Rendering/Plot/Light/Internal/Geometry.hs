@@ -181,8 +181,8 @@ height f = abs $ ymax f - ymin f
 
 -- | Interpolation
 
-interpolateBilinear :: Fractional a => Frame a -> Point a -> (Point a -> a) -> a
-interpolateBilinear (Frame q11@(Point x1 y1) q22@(Point x2 y2)) (Point x y) f =
+interpolateBilinear :: Fractional a => Point a -> Point a -> (Point a -> a) -> Point a -> a
+interpolateBilinear q11@(Point x1 y1) q22@(Point x2 y2) f (Point x y) =
   let
     q12 = Point x1 y2
     q21 = Point x2 y1

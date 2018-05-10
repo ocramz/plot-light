@@ -1,6 +1,26 @@
 {-# LANGUAGE OverloadedStrings, DeriveFunctor, DeriveGeneric #-}
 module Graphics.Rendering.Plot.Light.Internal
-  (FigureData(..), Frame(..), mkFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, figFWidth, figFHeight, Point(..), mkPoint, LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel, Axis(..), axes, meshGrid, subdivSegment, svgHeader, rect, rectCentered, squareCentered, circle, line, tick, ticks, axis, toPlot, text, pixel, pixel', pickColour, colourBar, legendBar, plusGlyph, crossGlyph, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), LegendPosition_(..), V2(..), Mat2(..), DiagMat2(..), diagMat2, AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), norm2, normalize2, v2fromEndpoints, v2fromPoint, origin, (-.), pointRange, movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, toSvgFrame, toSvgFrameLP, e1, e2, toFloat, wholeDecimal, blendTwo, palette, interpolateBilinear)
+  (
+  -- * Frame
+    Frame(..), mkFrame, unitFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height,
+    -- * FigureData
+    FigureData(..), figFWidth, figFHeight
+    -- * Point
+  , Point(..), mkPoint, origin
+    -- * LabeledPoint
+  , LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel, Axis(..), axes, meshGrid, subdivSegment,
+    -- * SVG elements
+    svgHeader, rect, rectCentered, squareCentered, circle, line, tick, ticks, axis, toPlot, text, pixel, pixel', pickColour, colourBar, legendBar, plusGlyph, crossGlyph, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), LegendPosition_(..)
+    -- * Geometry
+    -- ** R^2 Vectors
+  , V2(..), e1, e2, norm2, normalize2, v2fromEndpoints, v2fromPoint, (-.), pointRange
+    -- ** R^2 -> R^2 Matrices
+  , Mat2(..), DiagMat2(..), diagMat2
+    -- ** Typeclasses
+  , AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, toSvgFrame, toSvgFrameLP, toFloat, wholeDecimal
+  -- * Colours
+  , blendTwo, palette,
+    interpolateBilinear)
   where
 
 import Data.Monoid ((<>))
@@ -55,6 +75,7 @@ data FigureData a = FigureData {
   , figLabelFontSize :: Int
                        } deriving (Eq, Show, Functor, Generic)
 
+figureDataDefault :: Floating a => FigureData a
 figureDataDefault = FigureData 400 300 0.1 0.9 0.1 0.9 10
 
 
@@ -640,17 +661,16 @@ colourBar fdat pal w vmin vmax n legpos legh =
   legendBar (fromRational <$> fdat) w vmin vmax n legpos legh (colBarPx pal)
 
 
-legendBar
-  :: (Monad m, Enum t, Fractional t, Fractional a) =>
-     FigureData a
-     -> a
-     -> t
-     -> t
-     -> Int
-     -> LegendPosition_
-     -> a
-     -> (FigureData a -> a -> a -> t -> t -> LabeledPoint t a -> m b)
-     -> m ()
+legendBar :: (Monad m, Enum t, Fractional t, Fractional a) =>
+             FigureData a
+          -> a
+          -> t
+          -> t
+          -> Int
+          -> LegendPosition_
+          -> a
+          -> (FigureData a -> a -> a -> t -> t -> LabeledPoint t a -> m b)
+          -> m ()
 legendBar fdat w vmin vmax n legpos legh fun = do
   -- rect wrect hrect 1 (Just C.black) (Just C.white) prect
   forM_ lps (fun fdat w h vmin vmax) where
