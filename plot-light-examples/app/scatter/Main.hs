@@ -27,13 +27,14 @@ dats = zipWith LabeledPoint p_ l_ where
 spdata = ScatterPointData Circle 3 3 C.red
 
 
+main :: IO ()
 main = do
   let
     frameTo = frameFromFigData fdat
     frameFrom = frameFromPoints $ _lp <$> dats
     vmin = minimum $ _lplabel <$> dats
     vmax = maximum $ _lplabel <$> dats     
-    f l sz = 10/(1 + exp(-(0.3 * x)))
+    f l sz = 10/(1 + exp(- (0.3 * x)) )
       where x = l + sz
     g _ w = w
     h l col = C.blend l' C.blue col
