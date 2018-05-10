@@ -11,7 +11,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** LabeledPoint
   LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel,
   -- ** Frame
-  Frame(..), mkFrame, unitFrame, frameFromPoints,  mkFrameOrigin, height, width, xmin, xmax, ymin, ymax, 
+  Frame(..), mkFrame, unitFrame, frameFromPoints,  mkFrameOrigin, height, width, xmin, xmax, ymin, ymax, isPointInFrame,
   -- ** Axis
   Axis(..), otherAxis,
   -- ** Vectors
@@ -37,6 +37,8 @@ where
 
 -- import Data.Monoid ((<>))
 
+import Control.Exception
+import Control.Monad.Catch (MonadThrow(..), throwM)
 import GHC.Generics
 
 import Data.Semigroup (Semigroup(..))
@@ -130,6 +132,8 @@ instance (Ord a, Num a) => Monoid (Frame a) where
   mempty = Frame (Point 0 0) (Point 0 0)
   mappend = (<>)
 
+isPointInFrame :: Ord a => Frame a -> Point a -> Bool
+isPointInFrame (Frame p1 p2) p = p >= p1 && p <= p2
 
 mkFrame :: Point a -> Point a -> Frame a
 mkFrame = Frame
@@ -181,8 +185,16 @@ height f = abs $ ymax f - ymin f
 
 -- | Interpolation
 
-interpolateBilinear :: Fractional a => Point a -> Point a -> (Point a -> a) -> Point a -> a
-interpolateBilinear q11@(Point x1 y1) q22@(Point x2 y2) f (Point x y) =
+-- | Safe
+interpolateBilinear  :: (Ord p, Fractional p, Show p) =>
+     Frame p -> (Point p -> p) -> Point p -> p
+interpolateBilinear fr@(Frame p1 p2) f p
+  | isPointInFrame fr p = interpolateBilinear' p1 p2 f p
+  | otherwise = error $ unwords ["Point", show p, "is outside frame", show fr]
+
+-- | Unsafe
+interpolateBilinear' :: Fractional a => Point a -> Point a -> (Point a -> a) -> Point a -> a
+interpolateBilinear' q11@(Point x1 y1) q22@(Point x2 y2) f (Point x y) =
   let
     q12 = Point x1 y2
     q21 = Point x2 y1
