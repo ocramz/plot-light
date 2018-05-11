@@ -9,8 +9,9 @@ import qualified Data.Colour as C
 -- import qualified Data.Colour.Palette.BrewerSet as CP
 import qualified Data.Colour.Names as C
 
-import qualified Data.Histogram.Generic as H (histogram, Histogram(..), Bin(..))
+import qualified Data.Histogram as H (Histogram(..), Bin(..), asList)
 import qualified Data.Histogram.Bin as H (BinD(..), binD, BinI(..), binI)
+import qualified Data.Histogram.Fill as H (mkSimple, mkWeighted, fillBuilder, HBuilder(..))
 
 import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as VU
@@ -19,12 +20,17 @@ import qualified Data.Vector.Generic as VG
 histogram figdata = undefined 
 
 
--- | Uses the data range as binning range
-binDfromData :: Foldable v => Int -> v Double -> H.BinD
-binDfromData n v = H.binD mi n ma where
-  mi = minimum v
-  ma = maximum v
-  
 
-histo n vl = H.histogram (binDfromData n v) v where
-  v = V.fromList vl
+
+-- | Uses data range as binning range
+histo :: (Foldable v, VU.Unbox a, Num a) =>
+         Int
+      -> v Double
+      -> H.Histogram H.BinD a
+histo n v = H.fillBuilder buildr v
+  where
+    mi = minimum v
+    ma = maximum v
+    bins = H.binD mi n ma
+    buildr = H.mkSimple bins
+  
