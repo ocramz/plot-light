@@ -16,11 +16,10 @@ import qualified Data.Text as T
 -- | Scatter plot
 --
 -- Every point in the plot has the same parameters, as declared in the `ScatterPointData` record
-scatter
-  :: (Foldable t, Show a, RealFrac a) =>
-     ScatterPointData a
-     -> t (Point a)
-     -> Svg
+scatter :: (Foldable t, Show a, RealFrac a) =>
+           ScatterPointData a
+        -> t (Point a)
+        -> Svg
 scatter (ScatterPointData glshape w sw fcol) ps = 
   forM_ ps $ glyph w sw glshape Nothing (Just fcol)
 

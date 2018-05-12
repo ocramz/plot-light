@@ -96,6 +96,41 @@ svgHeader w h  =
      fd = mkFrameOrigin w h
 
 
+
+-- | A Col is both a 'Colour' and an alpha (opacity) coefficient
+data Col a = Col {
+    cColour :: C.Colour Double
+  , cAlpha :: a } deriving (Eq, Show)
+
+-- | A shape can either be only filled, or only contoured, or both
+data ShapeCol a =
+    NoBorderCol (Col a)  -- ^ Only fill colour
+  | NoFillCol (Col a) a   -- ^ Only border colour + stroke width
+  | BothCol (Col a) (Col a) a -- ^ Fill and border colours
+  deriving (Eq, Show)
+
+
+
+shapeCol m col = case col of
+  NoBorderCol (Col c a) -> m ! SA.fillOpacity (vd a) ! SA.fill (colourAttr c)
+  NoFillCol (Col c a) sw  -> m ! SA.strokeOpacity (vd a) ! SA.stroke (colourAttr c) ! SA.strokeWidth (vd sw)
+  BothCol (Col cf af) (Col cb ab) sw -> m ! SA.fillOpacity (vd af) ! SA.fill (colourAttr cf) ! SA.strokeOpacity (vd ab) ! SA.stroke (colourAttr cb) ! SA.strokeWidth (vd sw)
+
+
+none :: S.AttributeValue
+none = S.toValue ("none" :: String)
+
+colourFillOpt :: Maybe (C.Colour Double) -> S.Attribute
+colourFillOpt Nothing = SA.fill none
+colourFillOpt (Just c) = SA.fill (colourAttr c)
+
+colourStrokeOpt :: Maybe (C.Colour Double) -> S.Attribute
+colourStrokeOpt Nothing = SA.stroke none
+colourStrokeOpt (Just c) = SA.stroke (colourAttr c)
+
+-- SA.fillOpacity (vd opac)
+
+
 -- | A rectangle, defined by its anchor point coordinates and side lengths
 --
 -- > > putStrLn $ renderSvg $ rect (Point 100 200) 30 60 2 Nothing (Just C.aquamarine)
@@ -473,16 +508,7 @@ polyline sw strTy slj col lis =
   in case strTy of Continuous -> svg0
                    Dashed d -> svg0 ! strokeDashArray d
 
-none :: S.AttributeValue
-none = S.toValue ("none" :: String)
 
-colourFillOpt :: Maybe (C.Colour Double) -> S.Attribute
-colourFillOpt Nothing = SA.fill none
-colourFillOpt (Just c) = SA.fill (colourAttr c)
-
-colourStrokeOpt :: Maybe (C.Colour Double) -> S.Attribute
-colourStrokeOpt Nothing = SA.stroke none
-colourStrokeOpt (Just c) = SA.stroke (colourAttr c)
 
 
 -- | A filled polyline
