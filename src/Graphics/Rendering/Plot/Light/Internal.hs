@@ -20,6 +20,8 @@ module Graphics.Rendering.Plot.Light.Internal
   , AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, toSvgFrame, toSvgFrameLP, toFloat, wholeDecimal
   -- * Colours
   , blendTwo, palette,
+    -- * General utility
+    -- ** Function interpolation
     interpolateBilinear)
   where
 
@@ -36,6 +38,7 @@ import Data.Scientific (Scientific, toRealFloat)
 import qualified Data.Text as T
 -- import qualified Data.Vector as V
 
+import Text.Blaze.Internal (Attributable(..))
 import Text.Blaze.Svg
 import Text.Blaze.Svg11  ((!))
 import qualified Text.Blaze.Svg11 as S hiding (style)
@@ -109,9 +112,9 @@ data ShapeCol a =
   | BothCol (Col a) (Col a) a -- ^ Fill and border colours
   deriving (Eq, Show)
 
-
-
-shapeCol m col = case col of
+-- | Set the fill and stroke colour and opacity attributes all at once (e.g. if the fill is set to invisible, the stroke must be visible somehow.
+(!#) :: (Attributable h, Real a) => h -> ShapeCol a -> h
+m !# col = case col of
   NoBorderCol (Col c a) ->
     m ! SA.fillOpacity (vd a) ! SA.fill (colourAttr c) ! SA.stroke none
   NoFillCol (Col c a) sw  ->
@@ -123,62 +126,49 @@ shapeCol m col = case col of
 none :: S.AttributeValue
 none = S.toValue ("none" :: String)
 
-colourFillOpt :: Maybe (C.Colour Double) -> S.Attribute
-colourFillOpt Nothing = SA.fill none
-colourFillOpt (Just c) = SA.fill (colourAttr c)
-
-colourStrokeOpt :: Maybe (C.Colour Double) -> S.Attribute
-colourStrokeOpt Nothing = SA.stroke none
-colourStrokeOpt (Just c) = SA.stroke (colourAttr c)
-
--- SA.fillOpacity (vd opac)
 
 
 -- | A rectangle, defined by its anchor point coordinates and side lengths
 --
--- > > putStrLn $ renderSvg $ rect (Point 100 200) 30 60 2 Nothing (Just C.aquamarine)
--- > <rect x="100.0" y="200.0" width="30.0" height="60.0" fill="#7fffd4" stroke="none" stroke-width="2.0" />
-rect :: (Show a, RealFrac a) =>
-     a                       -- ^ Width
-  -> a                       -- ^ Height
-  -> a                       -- ^ Stroke width
-  -> Maybe (C.Colour Double) -- ^ Stroke colour
-  -> Maybe (C.Colour Double) -- ^ Fill colour
-  -> Point a                 -- ^ Corner point coordinates  
-  -> Svg
-rect wid hei sw scol fcol (Point x0 y0) = S.rect ! SA.x (vd x0) ! SA.y (vd y0) ! SA.width (vd wid) ! SA.height (vd hei) ! colourFillOpt fcol ! colourStrokeOpt scol ! SA.strokeWidth (vd sw)
+-- > > putStrLn $ renderSvg $ rect 30 60 2 Nothing (Just C.aquamarine) (Point 100 200) 
 
-rect' wid hei col (Point x0 y0) = S.rect ! SA.x (vd x0) ! SA.y (vd y0) ! SA.width (vd wid) ! SA.height (vd hei) 
+rect :: Real a =>
+         a          -- ^ Width
+      -> a          -- ^ Stroke width 
+      -> ShapeCol a -- ^ Colour and alpha information
+      -> Point a    -- ^ Corner point coordinates
+      -> Svg
+rect wid hei col (Point x0 y0) = S.rect ! SA.x (vd x0) ! SA.y (vd y0) ! SA.width (vd wid) ! SA.height (vd hei) !# col
 
 
 -- | A rectangle, defined by its center coordinates and side lengths
 --
 -- > > putStrLn $ renderSvg $ rectCentered 15 30 1 (Just C.blue) (Just C.red) (Point 20 30)
--- > <rect x="12.5" y="15.0" width="15.0" height="30.0" fill="#ff0000" stroke="#0000ff" stroke-width="1.0" />
-rectCentered :: (Show a, RealFrac a) =>
-     a                       -- ^ Width
-  -> a                       -- ^ Height
-  -> a                       -- ^ Stroke width
-  -> Maybe (C.Colour Double) -- ^ Stroke colour
-  -> Maybe (C.Colour Double) -- ^ Fill colour
-  -> Point a                 -- ^ Center coordinates     
-  -> Svg
-rectCentered  wid hei sw scol fcol (Point x0 y0) =
-  rect wid hei sw scol fcol p' where
+
+-- rectCentered :: (Show a, RealFrac a) =>
+--      a                       -- ^ Width
+--   -> a                       -- ^ Height
+--   -> a                       -- ^ Stroke width
+--   -> Maybe (C.Colour Double) -- ^ Stroke colour
+--   -> Maybe (C.Colour Double) -- ^ Fill colour
+--   -> Point a                 -- ^ Center coordinates     
+--   -> Svg
+rectCentered  wid hei col (Point x0 y0) =
+  rect wid hei col p' where
     p' = Point x0c y0c
     x0c = x0 - (wid / 2)
     y0c = y0 - (hei / 2)   
 
 
--- | A square, defined by its center coordinates and side length
-squareCentered
-  :: (Show a, RealFrac a) =>
-     a                          -- ^ Side length
-     -> a                       -- ^ Stroke width
-     -> Maybe (C.Colour Double) -- ^ Stroke colour
-     -> Maybe (C.Colour Double) -- ^ Fill colour
-     -> Point a                 -- ^ Center coordinates
-     -> Svg
+-- -- | A square, defined by its center coordinates and side length
+-- squareCentered
+--   :: (Show a, RealFrac a) =>
+--      a                          -- ^ Side length
+--      -> a                       -- ^ Stroke width
+--      -> Maybe (C.Colour Double) -- ^ Stroke colour
+--      -> Maybe (C.Colour Double) -- ^ Fill colour
+--      -> Point a                 -- ^ Center coordinates
+--      -> Svg
 squareCentered w = rectCentered w w
 
 lineColourDefault :: C.Colour Double
@@ -480,17 +470,17 @@ textAnchor TAEnd = SA.textAnchor (vs "end")
 -- | A circle
 --
 -- > > putStrLn $ renderSvg $ circle (Point 20 30) 15 (Just C.blue) (Just C.red)
--- > <circle cx="20.0" cy="30.0" r="15.0" fill="#ff0000" stroke="#0000ff" />
-circle
-  :: (Real a1, Real a) =>
-        a                       -- ^ Radius
-     -> a                       -- ^ Stroke width
-     -> Maybe (C.Colour Double) -- ^ Stroke colour
-     -> Maybe (C.Colour Double) -- ^ Fill colour
-     -> Point a1                   -- ^ Center     
-  -> Svg
-circle  r sw scol fcol (Point x y) =
-  S.circle ! SA.cx (vd x) ! SA.cy (vd y) ! SA.r (vd r) ! colourFillOpt fcol ! colourStrokeOpt scol ! SA.strokeWidth (vd sw) 
+
+-- circle
+--   :: (Real a1, Real a) =>
+--         a                       -- ^ Radius
+--      -> a                       -- ^ Stroke width
+--      -> Maybe (C.Colour Double) -- ^ Stroke colour
+--      -> Maybe (C.Colour Double) -- ^ Fill colour
+--      -> Point a1                   -- ^ Center     
+--   -> Svg
+circle  r col (Point x y) =
+  S.circle ! SA.cx (vd x) ! SA.cy (vd y) ! SA.r (vd r) !# col
 
 
 
@@ -560,14 +550,14 @@ candlestick
      -> (l -> a) -- ^ Line minimum value
      -> a                       -- ^ Box width
      -> a                       -- ^ Stroke width
-     -> C.Colour Double         -- ^ First box colour
-     -> C.Colour Double         -- ^ Second box colour
+     -> ShapeCol a              -- ^ First box colour
+     -> ShapeCol a              -- ^ Second box colour
      -> C.Colour Double         -- ^ Line stroke colour
      -> LabeledPoint l a        -- ^ Data point
      -> Svg
 candlestick fdec fboxmin fboxmax fmin fmax wid sw col1 col2 colstroke lp = do
   line pmin pmax sw Continuous colstroke
-  rectCentered wid hei sw (Just colstroke) (Just col) p
+  rectCentered wid hei col p
     where
     p = _lp lp
     lab = _lplabel lp
@@ -636,30 +626,31 @@ toSvgFrameLP from to fliplr (LabeledPoint p lab) = LabeledPoint (toSvgFrame from
 
 
 
-pixel
-  :: (Show a, RealFrac a) =>
-     [C.Colour Double]
-     -> a
-     -> a
-     -> Scientific
-     -> Scientific
-     -> LabeledPoint Scientific a
-     -> Svg
-pixel pal w h vmin vmax (LabeledPoint p l) = rect w h 0 Nothing (Just col) p where
+pixel :: (Show a, RealFrac a) =>
+         [C.Colour Double]         -- ^ Palette
+      -> a                         -- ^ Width
+      -> a                         -- ^ Height
+      -> Scientific          
+      -> Scientific
+      -> LabeledPoint Scientific a
+      -> Svg
+pixel pal w h vmin vmax (LabeledPoint p l) = rect w h col p where
   col = pickColour pal (toFloat vmin) (toFloat vmax) (toFloat l)
 
 pixel'
   :: (Show a, RealFrac a, RealFrac t) =>
      [C.Colour Double] -> a -> a -> t -> t -> LabeledPoint t a -> Svg
-pixel' pal w h vmin vmax (LabeledPoint p l) = rect w h 0 Nothing (Just col) p where
+pixel' pal w h vmin vmax (LabeledPoint p l) = rect w h col p where
   col = pickColour pal vmin vmax l
   
 
-pickColour :: RealFrac t => [C.Colour Double] -> t -> t -> t -> C.Colour Double
-pickColour pal xmin xmax x = pal !! i
+-- | Pick a colour from a list, assumed to be a palette mapped onto a compact numerical interval.
+pickColour :: (RealFrac t, Num a) =>
+        [C.Colour Double] -> t -> t -> t -> ShapeCol a
+pickColour pal xmin xmax x = NoBorderCol $ Col (pal !! i) 1
   where
     i = floor (x01 * fromIntegral (nColors - 1))
-    x01 = (x-xmin)/(xmax - xmin)
+    x01 = (x - xmin) / (xmax - xmin)
     nColors = length pal
 
 
@@ -731,7 +722,7 @@ colBarPx
      -> Svg
 colBarPx pal fdat w h vmin vmax (LabeledPoint p val) = do
   text 0 (figLabelFontSize fdat) C.black TAStart (T.pack $ show (rr val :: Fixed E3)) (V2 (1.1*w) (0.5*h)) p
-  rectCentered w h 0 Nothing (Just $ pickColour pal vmin vmax val) p
+  rectCentered w h (pickColour pal vmin vmax val) p
   
 
 
@@ -745,11 +736,6 @@ colBarPx pal fdat w h vmin vmax (LabeledPoint p val) = do
 -- | Render a Colour from `colour` into a `blaze` Attribute
 colourAttr :: C.Colour Double -> S.AttributeValue
 colourAttr = S.toValue . C.sRGB24show 
-
-
--- **
-
-
 
 
 
