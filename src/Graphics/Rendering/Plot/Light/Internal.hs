@@ -112,9 +112,12 @@ data ShapeCol a =
 
 
 shapeCol m col = case col of
-  NoBorderCol (Col c a) -> m ! SA.fillOpacity (vd a) ! SA.fill (colourAttr c)
-  NoFillCol (Col c a) sw  -> m ! SA.strokeOpacity (vd a) ! SA.stroke (colourAttr c) ! SA.strokeWidth (vd sw)
-  BothCol (Col cf af) (Col cb ab) sw -> m ! SA.fillOpacity (vd af) ! SA.fill (colourAttr cf) ! SA.strokeOpacity (vd ab) ! SA.stroke (colourAttr cb) ! SA.strokeWidth (vd sw)
+  NoBorderCol (Col c a) ->
+    m ! SA.fillOpacity (vd a) ! SA.fill (colourAttr c) ! SA.stroke none
+  NoFillCol (Col c a) sw  ->
+    m ! SA.strokeOpacity (vd a) ! SA.stroke (colourAttr c) ! SA.strokeWidth (vd sw) ! SA.fill none
+  BothCol (Col cf af) (Col cb ab) sw ->
+    m ! SA.fillOpacity (vd af) ! SA.fill (colourAttr cf) ! SA.strokeOpacity (vd ab) ! SA.stroke (colourAttr cb) ! SA.strokeWidth (vd sw)
 
 
 none :: S.AttributeValue
@@ -144,6 +147,8 @@ rect :: (Show a, RealFrac a) =>
   -> Point a                 -- ^ Corner point coordinates  
   -> Svg
 rect wid hei sw scol fcol (Point x0 y0) = S.rect ! SA.x (vd x0) ! SA.y (vd y0) ! SA.width (vd wid) ! SA.height (vd hei) ! colourFillOpt fcol ! colourStrokeOpt scol ! SA.strokeWidth (vd sw)
+
+rect' wid hei col (Point x0 y0) = S.rect ! SA.x (vd x0) ! SA.y (vd y0) ! SA.width (vd wid) ! SA.height (vd hei) 
 
 
 -- | A rectangle, defined by its center coordinates and side lengths
