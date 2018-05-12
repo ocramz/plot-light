@@ -30,8 +30,7 @@ import qualified Data.Colour.Names as C
 -- 2. Flip the data along the y axis since the origin in SVG is the top-left corner of the screen
 
 
-    
-    
+  
 -- tsAxis
 --   :: (Functor t, Foldable t, Show a, RealFrac a) =>
 --      FigureData a

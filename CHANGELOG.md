@@ -1,6 +1,8 @@
 	0.4
 
 	Remove data-default-*
+	Improve shape colour representation: shapes can have a colour fill, a coloured contour, or both (see 'ShapeCol').
+	
 
 	0.3.3
 
