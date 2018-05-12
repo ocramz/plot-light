@@ -21,7 +21,7 @@ module Graphics.Rendering.Plot.Light.Internal
   -- * Colours
   , blendTwo, palette
     -- ** Col
-  , col, col50, col100, colBoth
+  , (!#), Col(..), ShapeCol(..), col, col50, col100, shapeColBoth
   , shapeColNoBorder, shapeColNoFill
     -- * General utility
     -- ** Function interpolation
@@ -41,7 +41,7 @@ import Data.Scientific (Scientific, toRealFloat)
 import qualified Data.Text as T
 -- import qualified Data.Vector as V
 
--- import Text.Blaze.Svg.Internal (Attributable(..))
+import Text.Blaze.Internal (Attributable(..))
 import Text.Blaze.Svg
 import Text.Blaze.Svg11  ((!))
 import qualified Text.Blaze.Svg11 as S hiding (style)
@@ -132,17 +132,16 @@ shapeColNoBorder c a = NoBorderCol $ col c a
 shapeColNoFill :: C.Colour Double -> a -> a -> ShapeCol a
 shapeColNoFill c a = NoFillCol $ col c a 
 
-
-colBoth ::
+shapeColBoth ::
      C.Colour Double  -- ^ Fill colour
   -> C.Colour Double  -- ^ Stroke colour
   -> a                -- ^ Opacity 
   -> a                -- ^ Stroke width
   -> ShapeCol a
-colBoth cs cf a = BothCol (col cs a) (col cf a)
+shapeColBoth cs cf a = BothCol (col cs a) (col cf a)
 
 -- | Set the fill and stroke colour and opacity attributes all at once (e.g. if the fill is set to invisible, the stroke must be visible somehow.
--- (!#) :: (Attributable h, Real a) => h -> ShapeCol a -> h
+(!#) :: (Attributable h, Real a) => h -> ShapeCol a -> h
 m !# col = case col of
   NoBorderCol (Col c a) ->
     m ! SA.fillOpacity (vd a) ! SA.fill (colourAttr c) ! SA.stroke none
@@ -160,8 +159,8 @@ none = S.toValue ("none" :: String)
 
 -- | A rectangle, defined by its anchor point coordinates and side lengths
 --
--- > > putStrLn $ renderSvg $ rect 30 60 2 Nothing (Just C.aquamarine) (Point 100 200) 
-
+-- > > putStrLn $ renderSvg $ rect 50 60 (shapeColNoBorder C.blue 0.5) (Point 100 30)
+-- > <rect x="100.0" y="30.0" width="50.0" height="60.0" fill-opacity="0.5" fill="#0000ff" stroke="none" />
 rect :: Real a =>
          a          -- ^ Width
       -> a          -- ^ Stroke width 
@@ -173,7 +172,7 @@ rect wid hei col (Point x0 y0) = S.rect ! SA.x (vd x0) ! SA.y (vd y0) ! SA.width
 
 -- | A rectangle, defined by its center coordinates and side lengths
 --
--- > > putStrLn $ renderSvg $ rectCentered 15 30 1 (Just C.blue) (Just C.red) (Point 20 30)
+-- > > putStrLn $ renderSvg $ rectCentered 15 30 (Just C.blue) (Just C.red) (Point 20 30)
 
 rectCentered :: (Show a, RealFrac a) =>
      a                       -- ^ Width
@@ -494,17 +493,15 @@ textAnchor TAEnd = SA.textAnchor (vs "end")
 
 -- | A circle
 --
--- > > putStrLn $ renderSvg $ circle (Point 20 30) 15 (Just C.blue) (Just C.red)
-
--- circle
---   :: (Real a1, Real a) =>
---         a                       -- ^ Radius
---      -> a                       -- ^ Stroke width
---      -> Maybe (C.Colour Double) -- ^ Stroke colour
---      -> Maybe (C.Colour Double) -- ^ Fill colour
---      -> Point a1                   -- ^ Center     
---   -> Svg
-circle  r col (Point x y) =
+-- > > putStrLn $ renderSvg $ circle 15 (shapeColBoth C.red C.blue 1 5) (Point 10 20)
+-- > <circle cx="10.0" cy="20.0" r="15.0" fill-opacity="1.0" fill="#ff0000" stroke-opacity="1.0" stroke="#0000ff" stroke-width="5.0" />
+circle
+  :: (Real a1, Real a) =>
+        a                       -- ^ Radius
+     -> ShapeCol a 
+     -> Point a1                   -- ^ Center     
+  -> Svg
+circle r col (Point x y) =
   S.circle ! SA.cx (vd x) ! SA.cy (vd y) ! SA.r (vd r) !# col
 
 
