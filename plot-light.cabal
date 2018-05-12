@@ -37,6 +37,7 @@ library
                        Graphics.Rendering.Plot.Light.Internal.Utils
                        Data.Parsers
   build-depends:       base >= 4.7 && < 5
+                     , blaze-markup >= 0.8.0.0
                      , blaze-svg >= 0.3.6.1
                      , colour >= 2.3.3
                      , containers >= 0.5.7.1

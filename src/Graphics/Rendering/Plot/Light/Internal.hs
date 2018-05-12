@@ -19,10 +19,13 @@ module Graphics.Rendering.Plot.Light.Internal
     -- ** Typeclasses
   , AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, toSvgFrame, toSvgFrameLP, toFloat, wholeDecimal
   -- * Colours
-  , blendTwo, palette,
+  , blendTwo, palette
+    -- ** Col
+  , col, col50, col100, colBoth
+  , shapeColNoBorder, shapeColNoFill
     -- * General utility
     -- ** Function interpolation
-    interpolateBilinear)
+  , interpolateBilinear)
   where
 
 import Data.Monoid ((<>))
@@ -38,7 +41,7 @@ import Data.Scientific (Scientific, toRealFloat)
 import qualified Data.Text as T
 -- import qualified Data.Vector as V
 
-import Text.Blaze.Internal (Attributable(..))
+-- import Text.Blaze.Svg.Internal (Attributable(..))
 import Text.Blaze.Svg
 import Text.Blaze.Svg11  ((!))
 import qualified Text.Blaze.Svg11 as S hiding (style)
@@ -105,6 +108,17 @@ data Col a = Col {
     cColour :: C.Colour Double
   , cAlpha :: a } deriving (Eq, Show)
 
+col :: C.Colour Double -> a -> Col a
+col = Col
+
+-- | Full opacity colour
+col100 :: Num a => C.Colour Double -> Col a
+col100 c = col c 1
+
+-- | Half opacity colour
+col50 :: Fractional a => C.Colour Double -> Col a
+col50 c = col c 0.5
+
 -- | A shape can either be only filled, or only contoured, or both
 data ShapeCol a =
     NoBorderCol (Col a)  -- ^ Only fill colour
@@ -112,8 +126,23 @@ data ShapeCol a =
   | BothCol (Col a) (Col a) a -- ^ Fill and border colours
   deriving (Eq, Show)
 
+shapeColNoBorder :: C.Colour Double -> a -> ShapeCol a
+shapeColNoBorder c a = NoBorderCol $ col c a
+
+shapeColNoFill :: C.Colour Double -> a -> a -> ShapeCol a
+shapeColNoFill c a = NoFillCol $ col c a 
+
+
+colBoth ::
+     C.Colour Double  -- ^ Fill colour
+  -> C.Colour Double  -- ^ Stroke colour
+  -> a                -- ^ Opacity 
+  -> a                -- ^ Stroke width
+  -> ShapeCol a
+colBoth cs cf a = BothCol (col cs a) (col cf a)
+
 -- | Set the fill and stroke colour and opacity attributes all at once (e.g. if the fill is set to invisible, the stroke must be visible somehow.
-(!#) :: (Attributable h, Real a) => h -> ShapeCol a -> h
+-- (!#) :: (Attributable h, Real a) => h -> ShapeCol a -> h
 m !# col = case col of
   NoBorderCol (Col c a) ->
     m ! SA.fillOpacity (vd a) ! SA.fill (colourAttr c) ! SA.stroke none
@@ -121,6 +150,7 @@ m !# col = case col of
     m ! SA.strokeOpacity (vd a) ! SA.stroke (colourAttr c) ! SA.strokeWidth (vd sw) ! SA.fill none
   BothCol (Col cf af) (Col cb ab) sw ->
     m ! SA.fillOpacity (vd af) ! SA.fill (colourAttr cf) ! SA.strokeOpacity (vd ab) ! SA.stroke (colourAttr cb) ! SA.strokeWidth (vd sw)
+
 
 
 none :: S.AttributeValue
@@ -145,14 +175,12 @@ rect wid hei col (Point x0 y0) = S.rect ! SA.x (vd x0) ! SA.y (vd y0) ! SA.width
 --
 -- > > putStrLn $ renderSvg $ rectCentered 15 30 1 (Just C.blue) (Just C.red) (Point 20 30)
 
--- rectCentered :: (Show a, RealFrac a) =>
---      a                       -- ^ Width
---   -> a                       -- ^ Height
---   -> a                       -- ^ Stroke width
---   -> Maybe (C.Colour Double) -- ^ Stroke colour
---   -> Maybe (C.Colour Double) -- ^ Fill colour
---   -> Point a                 -- ^ Center coordinates     
---   -> Svg
+rectCentered :: (Show a, RealFrac a) =>
+     a                       -- ^ Width
+  -> a                       -- ^ Height
+  -> ShapeCol a              -- ^ Colour and alpha information
+  -> Point a                 -- ^ Center coordinates     
+  -> Svg
 rectCentered  wid hei col (Point x0 y0) =
   rect wid hei col p' where
     p' = Point x0c y0c
@@ -160,15 +188,13 @@ rectCentered  wid hei col (Point x0 y0) =
     y0c = y0 - (hei / 2)   
 
 
--- -- | A square, defined by its center coordinates and side length
--- squareCentered
---   :: (Show a, RealFrac a) =>
---      a                          -- ^ Side length
---      -> a                       -- ^ Stroke width
---      -> Maybe (C.Colour Double) -- ^ Stroke colour
---      -> Maybe (C.Colour Double) -- ^ Fill colour
---      -> Point a                 -- ^ Center coordinates
---      -> Svg
+-- | A square, defined by its center coordinates and side length
+squareCentered
+  :: (Show a, RealFrac a) =>
+     a                          -- ^ Side length
+     -> ShapeCol a              -- ^ Colour and alpha information
+     -> Point a                 -- ^ Center coordinates
+     -> Svg
 squareCentered w = rectCentered w w
 
 lineColourDefault :: C.Colour Double
@@ -243,16 +269,15 @@ tick ax len sw col (Point x y) = line (Point x1 y1) (Point x2 y2) sw Continuous 
     | otherwise = (x-lh, y, x+lh, y)
 
 
-plusGlyph, crossGlyph
-  :: (Show a, RealFrac a) =>
-     a
-     -> a
-     -> C.Colour Double
-     -> Point a
-     -> Svg
-plusGlyph w sw col (Point x y) = do
-  line pl pr sw Continuous col
-  line pt pb sw Continuous col
+plusGlyph, crossGlyph :: (Show a, RealFrac a) =>
+                         a               -- ^ Width
+                      -> a               -- ^ Stroke width
+                      -> C.Colour Double
+                      -> Point a
+                      -> Svg
+plusGlyph w sw k (Point x y) = do
+  line pl pr sw Continuous k
+  line pt pb sw Continuous k
   where
     wh = w / 2
     pl = Point (x-wh) y
@@ -260,9 +285,9 @@ plusGlyph w sw col (Point x y) = do
     pt = Point x (y-wh)
     pb = Point x (y+wh)
 
-crossGlyph w sw col (Point x y) = do
-  line pa pb sw Continuous col
-  line pc pd sw Continuous col
+crossGlyph w sw k (Point x y) = do
+  line pa pb sw Continuous k
+  line pc pd sw Continuous k
   where
     wh = 1.4142 * w
     pa = Point (x+wh) (x+wh)

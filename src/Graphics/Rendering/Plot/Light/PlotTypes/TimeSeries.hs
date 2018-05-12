@@ -68,7 +68,9 @@ tsAxis fd fboxmin fboxmax fmin fmax sw colAxis rot plabx plaby ps =
     fdat = frameToFrameValue from to
     baz = const (T.pack "")
     fplot lps =
-      forM_ lps (candlestick (>) fboxmin' fboxmax' fmin' fmax' 5 1 C.green C.red colAxis)
+      forM_ lps (candlestick (>) fboxmin' fboxmax' fmin' fmax' 5 1 colUp colDown colAxis)
+    colUp = colBoth C.green colAxis 1 sw
+    colDown = colBoth C.red colAxis 1 sw
     fboxmin' = fdat . fboxmin
     fboxmax' = fdat . fboxmax
     fmin' = fdat . fmin
