@@ -172,8 +172,8 @@ rect wid hei col (Point x0 y0) = S.rect ! SA.x (vd x0) ! SA.y (vd y0) ! SA.width
 
 -- | A rectangle, defined by its center coordinates and side lengths
 --
--- > > putStrLn $ renderSvg $ rectCentered 15 30 (Just C.blue) (Just C.red) (Point 20 30)
-
+-- > > putStrLn $ renderSvg $ rectCentered 15 30 (shapeColBoth C.blue C.red 1 5) (Point 20 30)
+-- > <rect x="12.5" y="15.0" width="15.0" height="30.0" fill-opacity="1.0" fill="#0000ff" stroke-opacity="1.0" stroke="#ff0000" stroke-width="5.0" />
 rectCentered :: (Show a, RealFrac a) =>
      a                       -- ^ Width
   -> a                       -- ^ Height
@@ -188,12 +188,14 @@ rectCentered  wid hei col (Point x0 y0) =
 
 
 -- | A square, defined by its center coordinates and side length
-squareCentered
-  :: (Show a, RealFrac a) =>
-     a                          -- ^ Side length
-     -> ShapeCol a              -- ^ Colour and alpha information
-     -> Point a                 -- ^ Center coordinates
-     -> Svg
+--
+-- > > putStrLn $ renderSvg $ squareCentered 30 (shapeColBoth C.blue C.red 1 5) (Point 20 30)
+-- > <rect x="5.0" y="15.0" width="30.0" height="30.0" fill-opacity="1.0" fill="#0000ff" stroke-opacity="1.0" stroke="#ff0000" stroke-width="5.0" />
+squareCentered :: (Show a, RealFrac a) =>
+                  a                          -- ^ Side length
+               -> ShapeCol a              -- ^ Colour and alpha information
+               -> Point a                 -- ^ Center coordinates
+               -> Svg
 squareCentered w = rectCentered w w
 
 lineColourDefault :: C.Colour Double
