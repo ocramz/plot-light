@@ -66,12 +66,12 @@ histogramD' :: Foldable v =>
             -> v Double
             -> Svg
 histogramD' frameTo col n dats = do
-  scaleSvg 1 (-1) $
+  toBottomLeftSvgOrigin fdat $
     forM_ lps' $ \(LabeledPoint p l) -> rectCenteredMidpointBase binw' (hMult * l) col p
   where
     hist = histo n dats
     (frameFrom, lps) = histGeometry hist
-    lps' = moveLabeledPointBwFrames frameFrom frameTo False True `map` lps
+    lps' = moveLabeledPointBwFrames frameFrom frameTo False False `map` lps
     binw = H.binSize $ H.bins hist  -- bin width
     hMult = 10 -- height multiplication coeff. (hack)
     (sx, sy) = fromToStretchRatios frameFrom frameTo

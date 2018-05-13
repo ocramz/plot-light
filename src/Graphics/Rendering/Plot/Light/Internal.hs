@@ -4,7 +4,7 @@ module Graphics.Rendering.Plot.Light.Internal
   -- * Frame
     Frame(..), mkFrame, unitFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, frameToAffine, fromToStretchRatios, 
     -- * FigureData
-    FigureData(..), figFWidth, figFHeight
+    FigureData(..), figFWidth, figFHeight, figureDataDefault
     -- * Point
   , Point(..), mkPoint, origin
     -- * LabeledPoint
@@ -31,7 +31,7 @@ module Graphics.Rendering.Plot.Light.Internal
     -- ** R^2 -> R^2 Matrices
   , Mat2(..), DiagMat2(..), diagMat2
     -- ** Typeclasses
-  , AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, scaleSvg, toSvgFrame, toSvgFrameLP, toFloat, wholeDecimal
+  , AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, scaleSvg, toBottomLeftSvgOrigin, toSvgFrame, toSvgFrameLP, toFloat, wholeDecimal
   -- * Colours
   , blendTwo, palette
     -- ** Col
@@ -97,6 +97,12 @@ data FigureData a = FigureData {
 
 figureDataDefault :: Floating a => FigureData a
 figureDataDefault = FigureData 400 300 0.1 0.9 0.1 0.9 10
+
+
+bottomLeftOrigin :: Num a => FigureData a -> Point a
+bottomLeftOrigin fdat = Point x y where
+  x = figWidth fdat * figLeftMFrac fdat
+  y = figHeight fdat * figBottomMFrac fdat
 
 
 
@@ -649,8 +655,19 @@ strokeLineJoin slj = SA.strokeLinejoin (S.toValue str) where
 translateSvg :: Show a => Point a -> Svg -> Svg
 translateSvg (Point x y) svg = S.g ! SA.transform (S.translate x y) $ svg
 
+-- | Scale a Svg entity
 scaleSvg :: Real a => a -> a -> Svg -> Svg
 scaleSvg sx sy svg = S.g ! SA.transform (S.scale (real sx) (real sy)) $ svg
+
+
+-- | Flips and translates the SVG argument such that its axis origin lies at the bottom left corner defined in 'FigureData'.
+toBottomLeftSvgOrigin :: Real a =>
+                         FigureData a   
+                      -> Svg
+                      -> Svg
+toBottomLeftSvgOrigin fdat svg = S.g ! SA.transform (S.translate (real 0) (real h) <> S.scale (real 1) (real (- 1))) $ svg
+  where
+    h = _py $ bottomLeftOrigin fdat
 
 
 

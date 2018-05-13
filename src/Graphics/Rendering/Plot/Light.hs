@@ -149,7 +149,7 @@ module Graphics.Rendering.Plot.Light (
   -- ** Scatter
   scatter, scatterLP, scatterLPBar, ScatterPointData(..), GlyphShape_(..),
   -- ** Histogram
-  densityD, histogramD,
+  -- densityD, histogramD,
   -- * Plot elements
   -- ** Geometric primitives
   -- *** Rectangle, square
@@ -179,7 +179,7 @@ module Graphics.Rendering.Plot.Light (
   -- ** TimeSeries utilities
   fromTick, toTick,
   -- ** SVG utilities
-  svgHeader, translateSvg, scaleSvg, toSvgFrame, toSvgFrameLP,
+  svgHeader, translateSvg, scaleSvg, toSvgFrame, toBottomLeftSvgOrigin, toSvgFrameLP,
   -- * Geometric types
   -- ** Frame
   Frame(..),
