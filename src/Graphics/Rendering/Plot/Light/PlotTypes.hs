@@ -7,7 +7,6 @@ import Graphics.Rendering.Plot.Light.PlotTypes.Histogram as X
 
 import Data.Parsers as X
 
-import Data.TimeSeries as X
 
 
 

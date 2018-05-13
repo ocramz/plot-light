@@ -1,5 +1,5 @@
 name:                plot-light
-version:             0.4.1
+version:             0.4.2
 synopsis:            A lightweight plotting library, exporting to SVG
 description:         This library provides drawing and plotting datastructures and functions; it is aimed in particular at scientific visualization, but it also exposes its plotting primitives and a small but general purpose 2D geometry library.
                      
@@ -24,7 +24,6 @@ library
   ghc-options:         -Wno-missing-signatures -Wno-type-defaults -Wno-name-shadowing -Wno-unused-local-binds -Wno-unused-top-binds -Wno-unused-imports
   hs-source-dirs:      src
   exposed-modules:     Graphics.Rendering.Plot.Light
-                       Data.TimeSeries
                        Graphics.Rendering.Plot.Light.PlotTypes                       
                        Graphics.Rendering.Plot.Light.Internal.Geometry
   other-modules:       Graphics.Rendering.Plot.Light.Internal
