@@ -11,9 +11,11 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** LabeledPoint
   LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel,
   -- ** Frame
-  Frame(..), mkFrame, unitFrame, frameFromPoints,  mkFrameOrigin, height, width, xmin, xmax, ymin, ymax, isPointInFrame, frameToAffine, fromToStretchRatios, 
+  Frame(..), mkFrame, unitFrame, frameFromPoints,  mkFrameOrigin, height, width, xmin, xmax, ymin, ymax, isPointInFrame, frameToAffine, fromToStretchRatios,
   -- ** Axis
   Axis(..), otherAxis,
+  -- *** AxisData, AxisFrame
+  AxisData(..), AxisFrame(..), axisX, axisY, mkAxisPoints,
   -- ** Vectors
   V2(..), pointFromV2,
   -- ** Matrices
@@ -40,7 +42,8 @@ where
 import Control.Exception
 import Control.Monad.Catch (MonadThrow(..), throwM)
 import GHC.Generics
-
+import GHC.Real (Ratio(..))
+import Data.Scientific
 import Data.Semigroup (Semigroup(..))
 
 
@@ -53,7 +56,7 @@ instance Ord a => Ord (Point a) where
   (Point x1 y1) <= (Point x2 y2) = x1 <= x2 && y1 <= y2
 
 instance Show a => Show (Point a) where
-  show (Point x y) = show x ++ "," ++ show y
+  show (Point x y) = "(P " ++ show x ++ ", " ++ show y ++ ")"
 
 mkPoint :: a -> a -> Point a
 mkPoint = Point
@@ -190,6 +193,73 @@ height f = abs $ ymax f - ymin f
 
 
 
+-- * Axis
+
+data Axis = X | Y deriving (Eq, Show)
+
+otherAxis :: Axis -> Axis
+otherAxis X = Y
+otherAxis _ = X
+
+
+
+-- data Linear
+-- data Logarithmic
+
+
+data AxisData a = AxisData {
+    axisNIntervals :: Int   -- ^ Number of axis intervals
+  , axisV :: V2 a           -- ^ Axis direction vector (Normalized)
+  , axisOrigin :: Point a   -- ^ Axis origin
+                           } deriving (Eq, Show)
+
+-- | Create an X-aligned 'AxisData'
+axisX :: Num a =>
+         Int
+      -> a  -- ^ Interval length 
+      -> Point a
+      -> AxisData a
+axisX n ldx = AxisData n (ldx .* e1)
+
+-- | Create an Y-aligned 'AxisData'
+axisY :: Num a =>
+         Int
+      -> a  -- ^ Interval length
+      -> Point a -> AxisData a
+axisY n ldy = AxisData n (ldy .* e2)
+
+-- | Create the list of axis tick points from the 'AxisData'
+mkAxisPoints :: (Num a, Enum a) => AxisData a -> [Point a]
+mkAxisPoints (AxisData n v p0) =
+  map (\i -> movePoint (i .* v) p0) $ take n [0, 1 ..]
+
+data AxisFrame a = AxisFrame {
+    afFrame :: Frame a    -- ^ Position in the figure
+  , afAxis1 :: AxisData a  -- ^ First axis
+  , afAxis2 :: AxisData a  -- ^ Second axis
+                             } deriving (Eq, Show)
+
+
+-- mkAxisTickPoints :: Num a => Axis -> AxisData a -> [Point a]
+-- mkAxisTickPoints ax (AxisData n dl x0) = case ax of
+--   X -> map (`setPointX` origin) ts
+--   Y -> map (`setPointY` origin) ts
+--   where
+--     ts = [x0 + fromIntegral i * dl | i <- [0 .. n]]
+
+-- data AxisFrame a = AxisFrame {
+--     afFrame :: Frame a    -- ^ Position in the figure
+--   , afAxis1 :: AxisData a
+--   , afAxis2 :: AxisData a
+--                              } deriving (Eq, Show)
+
+-- mkAxisFrame :: Int -> a -> Int -> a -> Frame a -> AxisFrame a
+-- mkAxisFrame nx lx ny ly fr = AxisFrame fr (AxisData nx lx) (AxisData ny ly)
+
+
+
+
+
 -- | Interpolation
 
 -- | Safe
@@ -233,32 +303,7 @@ interpolateBilinear' q11@(Point x1 y1) q22@(Point x2 y2) f (Point x y) =
 
 
 
--- * Axis
 
-data Axis = X | Y deriving (Eq, Show)
-
-otherAxis :: Axis -> Axis
-otherAxis X = Y
-otherAxis _ = X
-
-
-
--- data Linear
--- data Logarithmic
-
-data AxisData a = AxisData {
-    axisNIntervals :: Int 
-  , axisLength :: a       -- ^ For displaying axis units
-                         } deriving (Eq, Show)
-
-data AxisFrame a = AxisFrame {
-    afFrame :: Frame a    -- ^ Position in the figure
-  , afAxis1 :: AxisData a
-  , afAxis2 :: AxisData a
-                             } deriving (Eq, Show)
-
-mkAxisFrame :: Int -> a -> Int -> a -> Frame a -> AxisFrame a
-mkAxisFrame nx lx ny ly fr = AxisFrame fr (AxisData nx lx) (AxisData ny ly)
 
 
 
