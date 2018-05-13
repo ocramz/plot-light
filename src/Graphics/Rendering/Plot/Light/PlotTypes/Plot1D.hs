@@ -10,6 +10,13 @@ plotFun :: Functor f => (t -> t) -> f (Point t) -> f (Point t)
 plotFun f = fmap f' where
   f' (Point x _) = Point x (f x)
 
+plotf :: (Show a, RealFrac a) => (a -> a) -> Svg
+plotf = plotf' plot1dDomainDefaults
+
+plotf' :: (Show a, RealFrac a) => Plot1DDomain a -> (a -> a) -> Svg
+plotf' (Plot1DDomain n x1 x2) f = plot $ plotFun f ps where
+  ps = pointRange n (Point x1 0) (Point x2 0)
+
 plot :: (Foldable t, Show a, RealFrac a) => t (Point a) -> Svg
 plot = plot' plot1DDefaults
 
@@ -27,4 +34,13 @@ data Plot1DOptions a = Plot1DOptions {
                                      } deriving (Eq, Show)
 
 plot1DDefaults :: RealFrac a => Plot1DOptions a
-plot1DDefaults = Plot1DOptions 3 Continuous Round C.blue 
+plot1DDefaults = Plot1DOptions 3 Continuous Round C.blue
+
+data Plot1DDomain a = Plot1DDomain {
+    p1dNPoints :: Int
+  , p1dPoint1 :: a
+  , p1dPoint2 :: a
+                                   } deriving (Eq, Show)
+
+plot1dDomainDefaults :: RealFrac a => Plot1DDomain a
+plot1dDomainDefaults = Plot1DDomain 100 (-10) 10
