@@ -31,7 +31,7 @@ fnameOut = "data/histogram-1.svg"
 fdat = FigureData xPlot yPlot 0.1 0.8 0.1 0.9 10
 frameTo = frameFromFigData fdat
 
-dats = [1,2,1,3,46,30,4,7,73,12,23,90,34,24,5,6,12,3,55,61,70,80,75,90,65,68,34,23,32,31,15,16,17,90,91,98,97,98,6,30,4,7,73,12,23,90,34,24,5,6,12,3,55,61,7]
+dats = [1,2,46,30,4,7,73,12,23,90,34,24,5,6,12,3,55,61,70,80,75,90,65,68,34,23,32,31,15,16,17,90,91,98,97,98,6,30,4,7,73,12,23,90,34,24,5,6,12,3,55,61,7]
 
 -- dats = [1,1,1,2,2,3,4,4,4,4,5,5,5,5,5,5,5,5,5,5,6,6,6]
 
@@ -74,7 +74,7 @@ histogramD' frameTo col n dats = do
     (frameFrom, lps) = histGeometry hist
     lps' = moveLabeledPointBwFrames frameFrom frameTo False False `map` lps
     binw = H.binSize $ H.bins hist  -- bin width
-    hMult = sy -- height multiplication coeff. (hack)
+    hMult = 0.9 * sy -- height multiplication coeff. (hack)
     (sx, sy) = fromToStretchRatios frameFrom frameTo
     binw' = sx * binw
     

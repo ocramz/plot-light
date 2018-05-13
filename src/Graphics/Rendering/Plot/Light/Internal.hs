@@ -409,6 +409,12 @@ axis o@(Point ox oy) ax len sw col tickLenFrac ls fontsize lrot tanchor flab vla
           f | ax == X = setPointY oy
             | otherwise = setPointX ox
 
+axis' axd@(AxisData n v o) (LineOptions sw ls col) = do
+  line o pend sw ls col
+  where
+    ps = mkAxisPoints axd
+    pend = last ps
+
 
 -- | A pair of Cartesian axes
 axes :: (Show a, RealFrac a) =>

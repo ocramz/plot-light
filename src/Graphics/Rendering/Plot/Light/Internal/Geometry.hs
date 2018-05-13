@@ -213,6 +213,9 @@ data AxisData a = AxisData {
   , axisOrigin :: Point a   -- ^ Axis origin
                            } deriving (Eq, Show)
 
+axisLength :: Floating a => AxisData a -> a
+axisLength (AxisData n v _) = fromIntegral n * norm2 v
+
 -- | Create an X-aligned 'AxisData'
 axisX :: Num a =>
          Int

@@ -2,17 +2,17 @@
 
 -- |
 -- Module      :  Graphics.Rendering.Plot.Light
--- Copyright   :  Marco Zocca 2017
+-- Copyright   :  Marco Zocca 2017-2018
 -- License     :  BSD3
 -- Maintainer  :  Marco Zocca <zocca marco gmail>
 --
--- @plot-light@ provides functionality for rendering vector
--- graphics in SVG format. It is geared in particular towards scientific plotting, and it is termed "light" because it only requires a few common Haskell dependencies and no external libraries.
+-- @plot-light@ provides functionality for scientific plotting. The suffix "light" in the name is due to the library only requiring a few common Haskell dependencies and no external libraries (i.e no C/R/Python etc. bindings).
 --
 -- == Usage
 --
--- To incorporate this library in your projects you just need @import Graphics.Rendering.Plot.Light@. If GHC complains of name collisions you must import the module in "qualified" form.
+-- To incorporate this library in your projects you just need @import Graphics.Rendering.Plot.Light@. If GHC complains of name collisions you can import the module in "qualified" form :
 --
+-- > import qualified Graphics.Rendering.Plot.Light as P
 --
 -- == Examples
 -- 
