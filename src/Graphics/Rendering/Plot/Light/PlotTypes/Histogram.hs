@@ -4,7 +4,7 @@ module Graphics.Rendering.Plot.Light.PlotTypes.Histogram where
 import Graphics.Rendering.Plot.Light.Internal
 
 import Control.Monad (forM_)
--- import Text.Blaze.Svg
+import Text.Blaze.Svg
 import qualified Data.Colour as C
 -- import qualified Data.Colour.Palette.BrewerSet as CP
 import qualified Data.Colour.Names as C
@@ -23,12 +23,19 @@ import qualified Data.Vector.Generic as VG
 
 
 
--- histogram col h = forM_ ps $ rectCentered binW where
---   (binCenters, binCounts) = unzip $ H.asList h
---   binXOffset = - head binCenters + 0.5 * binW
---   binW = H.binSize $ H.bins h  -- bin width
---   -- hcol = case col of
---   --   NoBorderCol c a 
+histogram :: Foldable v =>
+             ShapeCol Double
+          -> Int
+          -> v Double
+          -> Svg
+histogram col nBins dats = forM_ pshs $ \(p, h) -> rectCenteredMidpointBase binW h col p where
+  h = histo nBins dats
+  p1 = Point (head binCenters) 0
+  p2 = Point (last binCenters) 0
+  ps = pointRange nBins p1 p2
+  pshs = zip ps binCounts 
+  (binCenters, binCounts) = unzip $ H.asList h
+  binW = H.binSize $ H.bins h  -- bin width
 
 
 
