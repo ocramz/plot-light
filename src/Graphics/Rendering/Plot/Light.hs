@@ -144,7 +144,9 @@ module Graphics.Rendering.Plot.Light (
   -- ** Colour utilities
   blendTwo, palette, pickColour,
   -- *** ShapeCol-related
-  ShapeCol(..), Col(..), 
+  ShapeCol(..), Col(..),
+  -- ** TimeSeries utilities
+  fromTick, toTick,
   -- ** SVG utilities
   svgHeader, translateSvg, toSvgFrame, toSvgFrameLP,
   -- * Geometric types

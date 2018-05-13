@@ -7,14 +7,14 @@ import Test.QuickCheck
 
 import Graphics.Rendering.Plot.Light
 import Graphics.Rendering.Plot.Light.Internal.Geometry
-import Data.TimeSeries
+-- import Data.TimeSeries
 
 main :: IO ()
 main = hspec spec
 
 spec :: Spec
 spec = do
-  describe "Data.Timeseries" $ 
+  describe "TimeSeries" $ 
     it "correctly converts between `Tick`s and `Fractional`s" $ do
       let t0 = 57957.475
       fromTick (toTick t0) `shouldBe` t0

@@ -24,10 +24,11 @@ library
   ghc-options:         -Wno-missing-signatures -Wno-type-defaults -Wno-name-shadowing -Wno-unused-local-binds -Wno-unused-top-binds -Wno-unused-imports
   hs-source-dirs:      src
   exposed-modules:     Graphics.Rendering.Plot.Light
-                       Graphics.Rendering.Plot.Light.PlotTypes                       
                        Graphics.Rendering.Plot.Light.Internal.Geometry
   other-modules:       Graphics.Rendering.Plot.Light.Internal
+                       Graphics.Rendering.Plot.Light.PlotTypes                       
                        Graphics.Rendering.Plot.Light.Internal.Layout
+                       Graphics.Rendering.Plot.Light.PlotTypes.Plot1D                       
                        Graphics.Rendering.Plot.Light.PlotTypes.Heatmap
                        Graphics.Rendering.Plot.Light.PlotTypes.Scatter
                        Graphics.Rendering.Plot.Light.PlotTypes.Histogram
