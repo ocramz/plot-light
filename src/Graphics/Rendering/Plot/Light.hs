@@ -105,11 +105,15 @@
 -- fdat = 'FigureData' xPlot yPlot 0.1 0.8 0.1 0.9 10
 -- @
 --
--- dats = zipWith LabeledPoint p_ l_ where
+-- @
+-- dats = zipWith 'LabeledPoint' p_ l_ where
 --    l_ = [-5, -4 .. ]
---    p_ = zipWith Point [46,30,4,7,73,12,23,90,34,24,5,6,12,3,55,61] [20,35,43,23,20,1,23,8,11,17,25,4,5,26, 30]
+--    p_ = zipWith 'Point' [46,30,4,7,73,12,23,90,34,24,5,6,12,3,55,61] [20,35,43,23,20,1,23,8,11,17,25,4,5,26, 30]
+-- @
 --
+-- @
 -- spdata = ScatterPointData Plus 3 3 C.black 0.8
+-- @
 --
 -- @
 -- main :: IO ()
@@ -129,7 +133,7 @@
 --          l' = (l - vmin)/(vmax - vmin)
 --      i l alp = alp * ( 1 + l / (1 + abs l))
 --      dats' = map ('moveLabeledPointBwFrames' frameFrom frameTo False True) dats
---      svg_t = svgHeader xPlot yPlot $ do
+--      svg_t = 'svgHeader' xPlot yPlot $ do
 --        'axes' fdat frameFrom 2 C.black 10 10
 --        'scatterLP' f g h i spdata dats'
 --        'scatterLPBar' fdat 50 vmin vmax 3 TopRight 100 f g h i spdata

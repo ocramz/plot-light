@@ -28,6 +28,8 @@ import qualified Data.Text.IO as T
 xPlot = 400
 yPlot = 300
 fnameOut = "data/histogram-1.svg"
+fdat = FigureData xPlot yPlot 0.1 0.8 0.1 0.9 10
+frameTo = frameFromFigData fdat
 
 -- dats = [1,2,1,3,46,30,4,7,73,12,23,90,34,24,5,6,12,3,55,61,70,80,75,90,65,68]
 
@@ -36,12 +38,41 @@ dats = [1,1,1,2,2,3,4,4,5,5,5]
 main = do
   let
     kol = shapeColNoBorder C.red 1
-    svg_t = svgHeader xPlot yPlot $ histogramD kol 5 dats
+    svg_t = svgHeader xPlot yPlot $ histogramD' frameTo kol 5 dats
   T.writeFile fnameOut $ T.pack $ renderSvg svg_t
 
 
-histogramFrame hist = undefined where
-  (binCenters, binCounts) = unzip $ H.asList hist
+-- | Returns the 'Frame' associated with a 'Histogram' along with the bins as 'LabeledPoint's (where the point coordinates lie on the X axis and the label contains the histogram count)
+histGeometry :: (VU.Unbox (H.BinValue bin), H.Bin bin, Ord (H.BinValue bin), Num (H.BinValue bin)) =>
+                H.Histogram bin (H.BinValue bin)
+             -> (Frame (H.BinValue bin),
+                 [LabeledPoint (H.BinValue bin) (H.BinValue bin)])
+histGeometry hist = (frm, hlps) where
+  hl = H.asList hist
+  hlps = map (\(x, bc) -> let p = Point x 0 in mkLabeledPoint p bc) hl
+  (binCenters, binCounts) = unzip hl
+  maxCount = maximum binCounts
+  x1 = head binCenters
+  x2 = last binCenters
+  p1 = Point x1 0
+  p2 = Point x2 maxCount
+  frm = mkFrame p1 p2
+
+
+histogramD' :: Foldable v =>
+               Frame Double
+            -> ShapeCol Double
+            -> Int
+            -> v Double
+            -> Svg
+histogramD' frameTo col n dats = forM_ lps' $ \(LabeledPoint p l) -> rectCenteredMidpointBase binw (hMult * l) col p
+  where
+    hist = histo n dats
+    (frameFrom, lps) = histGeometry hist
+    lps' = moveLabeledPointBwFrames frameFrom frameTo False True `map` lps
+    binw = H.binSize $ H.bins hist  -- bin width
+    hMult = 10 -- height multiplication coeff. (hack)
+    
   
 
 
