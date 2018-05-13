@@ -692,7 +692,7 @@ pixel :: (Show a, RealFrac a) =>
       -> Scientific               -- ^ Function maximum
       -> LabeledPoint Scientific a
       -> Svg
-pixel pal w h vmin vmax (LabeledPoint p l) = rect w h col p where
+pixel pal w h vmin vmax (LabeledPoint p l) = rectCentered w h col p where
   col = pickColour pal (toFloat vmin) (toFloat vmax) (toFloat l)
 
 -- | A 'pixel'' is a filled square shape used for populating 'heatmap' plots , coloured from a palette
@@ -705,7 +705,7 @@ pixel'
   -> t -- ^ Function maximum
   -> LabeledPoint t a
   -> Svg
-pixel' pal w h vmin vmax (LabeledPoint p l) = rect w h col p where
+pixel' pal w h vmin vmax (LabeledPoint p l) = rectCentered w h col p where
   col = pickColour pal vmin vmax l
   
 

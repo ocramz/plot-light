@@ -149,7 +149,7 @@ module Graphics.Rendering.Plot.Light (
   -- *** Pixel
   pixel, pixel', 
   -- ** Composite plot elements
-  filledBand, candlestick, histogram,
+  filledBand, candlestick, 
   -- ** Plot utilities
   axes, toPlot, FigureData(..),
   -- ** Element attributes
