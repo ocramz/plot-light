@@ -134,19 +134,30 @@ module Graphics.Rendering.Plot.Light (
   scatter, scatterLP, scatterLPBar, ScatterPointData(..), GlyphShape_(..),
   -- * Plot elements
   -- ** Geometric primitives
-  rect, rectCentered, squareCentered, circle, line, text, polyline, filledPolyline, pixel, pixel', 
+  -- *** Rectangle, square
+  rect, rectCentered, squareCentered,
+  -- *** Circle
+  circle,
+  -- *** Line
+  line,
+  -- *** Text
+  text, TextAnchor_(..), 
+  -- *** Polyline
+  polyline, filledPolyline, StrokeLineJoin_(..), 
+  -- *** Pixel
+  pixel, pixel', 
   -- ** Composite plot elements
-  filledBand, candlestick,
+  filledBand, candlestick, histogram,
   -- ** Plot utilities
   axes, toPlot, FigureData(..),
   -- ** Element attributes
-  LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), LegendPosition_(..),
+  LineStroke_(..), LegendPosition_(..),
   -- ** Operations on frames
   frameFromPoints, frameFromFigData, mkFrame, mkFrameOrigin, width, height, figFWidth, figFHeight,  
   -- ** Colour utilities
   blendTwo, palette, pickColour,
   -- *** ShapeCol-related
-  ShapeCol(..), Col(..),
+  ShapeCol(..), Col(..), shapeColNoBorder, shapeColNoFill, shapeColBoth,
   -- ** TimeSeries utilities
   fromTick, toTick,
   -- ** SVG utilities

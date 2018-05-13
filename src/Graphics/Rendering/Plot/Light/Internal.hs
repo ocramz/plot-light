@@ -22,7 +22,7 @@ module Graphics.Rendering.Plot.Light.Internal
     -- ** Text
     text, TextAnchor_(..), 
     -- ** Specialized plot elements
-    pixel, pixel', plusGlyph, crossGlyph, candlestick,
+    pixel, pixel', plusGlyph, crossGlyph, candlestick, 
     -- ** Plot legend
     pickColour, colourBar, legendBar, LegendPosition_(..), 
     -- * Geometry
@@ -119,9 +119,11 @@ svgHeader w h  =
 
 -- | A Col is both a 'Colour' and an alpha (opacity) coefficient
 data Col a = Col {
-    cColour :: C.Colour Double
-  , cAlpha :: a } deriving (Eq, Show)
+    cColour :: C.Colour Double  -- ^ Colour
+  , cAlpha :: a                 -- ^ Opacity, [0 .. 1]
+  } deriving (Eq, Show)
 
+-- | 'Col' constructor
 col :: C.Colour Double -> a -> Col a
 col = Col
 
@@ -140,12 +142,15 @@ data ShapeCol a =
   | BothCol (Col a) (Col a) a -- ^ Fill and border colours
   deriving (Eq, Show)
 
+-- | Construct a 'ShapeCol' for shapes that have no border stroke (i.e. have only the fill colour)
 shapeColNoBorder :: C.Colour Double -> a -> ShapeCol a
 shapeColNoBorder c a = NoBorderCol $ col c a
 
+-- | Construct a 'ShapeCol' for shapes that have no fill colour (i.e. have only the stroke colour)
 shapeColNoFill :: C.Colour Double -> a -> a -> ShapeCol a
 shapeColNoFill c a = NoFillCol $ col c a 
 
+-- | Construct a 'ShapeCol' for shapes that have both fill and stroke colour
 shapeColBoth ::
      C.Colour Double  -- ^ Fill colour
   -> C.Colour Double  -- ^ Stroke colour
@@ -678,21 +683,28 @@ toSvgFrameLP from to fliplr (LabeledPoint p lab) = LabeledPoint (toSvgFrame from
 
 
 
-
+-- | A 'pixel' is a filled square shape used for populating 'heatmap' plots , coloured from a palette
 pixel :: (Show a, RealFrac a) =>
          [C.Colour Double]         -- ^ Palette
       -> a                         -- ^ Width
       -> a                         -- ^ Height
-      -> Scientific          
-      -> Scientific
+      -> Scientific                -- ^ Function minimum
+      -> Scientific               -- ^ Function maximum
       -> LabeledPoint Scientific a
       -> Svg
 pixel pal w h vmin vmax (LabeledPoint p l) = rect w h col p where
   col = pickColour pal (toFloat vmin) (toFloat vmax) (toFloat l)
 
+-- | A 'pixel'' is a filled square shape used for populating 'heatmap' plots , coloured from a palette
 pixel'
   :: (Show a, RealFrac a, RealFrac t) =>
-     [C.Colour Double] -> a -> a -> t -> t -> LabeledPoint t a -> Svg
+     [C.Colour Double]  -- ^ Palette
+  -> a                  -- ^ Width 
+  -> a -- ^ Height
+  -> t -- ^ Function minimum 
+  -> t -- ^ Function maximum
+  -> LabeledPoint t a
+  -> Svg
 pixel' pal w h vmin vmax (LabeledPoint p l) = rect w h col p where
   col = pickColour pal vmin vmax l
   

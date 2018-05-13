@@ -38,6 +38,20 @@ executable scatter
                      , colour
                      , blaze-svg
                      , scientific
+
+executable histogram
+  default-language:    Haskell2010
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  hs-source-dirs:      app/histogram
+  main-is:             Main.hs
+  build-depends:       base >= 4.7 && < 5
+                     , plot-light > 0.3.2
+                     , plot-light-examples
+                     , attoparsec
+                     , text
+                     , colour
+                     , blaze-svg
+                     , scientific                     
                                           
 executable timeseries
   default-language:    Haskell2010
