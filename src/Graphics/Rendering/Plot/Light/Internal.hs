@@ -530,6 +530,9 @@ polyline sw strTy slj col lis =
 
 
 
+
+
+
 -- | A filled polyline
 --
 -- > > putStrLn $ renderSvg $ filledPolyline C.coral 0.3 [(Point 0 1), (Point 10 40), Point 34 50, Point 30 5]

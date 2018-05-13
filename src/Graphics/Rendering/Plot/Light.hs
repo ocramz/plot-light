@@ -126,6 +126,8 @@
 
 module Graphics.Rendering.Plot.Light (
   -- * Plot types
+  -- ** 1D plot
+  plotFun, Plot1DOptions(..),
   -- ** Heatmap
   heatmap, heatmap', plotFun2, colourBar,
   -- ** Scatter
