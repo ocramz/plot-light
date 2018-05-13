@@ -11,7 +11,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** LabeledPoint
   LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel,
   -- ** Frame
-  Frame(..), mkFrame, unitFrame, frameFromPoints,  mkFrameOrigin, height, width, xmin, xmax, ymin, ymax, isPointInFrame,
+  Frame(..), mkFrame, unitFrame, frameFromPoints,  mkFrameOrigin, height, width, xmin, xmax, ymin, ymax, isPointInFrame, frameToAffine, fromToStretchRatios, 
   -- ** Axis
   Axis(..), otherAxis,
   -- ** Vectors
@@ -147,6 +147,13 @@ unitFrame :: Num a => Frame a
 unitFrame = mkFrame origin oneOne
 
 
+
+-- | Horizontal and vertical stretch factors associated with an affine transformation between two 'Frame's
+fromToStretchRatios :: Fractional b => Frame b -> Frame b -> (b, b)  
+fromToStretchRatios frameFrom frameTo = (m2x/m1x, m2y/m1y)
+  where
+    (DMat2 m1x m1y, _) = frameToAffine frameFrom
+    (DMat2 m2x m2y, _) = frameToAffine frameTo
 
 
 -- | Create a `Frame` from a container of `Point`s `P`, i.e. construct two points `p1` and `p2` such that :

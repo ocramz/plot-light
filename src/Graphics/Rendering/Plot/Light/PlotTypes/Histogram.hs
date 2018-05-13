@@ -1,5 +1,5 @@
 {-# language FlexibleContexts #-}
-module Graphics.Rendering.Plot.Light.PlotTypes.Histogram (histogramD, densityD) where
+module Graphics.Rendering.Plot.Light.PlotTypes.Histogram where
 
 import Graphics.Rendering.Plot.Light.Internal
 
@@ -33,7 +33,7 @@ frameTo = frameFromFigData fdat
 
 -- dats = [1,2,1,3,46,30,4,7,73,12,23,90,34,24,5,6,12,3,55,61,70,80,75,90,65,68]
 
-dats = [1,1,1,2,2,3,4,4,5,5,5]
+dats = [1,1,1,2,2,3,4,4,4,4,5,5,5,5,5,5,5,5,5,5]
 
 main = do
   let
@@ -65,32 +65,38 @@ histogramD' :: Foldable v =>
             -> Int
             -> v Double
             -> Svg
-histogramD' frameTo col n dats = forM_ lps' $ \(LabeledPoint p l) -> rectCenteredMidpointBase binw (hMult * l) col p
+histogramD' frameTo col n dats = do
+  scaleSvg 1 (-1) $
+    forM_ lps' $ \(LabeledPoint p l) -> rectCenteredMidpointBase binw' (hMult * l) col p
   where
     hist = histo n dats
     (frameFrom, lps) = histGeometry hist
     lps' = moveLabeledPointBwFrames frameFrom frameTo False True `map` lps
     binw = H.binSize $ H.bins hist  -- bin width
     hMult = 10 -- height multiplication coeff. (hack)
+    (sx, sy) = fromToStretchRatios frameFrom frameTo
+    binw' = sx * binw
     
-  
 
 
 
-histogramD :: Foldable v =>
-             ShapeCol Double -- ^ Colour information (fill, stroke, opacity)
-          -> Int             -- ^ Number of histogram bins
-          -> v Double        -- ^ Data
-          -> Svg
-histogramD col nBins dats = forM_ pshs $ \(p, h) -> rectCenteredMidpointBase binW (hMult * h) col p where
-  his = histo nBins dats
-  p1 = Point (head binCenters) 0
-  p2 = Point (last binCenters) 0
-  ps = pointRange nBins p1 p2
-  pshs = zip ps binCounts 
-  (binCenters, binCounts) = unzip $ H.asList his
-  binW = H.binSize $ H.bins his  -- bin width
-  hMult = 10 -- height multiplication coeff. (hack)
+
+
+
+-- histogramD :: Foldable v =>
+--              ShapeCol Double -- ^ Colour information (fill, stroke, opacity)
+--           -> Int             -- ^ Number of histogram bins
+--           -> v Double        -- ^ Data
+--           -> Svg
+-- histogramD col nBins dats = forM_ pshs $ \(p, h) -> rectCenteredMidpointBase binW (hMult * h) col p where
+--   his = histo nBins dats
+--   p1 = Point (head binCenters) 0
+--   p2 = Point (last binCenters) 0
+--   ps = pointRange nBins p1 p2
+--   pshs = zip ps binCounts 
+--   (binCenters, binCounts) = unzip $ H.asList his
+--   binW = H.binSize $ H.bins his  -- bin width
+--   hMult = 10 -- height multiplication coeff. (hack)
 
 -- | Normalized histogram counts (i.e. uniform density approximation) 
 densityD :: (Fractional b, VU.Unbox b, Foldable v) =>

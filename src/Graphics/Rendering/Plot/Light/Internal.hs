@@ -2,7 +2,7 @@
 module Graphics.Rendering.Plot.Light.Internal
   (
   -- * Frame
-    Frame(..), mkFrame, unitFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height,
+    Frame(..), mkFrame, unitFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, frameToAffine, fromToStretchRatios, 
     -- * FigureData
     FigureData(..), figFWidth, figFHeight
     -- * Point
@@ -31,7 +31,7 @@ module Graphics.Rendering.Plot.Light.Internal
     -- ** R^2 -> R^2 Matrices
   , Mat2(..), DiagMat2(..), diagMat2
     -- ** Typeclasses
-  , AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, toSvgFrame, toSvgFrameLP, toFloat, wholeDecimal
+  , AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, scaleSvg, toSvgFrame, toSvgFrameLP, toFloat, wholeDecimal
   -- * Colours
   , blendTwo, palette
     -- ** Col
@@ -181,11 +181,11 @@ none = S.toValue ("none" :: String)
 -- > > putStrLn $ renderSvg $ rect 50 60 (shapeColNoBorder C.blue 0.5) (Point 100 30)
 -- > <rect x="100.0" y="30.0" width="50.0" height="60.0" fill-opacity="0.5" fill="#0000ff" stroke="none" />
 rect :: Real a =>
-         a          -- ^ Width
-      -> a          -- ^ Stroke width 
-      -> ShapeCol a -- ^ Colour and alpha information
-      -> Point a    -- ^ Corner point coordinates
-      -> Svg
+        a          -- ^ Width
+     -> a          -- ^ Stroke width 
+     -> ShapeCol a -- ^ Colour and alpha information
+     -> Point a    -- ^ Corner point coordinates
+     -> Svg
 rect wid hei col (Point x0 y0) = S.rect ! SA.x (vd x0) ! SA.y (vd y0) ! SA.width (vd wid) ! SA.height (vd hei) !# col
 
 
@@ -649,6 +649,8 @@ strokeLineJoin slj = SA.strokeLinejoin (S.toValue str) where
 translateSvg :: Show a => Point a -> Svg -> Svg
 translateSvg (Point x y) svg = S.g ! SA.transform (S.translate x y) $ svg
 
+scaleSvg :: Real a => a -> a -> Svg -> Svg
+scaleSvg sx sy svg = S.g ! SA.transform (S.scale (real sx) (real sy)) $ svg
 
 
 

@@ -179,7 +179,7 @@ module Graphics.Rendering.Plot.Light (
   -- ** TimeSeries utilities
   fromTick, toTick,
   -- ** SVG utilities
-  svgHeader, translateSvg, toSvgFrame, toSvgFrameLP,
+  svgHeader, translateSvg, scaleSvg, toSvgFrame, toSvgFrameLP,
   -- * Geometric types
   -- ** Frame
   Frame(..),
