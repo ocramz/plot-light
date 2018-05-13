@@ -23,12 +23,12 @@ import qualified Data.Vector.Generic as VG
 
 
 
-histogram col h = undefined where
-  (binCenters, binCounts) = unzip $ H.asList h
-  binXOffset = - head binCenters + 0.5 * binSize
-  binSize = H.binSize $ H.bins h
-  -- hcol = case col of
-  --   NoBorderCol c a 
+-- histogram col h = forM_ ps $ rectCentered binW where
+--   (binCenters, binCounts) = unzip $ H.asList h
+--   binXOffset = - head binCenters + 0.5 * binW
+--   binW = H.binSize $ H.bins h  -- bin width
+--   -- hcol = case col of
+--   --   NoBorderCol c a 
 
 
 

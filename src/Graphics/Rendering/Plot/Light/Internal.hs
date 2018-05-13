@@ -10,10 +10,24 @@ module Graphics.Rendering.Plot.Light.Internal
     -- * LabeledPoint
   , LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel, Axis(..), axes, meshGrid, subdivSegment,
     -- * SVG elements
-    svgHeader, rect, rectCentered, squareCentered, circle, line, tick, ticks, axis, toPlot, text, pixel, pixel', pickColour, colourBar, legendBar, plusGlyph, crossGlyph, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), LegendPosition_(..)
+    svgHeader, toPlot,
+    -- ** Rectangle/square
+    rect, rectCentered, rectCenteredMidpointBase, squareCentered,
+    -- ** Circle
+    circle,
+    -- ** Lines
+    line, tick, ticks, axis,
+    -- ** Polylines
+    polyline, filledPolyline, filledBand, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..),
+    -- ** Text
+    text, TextAnchor_(..), 
+    -- ** Specialized plot elements
+    pixel, pixel', plusGlyph, crossGlyph, candlestick,
+    -- ** Plot legend
+    pickColour, colourBar, legendBar, LegendPosition_(..), 
     -- * Geometry
     -- ** R^2 Vectors
-  , V2(..), e1, e2, norm2, normalize2, v2fromEndpoints, v2fromPoint, (-.), pointRange
+    V2(..), e1, e2, norm2, normalize2, v2fromEndpoints, v2fromPoint, (-.), pointRange
     -- ** R^2 -> R^2 Matrices
   , Mat2(..), DiagMat2(..), diagMat2
     -- ** Typeclasses
@@ -185,6 +199,18 @@ rectCentered  wid hei col (Point x0 y0) =
     p' = Point x0c y0c
     x0c = x0 - (wid / 2)
     y0c = y0 - (hei / 2)   
+
+-- | A rectangle, defined by the coordinates of the midpoint of its base
+rectCenteredMidpointBase :: (Show a, RealFrac a) =>
+     a                       -- ^ Width
+  -> a                       -- ^ Height
+  -> ShapeCol a              -- ^ Colour and alpha information
+  -> Point a                 -- ^ Base midpoint coordinates     
+  -> Svg
+rectCenteredMidpointBase wid hei col (Point x0 y0) =
+  rect wid hei col p' where
+    p' = Point x0c y0
+    x0c = x0 - (wid / 2)
 
 
 -- | A square, defined by its center coordinates and side length
