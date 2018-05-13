@@ -16,7 +16,7 @@
 --
 -- == Examples
 -- 
--- If you wish to try out the examples in this page, you will need to create a project that imports `blaze-svg`, `colour` and `text`, and to have these import statements as well :
+-- If you wish to try out the examples in this page, you will need to create a project that imports @blaze-svg@, @colour@ and @text@, and to have these import statements as well :
 --
 -- > import Text.Blaze.Svg.Renderer.String (renderSvg) 
 -- > import qualified Data.Colour.Names as C
@@ -39,33 +39,40 @@
 -- > xPlot = 400
 -- > yPlot = 300
 -- > fnameOut = "heatmap.svg"
+--
+-- @
+-- fdat = 'FigureData' xPlot yPlot 0.1 0.8 0.1 0.9 10
+-- @
 -- 
--- > fdat = FigureData xPlot yPlot 0.1 0.8 0.1 0.9 10
--- 
--- > palette0 = palette [C.red, C.white, C.blue] 15
--- 
--- > plotFun2ex1 = do
--- >  let 
--- >    p1 = Point (-2) (-2)
--- >    p2 = Point 2 2
--- >    frame = mkFrame p1 p2
--- >    nx = 50 
--- >    ny = 50
--- >    f x y = cos ( pi * theta ) * sin r 
--- >      where
--- >        r = x'**2 + y'**2
--- >        theta = atan2 y' x'
--- >        (x', y') = (fromRational x, fromRational y)
--- >    lps = plotFun2 f $ meshGrid frame nx ny
--- >    vmin = minimum $ _lplabel <$> lps
--- >    vmax = maximum $ _lplabel <$> lps   
--- >    pixels = heatmap' fdat palette0 frame nx ny lps
--- >    cbar = colourBar fdat palette0 10 vmin vmax 10 TopRight 100
--- >    svg_t = svgHeader xPlot yPlot $ do
--- >       axes fdat frame 2 C.black 10 10
--- >       pixels
--- >       cbar
--- >  T.writeFile fnameOut $ T.pack $ renderSvg svg_t
+-- @
+-- palette0 = 'palette' [C.red, C.white, C.blue] 15
+-- @
+--
+-- @
+-- plotFun2ex1 = do
+--   let 
+--     p1 = Point (-2) (-2)
+--     p2 = Point 2 2
+--     frame = 'mkFrame' p1 p2
+--     nx = 50 
+--     ny = 50
+--     f x y = cos ( pi * theta ) * sin r 
+--       where
+--         r = x'**2 + y'**2
+--         theta = atan2 y' x'
+--         (x', y') = (fromRational x, fromRational y)
+--     lps = 'plotFun2' f $ meshGrid frame nx ny
+--     labs = map _lplabel lps
+--     vmin = minimum labs
+--     vmax = maximum labs
+--     pixels = 'heatmap'' fdat palette0 frame nx ny lps
+--     cbar = 'colourBar' fdat palette0 10 vmin vmax 10 TopRight 100
+--     svg_t = 'svgHeader' xPlot yPlot $ do
+--        'axes' fdat frame 2 C.black 10 10
+--        pixels
+--        cbar
+-- T.writeFile fnameOut $ T.pack $ renderSvg svg_t
+-- @
 --
 -- This example demonstrates how to plot a 2D scalar function and write the output to SVG file.
 --
@@ -94,35 +101,40 @@
 -- > yPlot = 300
 -- > fnameOut = "scatter.svg"
 --
--- > fdat = FigureData xPlot yPlot 0.1 0.8 0.1 0.9 10
+-- @ 
+-- fdat = 'FigureData' xPlot yPlot 0.1 0.8 0.1 0.9 10
+-- @
 --
--- > dats = zipWith LabeledPoint p_ l_ where
--- >   l_ = [-5, -4 .. ]
--- >   p_ = zipWith Point [46,30,4,7,73,12,23,90,34,24,5,6,12,3,55,61] [20,35,43,23,20,1,23,8,11,17,25,4,5,26, 30]
+-- dats = zipWith LabeledPoint p_ l_ where
+--    l_ = [-5, -4 .. ]
+--    p_ = zipWith Point [46,30,4,7,73,12,23,90,34,24,5,6,12,3,55,61] [20,35,43,23,20,1,23,8,11,17,25,4,5,26, 30]
 --
--- > spdata = ScatterPointData Plus 3 3 C.black 0.8
--- 
--- > main :: IO ()
--- > main = do
--- >   let
--- >     frameTo = frameFromFigData fdat
--- >     frameFrom = frameFromPoints $ _lp <$> dats
--- >     vmin = minimum $ _lplabel <$> dats
--- >     vmax = maximum $ _lplabel <$> dats     
--- >     f l sz = 15 / (1 + exp(- (0.3 * x)) )
--- >       where x = l + sz
--- >     g l w = w * (1 + l / (1 + abs l))
--- >     h l col = C.blend l' C.red col
--- >       where
--- >         l' = (l - vmin)/(vmax - vmin)
--- >     i l alp = alp * ( 1 + l / (1 + abs l))
--- >     dats' = moveLabeledPointBwFrames frameFrom frameTo False True <$> dats
--- >     svg_t = svgHeader xPlot yPlot $ do
--- >       axes fdat frameFrom 2 C.black 10 10
--- >       scatterLP f g h i spdata dats'
--- >       scatterLPBar fdat 50 vmin vmax 3 TopRight 100 f g h i spdata
--- >   T.writeFile fnameOut $ T.pack $ renderSvg svg_t
--- 
+-- spdata = ScatterPointData Plus 3 3 C.black 0.8
+--
+-- @
+-- main :: IO ()
+-- main = do
+--    let
+--      frameTo = 'frameFromFigData' fdat
+--      points = map _lp dats
+--      frameFrom = 'frameFromPoints' points
+--      labs = map _lplabel dats
+--      vmin = minimum labs
+--      vmax = maximum labs
+--      f l sz = 15 / (1 + exp(- (0.3 * x)) )
+--        where x = l + sz
+--      g l w = w * (1 + l / (1 + abs l))
+--      h l col = C.blend l' C.red col
+--        where
+--          l' = (l - vmin)/(vmax - vmin)
+--      i l alp = alp * ( 1 + l / (1 + abs l))
+--      dats' = map ('moveLabeledPointBwFrames' frameFrom frameTo False True) dats
+--      svg_t = svgHeader xPlot yPlot $ do
+--        'axes' fdat frameFrom 2 C.black 10 10
+--        'scatterLP' f g h i spdata dats'
+--        'scatterLPBar' fdat 50 vmin vmax 3 TopRight 100 f g h i spdata
+--    T.writeFile fnameOut $ T.pack $ renderSvg svg_t
+-- @
 
 module Graphics.Rendering.Plot.Light (
   -- * Plot types

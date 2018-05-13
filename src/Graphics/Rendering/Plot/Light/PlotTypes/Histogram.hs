@@ -40,6 +40,10 @@ main = do
   T.writeFile fnameOut $ T.pack $ renderSvg svg_t
 
 
+histogramFrame hist = undefined where
+  (binCenters, binCounts) = unzip $ H.asList hist
+  
+
 
 
 histogramD :: Foldable v =>
