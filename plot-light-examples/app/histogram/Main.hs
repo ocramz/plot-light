@@ -14,6 +14,6 @@ import Graphics.Rendering.Plot.Light.Internal.Geometry
 
 
 
--- main = print "hello!"
+main = print "hello!"
 
 

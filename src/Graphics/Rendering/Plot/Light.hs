@@ -132,6 +132,8 @@ module Graphics.Rendering.Plot.Light (
   heatmap, heatmap', plotFun2, colourBar,
   -- ** Scatter
   scatter, scatterLP, scatterLPBar, ScatterPointData(..), GlyphShape_(..),
+  -- ** Histogram
+  densityD, histogramD,
   -- * Plot elements
   -- ** Geometric primitives
   -- *** Rectangle, square
