@@ -6,12 +6,15 @@ import Graphics.Rendering.Plot.Light.Internal.Utils
 import Data.Fixed
 import Data.Maybe (fromMaybe)
 import Control.Monad (forM_)
+
 import Text.Blaze.Svg
+import Text.Blaze.Svg.Renderer.String (renderSvg)
+
 import qualified Data.Colour as C
 -- import qualified Data.Colour.Palette.BrewerSet as CP
 import qualified Data.Colour.Names as C
 import qualified Data.Text as T
-
+import qualified Data.Text.IO as T
 
 -- | Scatter plot
 --
@@ -33,7 +36,7 @@ scatterLP :: (Foldable t, RealFrac a, Show a) =>
              (l -> b -> a)            -- ^ Modifies the glyph size
           -> (l -> b -> a)         -- ^ Modifies the glyph stroke width
           -> (l -> C.Colour Double -> C.Colour Double)  -- ^ Modifies the glyph colour
-          -> (l -> b -> a)
+          -> (l -> b -> a)        -- ^ Modifies the glyph opacity
           -> ScatterPointData b    -- ^ Glyph style defaults
           -> t (LabeledPoint l a) -- ^ Data
           -> Svg
@@ -80,11 +83,11 @@ scatterLPBar fdat w vmin vmax n legpos legh f g h i spdat = legendBar fdat w vmi
 -- | Parameters for a scatterplot glyph
 data ScatterPointData a = ScatterPointData
   {
-    spGlyphShape :: GlyphShape_
-  , spSize :: a
-  , spStrokeWidth :: a
-  , spColour :: C.Colour Double
-  , spAlpha :: a
+    spGlyphShape :: GlyphShape_   -- ^ Glyph shape
+  , spSize :: a                   -- ^ Glyph size
+  , spStrokeWidth :: a            -- ^ Glyph stroke width
+  , spColour :: C.Colour Double   -- ^ Glyph colour
+  , spAlpha :: a                  -- ^ Glyph opacity
   } deriving (Eq, Show)
 
 
@@ -128,6 +131,19 @@ glyph w sw sh col alpha p =
 -- -- | Utility function for cycling glyph colours and shapes (i.e. unique combinations of these make it easy to tell different datasets apart)
 -- cycleGlyphCols :: (CP.ColorCat, Int) -> Int -> [(CP.Kolor, GlyphShape_)]
 -- cycleGlyphCols (pal, n) nsets = take nsets $ zip (cycle $ CP.brewerSet pal n ) (cycle [Square, Circle ..])
+
+
+
+
+
+
+    
+
+
+
+
+
+
 
 
 

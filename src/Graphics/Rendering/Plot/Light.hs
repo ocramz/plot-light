@@ -38,11 +38,12 @@
 --
 -- > xPlot = 400
 -- > yPlot = 300
--- >
+-- > fnameOut = "heatmap.svg"
+-- 
 -- > fdat = FigureData xPlot yPlot 0.1 0.8 0.1 0.9 10
--- >
+-- 
 -- > palette0 = palette [C.red, C.white, C.blue] 15
--- > 
+-- 
 -- > plotFun2ex1 = do
 -- >  let 
 -- >    p1 = Point (-2) (-2)
@@ -64,7 +65,7 @@
 -- >       axes fdat frame 2 C.black 10 10
 -- >       pixels
 -- >       cbar
--- >  T.writeFile "heatmap.svg" $ T.pack $ renderSvg svg_t
+-- >  T.writeFile fnameOut $ T.pack $ renderSvg svg_t
 --
 -- This example demonstrates how to plot a 2D scalar function and write the output to SVG file.
 --
@@ -83,46 +84,45 @@
 --
 -- === 2. Scatter plot of 3D data
 --
--- <<doc/fig/scatter.png>>
+-- <<doc/fig/scatter-2.png>>
 --
 -- This example shows how to plot a collection of labelled points in the plane. Each sample row is represented by a `LabeledPoint`, in which the label is a scalar quantity.
 --
--- The `scatterLP` function renders each data row as a glyph, by modifying a `ScatterPointData` record of default values via three functions that control the glyph size, contour line thickness and colour. This functionality can be exploited in creative ways to achieve effective infographics.
---
+-- The `scatterLP` function renders each data row as a glyph, by modifying a `ScatterPointData` record of default values via four functions that control the glyph size, contour line thickness, colour and opacity. This functionality can be exploited in creative ways to achieve effective infographics.
 --
 -- > xPlot = 400
 -- > yPlot = 300
--- > fnameOut = "data/scatter-1.svg"
--- >
+-- > fnameOut = "scatter.svg"
+--
 -- > fdat = FigureData xPlot yPlot 0.1 0.8 0.1 0.9 10
--- >
+--
 -- > dats = zipWith LabeledPoint p_ l_ where
 -- >   l_ = [-5, -4 .. ]
--- >   p_ = zipWith Point [4,7,12,23,90,34,24,5,6,12,3] [43,23,1,23,8,11,17,25,4,5]
--- >
--- > spdata = ScatterPointData Circle 3 3 C.red
--- >
--- >
+-- >   p_ = zipWith Point [46,30,4,7,73,12,23,90,34,24,5,6,12,3,55,61] [20,35,43,23,20,1,23,8,11,17,25,4,5,26, 30]
+--
+-- > spdata = ScatterPointData Plus 3 3 C.black 0.8
+-- 
+-- > main :: IO ()
 -- > main = do
--- >  let
--- >    frameTo = frameFromFigData fdat
--- >    frameFrom = frameFromPoints $ _lp <$> dats
--- >    vmin = minimum $ _lplabel <$> dats
--- >    vmax = maximum $ _lplabel <$> dats     
--- >    f l sz = 10/(1 + exp(-(0.3 * x)))
--- >      where x = l + sz
--- >    g _ w = w
--- >    h l col = C.blend l' C.blue col
--- >      where
--- >        l' = (l - vmin)/(vmax - vmin)
--- >    dats' = moveLabeledPointBwFrames frameFrom frameTo False True <$> dats
--- >    svg_t = svgHeader xPlot yPlot $ do
--- >      axes fdat frameFrom 2 C.black 10 10
--- >      scatterLP f g h spdata dats'
--- >      scatterLPBar fdat 50 vmin vmax 3 TopRight 100 f g h spdata
+-- >   let
+-- >     frameTo = frameFromFigData fdat
+-- >     frameFrom = frameFromPoints $ _lp <$> dats
+-- >     vmin = minimum $ _lplabel <$> dats
+-- >     vmax = maximum $ _lplabel <$> dats     
+-- >     f l sz = 15 / (1 + exp(- (0.3 * x)) )
+-- >       where x = l + sz
+-- >     g l w = w * (1 + l / (1 + abs l))
+-- >     h l col = C.blend l' C.red col
+-- >       where
+-- >         l' = (l - vmin)/(vmax - vmin)
+-- >     i l alp = alp * ( 1 + l / (1 + abs l))
+-- >     dats' = moveLabeledPointBwFrames frameFrom frameTo False True <$> dats
+-- >     svg_t = svgHeader xPlot yPlot $ do
+-- >       axes fdat frameFrom 2 C.black 10 10
+-- >       scatterLP f g h i spdata dats'
+-- >       scatterLPBar fdat 50 vmin vmax 3 TopRight 100 f g h i spdata
 -- >   T.writeFile fnameOut $ T.pack $ renderSvg svg_t
---
---
+-- 
 
 module Graphics.Rendering.Plot.Light (
   -- * Plot types
@@ -131,7 +131,7 @@ module Graphics.Rendering.Plot.Light (
   -- ** Scatter
   scatter, scatterLP, scatterLPBar, ScatterPointData(..), GlyphShape_(..),
   -- * Plot elements
-  -- ** Geometrical primitives
+  -- ** Geometric primitives
   rect, rectCentered, squareCentered, circle, line, text, polyline, filledPolyline, pixel, pixel', 
   -- ** Composite plot elements
   filledBand, candlestick,
@@ -142,12 +142,19 @@ module Graphics.Rendering.Plot.Light (
   -- ** Operations on frames
   frameFromPoints, frameFromFigData, mkFrame, mkFrameOrigin, width, height, figFWidth, figFHeight,  
   -- ** Colour utilities
-  blendTwo, palette, pickColour, 
+  blendTwo, palette, pickColour,
+  -- *** ShapeCol-related
+  ShapeCol(..), Col(..), 
   -- ** SVG utilities
   svgHeader, translateSvg, toSvgFrame, toSvgFrameLP,
-  -- * Types
-  Frame(..), Point(..), LabeledPoint(..), labelPoint, mapLabel, Axis(..),
-  -- ** Helpers
+  -- * Geometric types
+  -- ** Frame
+  Frame(..),
+  -- ** Point, LabeledPoint
+  Point(..), LabeledPoint(..), labelPoint, mapLabel,
+  -- ** Axis
+  Axis(..),
+  -- * Helpers
   meshGrid,
   -- *** Misc.
   toFloat, wholeDecimal
