@@ -1,15 +1,21 @@
-module Graphics.Rendering.Plot.Light.PlotTypes.Plot1D (plotFun, Plot1DOptions(..)) where
+module Graphics.Rendering.Plot.Light.PlotTypes.Plot1D (
+    plotFun, Plot1DOptions(..)
+  , plotf, plotf'
+  , Plot1DDomain(..)
+  , plot, plot'
+  ) where
 
 import Graphics.Rendering.Plot.Light.Internal
 import qualified Data.Colour as C
 import qualified Data.Colour.Names as C
 import Text.Blaze.Svg
 
--- | Plot a 1D function
+-- | Graph a 1D function
 plotFun :: Functor f => (t -> t) -> f (Point t) -> f (Point t)
 plotFun f = fmap f' where
   f' (Point x _) = Point x (f x)
 
+-- | Plot the graph of a 1D function
 plotf :: (Show a, RealFrac a) => (a -> a) -> Svg
 plotf = plotf' plot1dDomainDefaults
 
@@ -24,7 +30,7 @@ plot' :: (Foldable t, Show a, RealFrac a) =>
          Plot1DOptions a
       -> t (Point a)
       -> Svg
-plot' (Plot1DOptions sw ty sjt sc) dats = polyline sw ty sjt sc dats
+plot' (Plot1DOptions sw ty sjt sc) = polyline sw ty sjt sc 
 
 data Plot1DOptions a = Plot1DOptions {
     p1oWidth :: a             -- ^ Stroke width
