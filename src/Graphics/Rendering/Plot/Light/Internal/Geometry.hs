@@ -243,6 +243,24 @@ otherAxis _ = X
 
 
 
+-- data Linear
+-- data Logarithmic
+
+data AxisData a = AxisData {
+    axisNIntervals :: Int 
+  , axisLength :: a       -- ^ For displaying axis units
+                         } deriving (Eq, Show)
+
+data AxisFrame a = AxisFrame {
+    afFrame :: Frame a    -- ^ Position in the figure
+  , afAxis1 :: AxisData a
+  , afAxis2 :: AxisData a
+                             } deriving (Eq, Show)
+
+mkAxisFrame :: Int -> a -> Int -> a -> Frame a -> AxisFrame a
+mkAxisFrame nx lx ny ly fr = AxisFrame fr (AxisData nx lx) (AxisData ny ly)
+
+
 
 
 

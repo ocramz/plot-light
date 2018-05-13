@@ -338,19 +338,18 @@ crossGlyph w sw k (Point x y) = do
     
 
 
-labeledTick
-  :: (Show a, RealFrac a) =>
-     Axis
-     -> a                 -- ^ Length
-     -> a                 -- ^ Stroke width
-     -> C.Colour Double
-     -> Int               -- ^ Font size
-     -> a                 -- ^ Label angle
-     -> TextAnchor_     
-     -> (t -> T.Text)     -- ^ Label rendering function
-     -> V2 a              -- ^ Label shift 
-     -> LabeledPoint t a
-     -> Svg
+labeledTick :: (Show a, RealFrac a) =>
+               Axis
+            -> a                 -- ^ Length
+            -> a                 -- ^ Stroke width
+            -> C.Colour Double
+            -> Int               -- ^ Font size
+            -> a                 -- ^ Label angle
+            -> TextAnchor_     
+            -> (t -> T.Text)     -- ^ Label rendering function
+            -> V2 a              -- ^ Label shift 
+            -> LabeledPoint t a
+            -> Svg
 labeledTick ax len sw col fontsize lrot tanchor flab vlab (LabeledPoint p label) = do
   tick ax len sw col p
   text lrot fontsize col tanchor (flab label) vlab p
@@ -358,12 +357,12 @@ labeledTick ax len sw col fontsize lrot tanchor flab vlab (LabeledPoint p label)
 
 -- | An array of axis-aligned identical segments (to be used as axis tickmarks), with centers given by the array of `Point`s
 ticks :: (Foldable t, Show a, RealFrac a) =>
-               Axis                -- ^ Axis 
-               -> a                -- ^ Length         
-               -> a                -- ^ Stroke width
-               -> C.Colour Double  -- ^ Stroke colour
-               -> t (Point a)      -- ^ Center coordinates
-               -> Svg
+         Axis                -- ^ Axis 
+      -> a                -- ^ Length         
+      -> a                -- ^ Stroke width
+      -> C.Colour Double  -- ^ Stroke colour
+      -> t (Point a)      -- ^ Center coordinates
+      -> Svg
 ticks ax len sw col ps = forM_ ps (tick ax len sw col)
 
 
@@ -413,7 +412,7 @@ axis o@(Point ox oy) ax len sw col tickLenFrac ls fontsize lrot tanchor flab vla
 
 -- | A pair of Cartesian axes
 axes :: (Show a, RealFrac a) =>
-     FigureData a
+        FigureData a
      -> Frame a
      -> a
      -> C.Colour Double
@@ -424,7 +423,8 @@ axes fdat (Frame (Point xmi ymi) (Point xma yma)) sw col nx ny = do
   axis o X lenx sw col 0.01 Continuous fontsize (-45) TAEnd showlabf (V2 (-10) 0) plabx_
   axis o Y (- leny) sw col 0.01 Continuous fontsize 0 TAEnd showlabf (V2 (-10) 0) plaby_
   where
-    o = Point (figWidth fdat * figLeftMFrac fdat) (figHeight fdat * figBottomMFrac fdat)
+    -- (Frame (Point xmi xymi) (Point xma yma)) = frameFromFigData fdat
+    o = bottomLeftOrigin fdat
     pxend = movePoint (V2 lenx 0) o
     pyend = movePoint (V2 0 (- leny)) o
     plabx_ = zipWith LabeledPoint (pointRange nx o pxend) (take (nx+1) $ subdivSegment xmi xma $ fromIntegral nx)
