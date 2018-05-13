@@ -16,7 +16,7 @@
 --
 -- == Examples
 -- 
--- If you wish to try out the examples in this page, you will need to have these import statements as well :
+-- If you wish to try out the examples in this page, you will need to create a project that imports `blaze-svg`, `colour` and `text`, and to have these import statements as well :
 --
 -- > import Text.Blaze.Svg.Renderer.String (renderSvg) 
 -- > import qualified Data.Colour.Names as C
@@ -135,7 +135,7 @@ module Graphics.Rendering.Plot.Light (
   -- * Plot elements
   -- ** Geometric primitives
   -- *** Rectangle, square
-  rect, rectCentered, squareCentered,
+  rect, rectCentered, rectCenteredMidpointBase, squareCentered,
   -- *** Circle
   circle,
   -- *** Line

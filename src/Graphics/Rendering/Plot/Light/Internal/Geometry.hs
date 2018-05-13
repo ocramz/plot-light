@@ -435,15 +435,35 @@ subdivSegment x1 x2 n = f <$> [0, 1 ..] where
   f x  = x * l/fromIntegral n + fromRational (toRational xmin)
 
 
+-- | Apply an affine transformation such that the resulting vector points to the unit square
 fromFrame :: Fractional a => Frame a -> V2 a -> V2 a
 fromFrame from v = mfrom <\> (v ^-^ vfrom) where
   vfrom = v2fromPoint (_fpmin from) -- min.point vector of `from`
   mfrom = diagMat2 (width from) (height from) -- rescaling matrix of `from`
 
+-- | Apply an affine transformation to a vector that points within the unit square
 toFrame :: Num a => Frame a -> V2 a -> V2 a
 toFrame to v01 = (mto #> v01) ^+^ vto where
   vto = v2fromPoint (_fpmin to)     -- min.point vector of `to`
   mto = diagMat2 (width to) (height to)       -- rescaling matrix of `to`
+
+
+
+
+frameToAffine :: Num a => Frame a -> (DiagMat2 a, V2 a)
+frameToAffine frm = (m, v) where
+  m = diagMat2 (width frm) (height frm)
+  v = v2fromPoint (_fpmin frm)
+
+affineToFrame :: (Num a, LinearMap m (V2 a)) => m -> V2 a -> Frame a
+affineToFrame m v = frm where
+  pmin = movePoint v origin
+  pmax = movePoint (m #> v) pmin
+  frm = mkFrame pmin pmax
+
+-- | Identity of affine Frame transformations
+idFrame :: Num a => Frame a -> Frame a
+idFrame = uncurry affineToFrame . frameToAffine
 
 
 

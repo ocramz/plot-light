@@ -96,16 +96,16 @@ modifyScatterPoint ::
      -> (l -> b -> c)                             -- ^ Modifies glyph stroke width
      -> (l -> C.Colour Double -> C.Colour Double) -- ^ Modifies glyph colour
      -> (l -> b -> c)                             -- ^ Modifies glyph opacity
-     -> ScatterPointData b
-     -> LabeledPoint l d
-     -> ScatterPointData c
+     -> ScatterPointData b                        -- ^ Initial glyph parameters
+     -> LabeledPoint l d                          -- ^ 'LabeledPoint' to be modified
+     -> ScatterPointData c                        -- ^ Final glyph parameters
 modifyScatterPoint f g h i (ScatterPointData glsh sz w col alpha) lp =
   ScatterPointData glsh (f lab sz) (g lab w) (h lab col) (i lab alpha)
   where
     lab = _lplabel lp
 
 
--- | Glyph shape
+-- | Glyph shape for scatter plots
 data GlyphShape_ = Square | Circle | Cross | Plus deriving (Eq, Show, Enum)
 
 -- | Scatterplot glyph shapes
