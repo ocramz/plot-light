@@ -15,7 +15,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** Axis
   Axis(..), otherAxis,
   -- *** AxisData, AxisFrame
-  AxisData(..), AxisFrame(..), axisX, axisY, mkAxisPoints,
+  AxisData(..), AxisFrame(..), -- axisX, axisY, mkAxisPoints,
   -- ** Vectors
   V2(..), pointFromV2,
   -- ** Matrices
@@ -195,6 +195,8 @@ height f = abs $ ymax f - ymin f
 
 -- * Axis
 
+-- super hacky, let's get rid of this
+
 data Axis = X | Y deriving (Eq, Show)
 
 otherAxis :: Axis -> Axis
@@ -210,31 +212,31 @@ otherAxis _ = X
 data AxisData a = AxisData {
     axisNIntervals :: Int   -- ^ Number of axis intervals
   , axisV :: V2 a           -- ^ Axis direction vector (Normalized)
-  , axisOrigin :: Point a   -- ^ Axis origin
+  -- , axisOrigin :: Point a   -- ^ Axis origin
                            } deriving (Eq, Show)
 
-axisLength :: Floating a => AxisData a -> a
-axisLength (AxisData n v _) = fromIntegral n * norm2 v
+-- axisLength :: Floating a => AxisData a -> a
+-- axisLength (AxisData n v _) = fromIntegral n * norm2 v
 
--- | Create an X-aligned 'AxisData'
-axisX :: Num a =>
-         Int
-      -> a  -- ^ Interval length 
-      -> Point a
-      -> AxisData a
-axisX n ldx = AxisData n (ldx .* e1)
+-- -- | Create an X-aligned 'AxisData'
+-- axisX :: Num a =>
+--          Int
+--       -> a  -- ^ Interval length 
+--       -> Point a
+--       -> AxisData a
+-- axisX n ldx = AxisData n (ldx .* e1)
 
--- | Create an Y-aligned 'AxisData'
-axisY :: Num a =>
-         Int
-      -> a  -- ^ Interval length
-      -> Point a -> AxisData a
-axisY n ldy = AxisData n (ldy .* e2)
+-- -- | Create an Y-aligned 'AxisData'
+-- axisY :: Num a =>
+--          Int
+--       -> a  -- ^ Interval length
+--       -> Point a -> AxisData a
+-- axisY n ldy = AxisData n (ldy .* e2)
 
--- | Create the list of axis tick points from the 'AxisData'
-mkAxisPoints :: (Num a, Enum a) => AxisData a -> [Point a]
-mkAxisPoints (AxisData n v p0) =
-  map (\i -> movePoint (i .* v) p0) $ take n [0, 1 ..]
+-- -- | Create the list of axis tick points from the 'AxisData'
+-- mkAxisPoints :: (Num a, Enum a) => AxisData a -> [Point a]
+-- mkAxisPoints (AxisData n v p0) =
+--   map (\i -> movePoint (i .* v) p0) $ take n [0, 1 ..]
 
 data AxisFrame a = AxisFrame {
     afFrame :: Frame a    -- ^ Position in the figure
@@ -243,21 +245,6 @@ data AxisFrame a = AxisFrame {
                              } deriving (Eq, Show)
 
 
--- mkAxisTickPoints :: Num a => Axis -> AxisData a -> [Point a]
--- mkAxisTickPoints ax (AxisData n dl x0) = case ax of
---   X -> map (`setPointX` origin) ts
---   Y -> map (`setPointY` origin) ts
---   where
---     ts = [x0 + fromIntegral i * dl | i <- [0 .. n]]
-
--- data AxisFrame a = AxisFrame {
---     afFrame :: Frame a    -- ^ Position in the figure
---   , afAxis1 :: AxisData a
---   , afAxis2 :: AxisData a
---                              } deriving (Eq, Show)
-
--- mkAxisFrame :: Int -> a -> Int -> a -> Frame a -> AxisFrame a
--- mkAxisFrame nx lx ny ly fr = AxisFrame fr (AxisData nx lx) (AxisData ny ly)
 
 
 
@@ -317,7 +304,17 @@ interpolateBilinear' q11@(Point x1 y1) q22@(Point x2 y2) f (Point x y) =
 
 
 -- | V2 is a vector in R^2
-data V2 a = V2 a a deriving (Eq, Show)
+data V2 a = V2 a a deriving (Eq)
+instance Show a => Show (V2 a) where
+  show (V2 vx vy) = "(V2 "++ show vx ++", "++ show vy++")"
+
+-- | V2i is a vector in R^2 having unit norm
+newtype V2i a = V2i (V2 a) deriving (Eq, Show)
+
+-- | V2i can only be constructed with this method
+mkV2i :: Floating a => V2 a -> V2i a
+mkV2i v = V2i $ normalize2 v
+
 
 instance Num a => Semigroup (V2 a) where
   (V2 a b) <> (V2 c d) = V2 (a + c) (b + d)  
@@ -385,7 +382,7 @@ v2fromEndpoints (Point px py) (Point qx qy) = V2 (qx-px) (qy-py)
 
 
 
--- | A Mat2 can be seen as a linear operator that acts on points in the plane
+-- | A Mat2 is a linear operator that acts on points in the plane to produce points on the plane.
 data Mat2 a = Mat2 a a a a deriving (Eq, Show)
 
 -- | Linear maps, i.e. linear transformations of vectors
