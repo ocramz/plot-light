@@ -32,5 +32,13 @@ histo n v = H.fillBuilder buildr v
     mi = minimum v
     ma = maximum v
     bins = H.binD mi n ma
+    buildr = H.mkSimple bins 
+
+histo' :: (Foldable f, H.Bin bin, VU.Unbox val, Num val) =>
+          (f (H.BinValue bin) -> bin)
+       -> f (H.BinValue bin)
+       -> H.Histogram bin val
+histo' fb v = H.fillBuilder buildr v
+  where
+    bins = fb v
     buildr = H.mkSimple bins
-  
