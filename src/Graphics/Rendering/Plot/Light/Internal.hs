@@ -181,6 +181,34 @@ none :: S.AttributeValue
 none = S.toValue ("none" :: String)
 
 
+-- | Shape DSL
+
+r0 = Rect (Point 20 30) 10 50.0 (shapeColNoBorder C.blue 1) 
+
+data ShapeDsl a =
+    Rect (Point a) a a (ShapeCol a)
+  | Circle (Point a) a (ShapeCol a)
+  deriving (Eq, Show)
+
+-- | Translate the terms of the shape DSL from the screen frame to the SVG frame (vertical mirror flip)
+toSvgFrameDsl :: Num a => FigureData a -> ShapeDsl a -> ShapeDsl a
+toSvgFrameDsl fdat s = case s of
+  Rect p w h col -> Rect p' w h col where
+    p' = movePoint v p
+    v = heightShiftV2 fdat (h + _py p)
+
+heightShiftV2 :: Num a => FigureData a -> a -> V2 a
+heightShiftV2 fdat h = V2 0 (hfig - h) where
+  hfig = figHeight fdat
+
+-- | Interpret a term of the shape DSL into an SVG object
+interpSvgDsl :: Real a => ShapeDsl a -> Svg
+interpSvgDsl term = case term of
+  Rect p w h col -> rect w h col p
+
+render :: Real a => FigureData a -> ShapeDsl a -> Svg
+render fdat = interpSvgDsl . toSvgFrameDsl fdat   
+
 
 -- | A rectangle, defined by its anchor point coordinates and side lengths
 --
@@ -188,7 +216,7 @@ none = S.toValue ("none" :: String)
 -- > <rect x="100.0" y="30.0" width="50.0" height="60.0" fill-opacity="0.5" fill="#0000ff" stroke="none" />
 rect :: Real a =>
         a          -- ^ Width
-     -> a          -- ^ Stroke width 
+     -> a          -- ^ Height
      -> ShapeCol a -- ^ Colour and alpha information
      -> Point a    -- ^ Corner point coordinates
      -> Svg
