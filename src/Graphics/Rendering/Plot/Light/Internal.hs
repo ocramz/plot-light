@@ -2,25 +2,44 @@
 module Graphics.Rendering.Plot.Light.Internal
   (
   -- * Frame
-    Frame(..), mkFrame, unitFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height,
+    Frame(..), mkFrame, unitFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, frameToAffine, fromToStretchRatios, 
     -- * FigureData
-    FigureData(..), figFWidth, figFHeight
+    FigureData(..), figFWidth, figFHeight, figureDataDefault
     -- * Point
   , Point(..), mkPoint, origin
     -- * LabeledPoint
   , LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel, Axis(..), axes, meshGrid, subdivSegment,
     -- * SVG elements
-    svgHeader, rect, rectCentered, squareCentered, circle, line, tick, ticks, axis, toPlot, text, pixel, pixel', pickColour, colourBar, legendBar, plusGlyph, crossGlyph, polyline, filledPolyline, filledBand, candlestick, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..), TextAnchor_(..), LegendPosition_(..)
+    svgHeader, toPlot,
+    -- ** Rectangle/square
+    rect, rectCentered, rectCenteredMidpointBase, squareCentered,
+    -- ** Circle
+    circle,
+    -- ** Lines
+    line, tick, ticks, axis,
+    -- ** Polylines
+    polyline, filledPolyline, filledBand, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..),
+    -- ** Text
+    text, TextAnchor_(..), 
+    -- ** Specialized plot elements
+    pixel, pixel', plusGlyph, crossGlyph, candlestick, 
+    -- ** Plot legend
+    pickColour, colourBar, legendBar, LegendPosition_(..), 
     -- * Geometry
     -- ** R^2 Vectors
-  , V2(..), e1, e2, norm2, normalize2, v2fromEndpoints, v2fromPoint, (-.), pointRange
+    V2(..), e1, e2, norm2, normalize2, v2fromEndpoints, v2fromPoint, (-.), pointRange
     -- ** R^2 -> R^2 Matrices
   , Mat2(..), DiagMat2(..), diagMat2
     -- ** Typeclasses
-  , AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, toSvgFrame, toSvgFrameLP, toFloat, wholeDecimal
+  , AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, scaleSvg, toBottomLeftSvgOrigin, toSvgFrame, toSvgFrameLP, toFloat, wholeDecimal
   -- * Colours
-  , blendTwo, palette,
-    interpolateBilinear)
+  , blendTwo, palette
+    -- ** Col
+  , (!#), Col(..), ShapeCol(..), col, col50, col100, shapeColBoth
+  , shapeColNoBorder, shapeColNoFill
+    -- * General utility
+    -- ** Function interpolation
+  , interpolateBilinear)
   where
 
 import Data.Monoid ((<>))
@@ -36,6 +55,7 @@ import Data.Scientific (Scientific, toRealFloat)
 import qualified Data.Text as T
 -- import qualified Data.Vector as V
 
+import Text.Blaze.Internal (Attributable(..))
 import Text.Blaze.Svg
 import Text.Blaze.Svg11  ((!))
 import qualified Text.Blaze.Svg11 as S hiding (style)
@@ -79,6 +99,12 @@ figureDataDefault :: Floating a => FigureData a
 figureDataDefault = FigureData 400 300 0.1 0.9 0.1 0.9 10
 
 
+bottomLeftOrigin :: Num a => FigureData a -> Point a
+bottomLeftOrigin fdat = Point x y where
+  x = figWidth fdat * figLeftMFrac fdat
+  y = figHeight fdat * figBottomMFrac fdat
+
+
 
 
 -- | Create the SVG header
@@ -96,49 +122,117 @@ svgHeader w h  =
      fd = mkFrameOrigin w h
 
 
+
+-- | A Col is both a 'Colour' and an alpha (opacity) coefficient
+data Col a = Col {
+    cColour :: C.Colour Double  -- ^ Colour
+  , cAlpha :: a                 -- ^ Opacity, [0 .. 1]
+  } deriving (Eq, Show)
+
+-- | 'Col' constructor
+col :: C.Colour Double -> a -> Col a
+col = Col
+
+-- | Full opacity colour
+col100 :: Num a => C.Colour Double -> Col a
+col100 c = col c 1
+
+-- | Half opacity colour
+col50 :: Fractional a => C.Colour Double -> Col a
+col50 c = col c 0.5
+
+-- | A shape can either be only filled, or only contoured, or both
+data ShapeCol a =
+    NoBorderCol (Col a)  -- ^ Only fill colour
+  | NoFillCol (Col a) a   -- ^ Only border colour + stroke width
+  | BothCol (Col a) (Col a) a -- ^ Fill and border colours
+  deriving (Eq, Show)
+
+-- | Construct a 'ShapeCol' for shapes that have no border stroke (i.e. have only the fill colour)
+shapeColNoBorder :: C.Colour Double -> a -> ShapeCol a
+shapeColNoBorder c a = NoBorderCol $ col c a
+
+-- | Construct a 'ShapeCol' for shapes that have no fill colour (i.e. have only the stroke colour)
+shapeColNoFill :: C.Colour Double -> a -> a -> ShapeCol a
+shapeColNoFill c a = NoFillCol $ col c a 
+
+-- | Construct a 'ShapeCol' for shapes that have both fill and stroke colour
+shapeColBoth ::
+     C.Colour Double  -- ^ Fill colour
+  -> C.Colour Double  -- ^ Stroke colour
+  -> a                -- ^ Opacity 
+  -> a                -- ^ Stroke width
+  -> ShapeCol a
+shapeColBoth cs cf a = BothCol (col cs a) (col cf a)
+
+-- | Set the fill and stroke colour and opacity attributes all at once (e.g. if the fill is set to invisible, the stroke must be visible somehow.
+(!#) :: (Attributable h, Real a) => h -> ShapeCol a -> h
+m !# col = case col of
+  NoBorderCol (Col c a) ->
+    m ! SA.fillOpacity (vd a) ! SA.fill (colourAttr c) ! SA.stroke none
+  NoFillCol (Col c a) sw  ->
+    m ! SA.strokeOpacity (vd a) ! SA.stroke (colourAttr c) ! SA.strokeWidth (vd sw) ! SA.fill none
+  BothCol (Col cf af) (Col cb ab) sw ->
+    m ! SA.fillOpacity (vd af) ! SA.fill (colourAttr cf) ! SA.strokeOpacity (vd ab) ! SA.stroke (colourAttr cb) ! SA.strokeWidth (vd sw)
+
+
+
+none :: S.AttributeValue
+none = S.toValue ("none" :: String)
+
+
+
 -- | A rectangle, defined by its anchor point coordinates and side lengths
 --
--- > > putStrLn $ renderSvg $ rect (Point 100 200) 30 60 2 Nothing (Just C.aquamarine)
--- > <rect x="100.0" y="200.0" width="30.0" height="60.0" fill="#7fffd4" stroke="none" stroke-width="2.0" />
-rect :: (Show a, RealFrac a) =>
-     a                       -- ^ Width
-  -> a                       -- ^ Height
-  -> a                       -- ^ Stroke width
-  -> Maybe (C.Colour Double) -- ^ Stroke colour
-  -> Maybe (C.Colour Double) -- ^ Fill colour
-  -> Point a                 -- ^ Corner point coordinates  
-  -> Svg
-rect wid hei sw scol fcol (Point x0 y0) = S.rect ! SA.x (vd x0) ! SA.y (vd y0) ! SA.width (vd wid) ! SA.height (vd hei) ! colourFillOpt fcol ! colourStrokeOpt scol ! SA.strokeWidth (vd sw)
+-- > > putStrLn $ renderSvg $ rect 50 60 (shapeColNoBorder C.blue 0.5) (Point 100 30)
+-- > <rect x="100.0" y="30.0" width="50.0" height="60.0" fill-opacity="0.5" fill="#0000ff" stroke="none" />
+rect :: Real a =>
+        a          -- ^ Width
+     -> a          -- ^ Stroke width 
+     -> ShapeCol a -- ^ Colour and alpha information
+     -> Point a    -- ^ Corner point coordinates
+     -> Svg
+rect wid hei col (Point x0 y0) = S.rect ! SA.x (vd x0) ! SA.y (vd y0) ! SA.width (vd wid) ! SA.height (vd hei) !# col
 
 
 -- | A rectangle, defined by its center coordinates and side lengths
 --
--- > > putStrLn $ renderSvg $ rectCentered 15 30 1 (Just C.blue) (Just C.red) (Point 20 30)
--- > <rect x="12.5" y="15.0" width="15.0" height="30.0" fill="#ff0000" stroke="#0000ff" stroke-width="1.0" />
+-- > > putStrLn $ renderSvg $ rectCentered 15 30 (shapeColBoth C.blue C.red 1 5) (Point 20 30)
+-- > <rect x="12.5" y="15.0" width="15.0" height="30.0" fill-opacity="1.0" fill="#0000ff" stroke-opacity="1.0" stroke="#ff0000" stroke-width="5.0" />
 rectCentered :: (Show a, RealFrac a) =>
      a                       -- ^ Width
   -> a                       -- ^ Height
-  -> a                       -- ^ Stroke width
-  -> Maybe (C.Colour Double) -- ^ Stroke colour
-  -> Maybe (C.Colour Double) -- ^ Fill colour
+  -> ShapeCol a              -- ^ Colour and alpha information
   -> Point a                 -- ^ Center coordinates     
   -> Svg
-rectCentered  wid hei sw scol fcol (Point x0 y0) =
-  rect wid hei sw scol fcol p' where
+rectCentered  wid hei col (Point x0 y0) =
+  rect wid hei col p' where
     p' = Point x0c y0c
     x0c = x0 - (wid / 2)
     y0c = y0 - (hei / 2)   
 
+-- | A rectangle, defined by the coordinates of the midpoint of its base
+rectCenteredMidpointBase :: (Show a, RealFrac a) =>
+     a                       -- ^ Width
+  -> a                       -- ^ Height
+  -> ShapeCol a              -- ^ Colour and alpha information
+  -> Point a                 -- ^ Base midpoint coordinates     
+  -> Svg
+rectCenteredMidpointBase wid hei col (Point x0 y0) =
+  rect wid hei col p' where
+    p' = Point x0c y0
+    x0c = x0 - (wid / 2)
+
 
 -- | A square, defined by its center coordinates and side length
-squareCentered
-  :: (Show a, RealFrac a) =>
-     a                          -- ^ Side length
-     -> a                       -- ^ Stroke width
-     -> Maybe (C.Colour Double) -- ^ Stroke colour
-     -> Maybe (C.Colour Double) -- ^ Fill colour
-     -> Point a                 -- ^ Center coordinates
-     -> Svg
+--
+-- > > putStrLn $ renderSvg $ squareCentered 30 (shapeColBoth C.blue C.red 1 5) (Point 20 30)
+-- > <rect x="5.0" y="15.0" width="30.0" height="30.0" fill-opacity="1.0" fill="#0000ff" stroke-opacity="1.0" stroke="#ff0000" stroke-width="5.0" />
+squareCentered :: (Show a, RealFrac a) =>
+                  a                          -- ^ Side length
+               -> ShapeCol a              -- ^ Colour and alpha information
+               -> Point a                 -- ^ Center coordinates
+               -> Svg
 squareCentered w = rectCentered w w
 
 lineColourDefault :: C.Colour Double
@@ -213,16 +307,15 @@ tick ax len sw col (Point x y) = line (Point x1 y1) (Point x2 y2) sw Continuous 
     | otherwise = (x-lh, y, x+lh, y)
 
 
-plusGlyph, crossGlyph
-  :: (Show a, RealFrac a) =>
-     a
-     -> a
-     -> C.Colour Double
-     -> Point a
-     -> Svg
-plusGlyph w sw col (Point x y) = do
-  line pl pr sw Continuous col
-  line pt pb sw Continuous col
+plusGlyph, crossGlyph :: (Show a, RealFrac a) =>
+                         a               -- ^ Width
+                      -> a               -- ^ Stroke width
+                      -> C.Colour Double
+                      -> Point a
+                      -> Svg
+plusGlyph w sw k (Point x y) = do
+  line pl pr sw Continuous k
+  line pt pb sw Continuous k
   where
     wh = w / 2
     pl = Point (x-wh) y
@@ -230,9 +323,9 @@ plusGlyph w sw col (Point x y) = do
     pt = Point x (y-wh)
     pb = Point x (y+wh)
 
-crossGlyph w sw col (Point x y) = do
-  line pa pb sw Continuous col
-  line pc pd sw Continuous col
+crossGlyph w sw k (Point x y) = do
+  line pa pb sw Continuous k
+  line pc pd sw Continuous k
   where
     wh = 1.4142 * w
     pa = Point (x+wh) (x+wh)
@@ -245,19 +338,18 @@ crossGlyph w sw col (Point x y) = do
     
 
 
-labeledTick
-  :: (Show a, RealFrac a) =>
-     Axis
-     -> a                 -- ^ Length
-     -> a                 -- ^ Stroke width
-     -> C.Colour Double
-     -> Int               -- ^ Font size
-     -> a                 -- ^ Label angle
-     -> TextAnchor_     
-     -> (t -> T.Text)     -- ^ Label rendering function
-     -> V2 a              -- ^ Label shift 
-     -> LabeledPoint t a
-     -> Svg
+labeledTick :: (Show a, RealFrac a) =>
+               Axis
+            -> a                 -- ^ Length
+            -> a                 -- ^ Stroke width
+            -> C.Colour Double
+            -> Int               -- ^ Font size
+            -> a                 -- ^ Label angle
+            -> TextAnchor_     
+            -> (t -> T.Text)     -- ^ Label rendering function
+            -> V2 a              -- ^ Label shift 
+            -> LabeledPoint t a
+            -> Svg
 labeledTick ax len sw col fontsize lrot tanchor flab vlab (LabeledPoint p label) = do
   tick ax len sw col p
   text lrot fontsize col tanchor (flab label) vlab p
@@ -265,12 +357,12 @@ labeledTick ax len sw col fontsize lrot tanchor flab vlab (LabeledPoint p label)
 
 -- | An array of axis-aligned identical segments (to be used as axis tickmarks), with centers given by the array of `Point`s
 ticks :: (Foldable t, Show a, RealFrac a) =>
-               Axis                -- ^ Axis 
-               -> a                -- ^ Length         
-               -> a                -- ^ Stroke width
-               -> C.Colour Double  -- ^ Stroke colour
-               -> t (Point a)      -- ^ Center coordinates
-               -> Svg
+         Axis                -- ^ Axis 
+      -> a                -- ^ Length         
+      -> a                -- ^ Stroke width
+      -> C.Colour Double  -- ^ Stroke colour
+      -> t (Point a)      -- ^ Center coordinates
+      -> Svg
 ticks ax len sw col ps = forM_ ps (tick ax len sw col)
 
 
@@ -294,20 +386,20 @@ labeledTicks ax len sw col fontsize lrot tanchor flab vlab ps =
 -- > > putStrLn $ renderSvg $ axis (Point 0 50) X 200 2 C.red 0.05 Continuous 15 (-45) TAEnd T.pack (V2 (-10) 0) [LabeledPoint (Point 50 1) "bla", LabeledPoint (Point 60 1) "asdf"]
 -- > <line x1="0.0" y1="50.0" x2="200.0" y2="50.0" stroke="#ff0000" stroke-width="2.0" /><line x1="50.0" y1="45.0" x2="50.0" y2="55.0" stroke="#ff0000" stroke-width="2.0" /><text x="-10.0" y="0.0" transform="translate(50.0 50.0)rotate(-45.0)" font-size="15" fill="#ff0000" text-anchor="end">bla</text><line x1="60.0" y1="45.0" x2="60.0" y2="55.0" stroke="#ff0000" stroke-width="2.0" /><text x="-10.0" y="0.0" transform="translate(60.0 50.0)rotate(-45.0)" font-size="15" fill="#ff0000" text-anchor="end">asdf</text>
 axis :: (Functor t, Foldable t, Show a, RealFrac a) =>
-              Point a            -- ^ Origin coordinates
-              -> Axis            -- ^ Axis (i.e. either `X` or `Y`)
-              -> a               -- ^ Length of the axis
-              -> a               -- ^ Stroke width
-              -> C.Colour Double -- ^ Stroke colour
-              -> a               -- ^ The tick length is a fraction of the axis length
-              -> LineStroke_ a   -- ^ Stroke type
-              -> Int               -- ^ Label font size
-              -> a               -- ^ Label rotation angle
-              -> TextAnchor_     -- ^ How to anchor a text label to the axis
-              -> (l -> T.Text)   -- ^ How to render the tick label
-              -> V2 a            -- ^ Offset the label
-              -> t (LabeledPoint l a)     -- ^ Tick center coordinates
-              -> Svg
+        Point a            -- ^ Origin coordinates
+     -> Axis            -- ^ Axis (i.e. either `X` or `Y`)
+     -> a               -- ^ Length of the axis
+     -> a               -- ^ Stroke width
+     -> C.Colour Double -- ^ Stroke colour
+     -> a               -- ^ The tick length is a fraction of the axis length
+     -> LineStroke_ a   -- ^ Stroke type
+     -> Int               -- ^ Label font size
+     -> a               -- ^ Label rotation angle
+     -> TextAnchor_     -- ^ How to anchor a text label to the axis
+     -> (l -> T.Text)   -- ^ How to render the tick label
+     -> V2 a            -- ^ Offset the label
+     -> t (LabeledPoint l a)     -- ^ Tick center coordinates
+     -> Svg
 axis o@(Point ox oy) ax len sw col tickLenFrac ls fontsize lrot tanchor flab vlab ps = do
       line o pend sw ls col
       labeledTicks (otherAxis ax) (tickLenFrac * len) sw col fontsize lrot tanchor flab vlab (moveLabeledPoint f <$> ps)
@@ -317,10 +409,16 @@ axis o@(Point ox oy) ax len sw col tickLenFrac ls fontsize lrot tanchor flab vla
           f | ax == X = setPointY oy
             | otherwise = setPointX ox
 
+-- axis' axd@(AxisData n v o) (LineOptions sw ls col) = do
+--   line o pend sw ls col
+--   where
+--     ps = mkAxisPoints axd
+--     pend = last ps
+
 
 -- | A pair of Cartesian axes
 axes :: (Show a, RealFrac a) =>
-     FigureData a
+        FigureData a
      -> Frame a
      -> a
      -> C.Colour Double
@@ -331,7 +429,8 @@ axes fdat (Frame (Point xmi ymi) (Point xma yma)) sw col nx ny = do
   axis o X lenx sw col 0.01 Continuous fontsize (-45) TAEnd showlabf (V2 (-10) 0) plabx_
   axis o Y (- leny) sw col 0.01 Continuous fontsize 0 TAEnd showlabf (V2 (-10) 0) plaby_
   where
-    o = Point (figWidth fdat * figLeftMFrac fdat) (figHeight fdat * figBottomMFrac fdat)
+    -- (Frame (Point xmi xymi) (Point xma yma)) = frameFromFigData fdat
+    o = bottomLeftOrigin fdat
     pxend = movePoint (V2 lenx 0) o
     pyend = movePoint (V2 0 (- leny)) o
     plabx_ = zipWith LabeledPoint (pointRange nx o pxend) (take (nx+1) $ subdivSegment xmi xma $ fromIntegral nx)
@@ -439,18 +538,16 @@ textAnchor TAEnd = SA.textAnchor (vs "end")
 
 -- | A circle
 --
--- > > putStrLn $ renderSvg $ circle (Point 20 30) 15 (Just C.blue) (Just C.red)
--- > <circle cx="20.0" cy="30.0" r="15.0" fill="#ff0000" stroke="#0000ff" />
+-- > > putStrLn $ renderSvg $ circle 15 (shapeColBoth C.red C.blue 1 5) (Point 10 20)
+-- > <circle cx="10.0" cy="20.0" r="15.0" fill-opacity="1.0" fill="#ff0000" stroke-opacity="1.0" stroke="#0000ff" stroke-width="5.0" />
 circle
   :: (Real a1, Real a) =>
         a                       -- ^ Radius
-     -> a                       -- ^ Stroke width
-     -> Maybe (C.Colour Double) -- ^ Stroke colour
-     -> Maybe (C.Colour Double) -- ^ Fill colour
+     -> ShapeCol a 
      -> Point a1                   -- ^ Center     
   -> Svg
-circle  r sw scol fcol (Point x y) =
-  S.circle ! SA.cx (vd x) ! SA.cy (vd y) ! SA.r (vd r) ! colourFillOpt fcol ! colourStrokeOpt scol ! SA.strokeWidth (vd sw) 
+circle r col (Point x y) =
+  S.circle ! SA.cx (vd x) ! SA.cy (vd y) ! SA.r (vd r) !# col
 
 
 
@@ -473,16 +570,10 @@ polyline sw strTy slj col lis =
   in case strTy of Continuous -> svg0
                    Dashed d -> svg0 ! strokeDashArray d
 
-none :: S.AttributeValue
-none = S.toValue ("none" :: String)
 
-colourFillOpt :: Maybe (C.Colour Double) -> S.Attribute
-colourFillOpt Nothing = SA.fill none
-colourFillOpt (Just c) = SA.fill (colourAttr c)
 
-colourStrokeOpt :: Maybe (C.Colour Double) -> S.Attribute
-colourStrokeOpt Nothing = SA.stroke none
-colourStrokeOpt (Just c) = SA.stroke (colourAttr c)
+
+
 
 
 -- | A filled polyline
@@ -529,14 +620,14 @@ candlestick
      -> (l -> a) -- ^ Line minimum value
      -> a                       -- ^ Box width
      -> a                       -- ^ Stroke width
-     -> C.Colour Double         -- ^ First box colour
-     -> C.Colour Double         -- ^ Second box colour
+     -> ShapeCol a              -- ^ First box colour
+     -> ShapeCol a              -- ^ Second box colour
      -> C.Colour Double         -- ^ Line stroke colour
      -> LabeledPoint l a        -- ^ Data point
      -> Svg
 candlestick fdec fboxmin fboxmax fmin fmax wid sw col1 col2 colstroke lp = do
   line pmin pmax sw Continuous colstroke
-  rectCentered wid hei sw (Just colstroke) (Just col) p
+  rectCentered wid hei col p
     where
     p = _lp lp
     lab = _lplabel lp
@@ -570,6 +661,19 @@ strokeLineJoin slj = SA.strokeLinejoin (S.toValue str) where
 translateSvg :: Show a => Point a -> Svg -> Svg
 translateSvg (Point x y) svg = S.g ! SA.transform (S.translate x y) $ svg
 
+-- | Scale a Svg entity
+scaleSvg :: Real a => a -> a -> Svg -> Svg
+scaleSvg sx sy svg = S.g ! SA.transform (S.scale (real sx) (real sy)) $ svg
+
+
+-- | Flips and translates the SVG argument such that its axis origin lies at the bottom left corner defined in 'FigureData'.
+toBottomLeftSvgOrigin :: Real a =>
+                         FigureData a   
+                      -> Svg
+                      -> Svg
+toBottomLeftSvgOrigin fdat svg = S.g ! SA.transform (S.translate (real 0) (real h) <> S.scale (real 1) (real (- 1))) $ svg
+  where
+    h = _py $ bottomLeftOrigin fdat
 
 
 
@@ -604,31 +708,39 @@ toSvgFrameLP from to fliplr (LabeledPoint p lab) = LabeledPoint (toSvgFrame from
 
 
 
-
-pixel
-  :: (Show a, RealFrac a) =>
-     [C.Colour Double]
-     -> a
-     -> a
-     -> Scientific
-     -> Scientific
-     -> LabeledPoint Scientific a
-     -> Svg
-pixel pal w h vmin vmax (LabeledPoint p l) = rect w h 0 Nothing (Just col) p where
+-- | A 'pixel' is a filled square shape used for populating 'heatmap' plots , coloured from a palette
+pixel :: (Show a, RealFrac a) =>
+         [C.Colour Double]         -- ^ Palette
+      -> a                         -- ^ Width
+      -> a                         -- ^ Height
+      -> Scientific                -- ^ Function minimum
+      -> Scientific               -- ^ Function maximum
+      -> LabeledPoint Scientific a
+      -> Svg
+pixel pal w h vmin vmax (LabeledPoint p l) = rectCentered w h col p where
   col = pickColour pal (toFloat vmin) (toFloat vmax) (toFloat l)
 
+-- | A 'pixel'' is a filled square shape used for populating 'heatmap' plots , coloured from a palette
 pixel'
   :: (Show a, RealFrac a, RealFrac t) =>
-     [C.Colour Double] -> a -> a -> t -> t -> LabeledPoint t a -> Svg
-pixel' pal w h vmin vmax (LabeledPoint p l) = rect w h 0 Nothing (Just col) p where
+     [C.Colour Double]  -- ^ Palette
+  -> a                  -- ^ Width 
+  -> a -- ^ Height
+  -> t -- ^ Function minimum 
+  -> t -- ^ Function maximum
+  -> LabeledPoint t a
+  -> Svg
+pixel' pal w h vmin vmax (LabeledPoint p l) = rectCentered w h col p where
   col = pickColour pal vmin vmax l
   
 
-pickColour :: RealFrac t => [C.Colour Double] -> t -> t -> t -> C.Colour Double
-pickColour pal xmin xmax x = pal !! i
+-- | Pick a colour from a list, assumed to be a palette mapped onto a compact numerical interval.
+pickColour :: (RealFrac t, Num a) =>
+        [C.Colour Double] -> t -> t -> t -> ShapeCol a
+pickColour pal xmin xmax x = NoBorderCol $ Col (pal !! i) 1
   where
     i = floor (x01 * fromIntegral (nColors - 1))
-    x01 = (x-xmin)/(xmax - xmin)
+    x01 = (x - xmin) / (xmax - xmin)
     nColors = length pal
 
 
@@ -700,7 +812,7 @@ colBarPx
      -> Svg
 colBarPx pal fdat w h vmin vmax (LabeledPoint p val) = do
   text 0 (figLabelFontSize fdat) C.black TAStart (T.pack $ show (rr val :: Fixed E3)) (V2 (1.1*w) (0.5*h)) p
-  rectCentered w h 0 Nothing (Just $ pickColour pal vmin vmax val) p
+  rectCentered w h (pickColour pal vmin vmax val) p
   
 
 
@@ -714,11 +826,6 @@ colBarPx pal fdat w h vmin vmax (LabeledPoint p val) = do
 -- | Render a Colour from `colour` into a `blaze` Attribute
 colourAttr :: C.Colour Double -> S.AttributeValue
 colourAttr = S.toValue . C.sRGB24show 
-
-
--- **
-
-
 
 
 

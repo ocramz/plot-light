@@ -5,15 +5,15 @@ module Graphics.Rendering.Plot.Light.PlotTypes.TimeSeries where
 import Control.Monad (forM_)
 
 -- import GHC.Real
--- import Data.Fixed (Pico)
--- import Data.Time
+import Data.Fixed (Pico)
+import Data.Time
+
 -- import Data.Scientific
 
 import qualified Data.Text as T
 
 import Graphics.Rendering.Plot.Light.Internal
 -- import Graphics.Rendering.Plot.Light.Internal.Utils
-import Data.TimeSeries
 
 -- For debugging
 import Text.Blaze.Svg
@@ -30,8 +30,7 @@ import qualified Data.Colour.Names as C
 -- 2. Flip the data along the y axis since the origin in SVG is the top-left corner of the screen
 
 
-    
-    
+  
 -- tsAxis
 --   :: (Functor t, Foldable t, Show a, RealFrac a) =>
 --      FigureData a
@@ -68,7 +67,9 @@ tsAxis fd fboxmin fboxmax fmin fmax sw colAxis rot plabx plaby ps =
     fdat = frameToFrameValue from to
     baz = const (T.pack "")
     fplot lps =
-      forM_ lps (candlestick (>) fboxmin' fboxmax' fmin' fmax' 5 1 C.green C.red colAxis)
+      forM_ lps (candlestick (>) fboxmin' fboxmax' fmin' fmax' 5 1 colUp colDown colAxis)
+    colUp = shapeColBoth C.green colAxis 1 sw
+    colDown = shapeColBoth C.red colAxis 1 sw
     fboxmin' = fdat . fboxmin
     fboxmax' = fdat . fboxmax
     fmin' = fdat . fmin
@@ -87,6 +88,60 @@ tsAxis' figdata fmin fmax col lps =
   fmin' = fdat . fmin
 
 
+
+
+
+-- | An instant, defined by date (Day) and TimeOfDay
+data Tick = Tick Day TimeOfDay
+  deriving (Eq, Show, Ord)
+
+-- | Create a Tick from valid (year, month, day, hour, minute, second)
+mkTick :: Integer -> Int -> Int -> Int -> Int -> Pico -> Maybe Tick
+mkTick yy mm dd hr mi se = do
+   tim <- makeTimeOfDayValid hr mi se
+   let d = fromGregorian yy mm dd
+   return $ Tick d tim
+
+-- | A point in a time series
+data TsPoint a =
+  Tsp {
+    _tick :: Tick,
+    _val :: a
+    } deriving (Eq, Show)
+
+tickToFractional :: Fractional b => TsPoint a -> b
+tickToFractional = fromRational . fromTick . _tick
+
+-- | Map a Tick onto the rationals
+fromTick :: Tick -> Rational
+fromTick (Tick d t) = fromIntegral (toModifiedJulianDay d) + timeOfDayToDayFraction t
+    
+-- | Map a rational onto a Tick
+toTick :: Rational -> Tick
+toTick n = Tick d t
+  where
+    t = dayFractionToTimeOfDay dec
+    d = ModifiedJulianDay wh
+    (wh, dec) = wholeDecimal n
+
+
+hourTick, halfHourTick, quarterHourTick :: Rational
+hourTick = 1/24
+halfHourTick = 1/2 * hourTick
+quarterHourTick = 1/4 * hourTick
+
+
+-- locTime :: IO LocalTime
+-- locTime = do
+--   tz <- getCurrentTimeZone
+--   ct <- getCurrentTime
+--   return $ utcToLocalTime tz ct
+
+
+-- tickRange :: Tick -> Tick -> Rational -> [Tick]
+-- tickRange t1 t2 dt = toTick <$> [td1, td1 + dt .. td2] where
+--   td1 = fromTick t1
+--   td2 = fromTick t2
 
 
 
@@ -124,8 +179,6 @@ labeledTsPointRange n p t1 q dt = zipWith LabeledPoint p_ t_
 frameToFrameFxRow from to fxr = f <$> fxr
   where
     f = frameToFrameValue from to
-
-
 
 
 data FxRow a  = FxRow {

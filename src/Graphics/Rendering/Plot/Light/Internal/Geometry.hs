@@ -11,9 +11,11 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** LabeledPoint
   LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel,
   -- ** Frame
-  Frame(..), mkFrame, unitFrame, frameFromPoints,  mkFrameOrigin, height, width, xmin, xmax, ymin, ymax, isPointInFrame,
+  Frame(..), mkFrame, unitFrame, frameFromPoints,  mkFrameOrigin, height, width, xmin, xmax, ymin, ymax, isPointInFrame, frameToAffine, fromToStretchRatios,
   -- ** Axis
   Axis(..), otherAxis,
+  -- *** AxisData, AxisFrame
+  AxisData(..), AxisFrame(..), -- axisX, axisY, mkAxisPoints,
   -- ** Vectors
   V2(..), pointFromV2,
   -- ** Matrices
@@ -40,7 +42,8 @@ where
 import Control.Exception
 import Control.Monad.Catch (MonadThrow(..), throwM)
 import GHC.Generics
-
+import GHC.Real (Ratio(..))
+import Data.Scientific
 import Data.Semigroup (Semigroup(..))
 
 
@@ -53,7 +56,7 @@ instance Ord a => Ord (Point a) where
   (Point x1 y1) <= (Point x2 y2) = x1 <= x2 && y1 <= y2
 
 instance Show a => Show (Point a) where
-  show (Point x y) = show x ++ "," ++ show y
+  show (Point x y) = "(P " ++ show x ++ ", " ++ show y ++ ")"
 
 mkPoint :: a -> a -> Point a
 mkPoint = Point
@@ -148,6 +151,13 @@ unitFrame = mkFrame origin oneOne
 
 
 
+-- | Horizontal and vertical stretch factors associated with an affine transformation between two 'Frame's
+fromToStretchRatios :: Fractional b => Frame b -> Frame b -> (b, b)  
+fromToStretchRatios frameFrom frameTo = (m2x/m1x, m2y/m1y)
+  where
+    (DMat2 m1x m1y, _) = frameToAffine frameFrom
+    (DMat2 m2x m2y, _) = frameToAffine frameTo
+
 
 -- | Create a `Frame` from a container of `Point`s `P`, i.e. construct two points `p1` and `p2` such that :
 --
@@ -179,6 +189,63 @@ ymax = _py . _fpmax
 width, height :: Num a => Frame a -> a
 width f = abs $ xmax f - xmin f
 height f = abs $ ymax f - ymin f
+
+
+
+
+-- * Axis
+
+-- super hacky, let's get rid of this
+
+data Axis = X | Y deriving (Eq, Show)
+
+otherAxis :: Axis -> Axis
+otherAxis X = Y
+otherAxis _ = X
+
+
+
+-- data Linear
+-- data Logarithmic
+
+
+data AxisData a = AxisData {
+    axisNIntervals :: Int   -- ^ Number of axis intervals
+  , axisV :: V2 a           -- ^ Axis direction vector (Normalized)
+  -- , axisOrigin :: Point a   -- ^ Axis origin
+                           } deriving (Eq, Show)
+
+-- axisLength :: Floating a => AxisData a -> a
+-- axisLength (AxisData n v _) = fromIntegral n * norm2 v
+
+-- -- | Create an X-aligned 'AxisData'
+-- axisX :: Num a =>
+--          Int
+--       -> a  -- ^ Interval length 
+--       -> Point a
+--       -> AxisData a
+-- axisX n ldx = AxisData n (ldx .* e1)
+
+-- -- | Create an Y-aligned 'AxisData'
+-- axisY :: Num a =>
+--          Int
+--       -> a  -- ^ Interval length
+--       -> Point a -> AxisData a
+-- axisY n ldy = AxisData n (ldy .* e2)
+
+-- -- | Create the list of axis tick points from the 'AxisData'
+-- mkAxisPoints :: (Num a, Enum a) => AxisData a -> [Point a]
+-- mkAxisPoints (AxisData n v p0) =
+--   map (\i -> movePoint (i .* v) p0) $ take n [0, 1 ..]
+
+data AxisFrame a = AxisFrame {
+    afFrame :: Frame a    -- ^ Position in the figure
+  , afAxis1 :: AxisData a  -- ^ First axis
+  , afAxis2 :: AxisData a  -- ^ Second axis
+                             } deriving (Eq, Show)
+
+
+
 
 
 
@@ -226,13 +293,6 @@ interpolateBilinear' q11@(Point x1 y1) q22@(Point x2 y2) f (Point x y) =
 
 
 
--- * Axis
-
-data Axis = X | Y deriving (Eq, Show)
-
-otherAxis :: Axis -> Axis
-otherAxis X = Y
-otherAxis _ = X
 
 
 
@@ -244,7 +304,17 @@ otherAxis _ = X
 
 
 -- | V2 is a vector in R^2
-data V2 a = V2 a a deriving (Eq, Show)
+data V2 a = V2 a a deriving (Eq)
+instance Show a => Show (V2 a) where
+  show (V2 vx vy) = "(V2 "++ show vx ++", "++ show vy++")"
+
+-- | V2i is a vector in R^2 having unit norm
+newtype V2i a = V2i (V2 a) deriving (Eq, Show)
+
+-- | V2i can only be constructed with this method
+mkV2i :: Floating a => V2 a -> V2i a
+mkV2i v = V2i $ normalize2 v
+
 
 instance Num a => Semigroup (V2 a) where
   (V2 a b) <> (V2 c d) = V2 (a + c) (b + d)  
@@ -312,7 +382,7 @@ v2fromEndpoints (Point px py) (Point qx qy) = V2 (qx-px) (qy-py)
 
 
 
--- | A Mat2 can be seen as a linear operator that acts on points in the plane
+-- | A Mat2 is a linear operator that acts on points in the plane to produce points on the plane.
 data Mat2 a = Mat2 a a a a deriving (Eq, Show)
 
 -- | Linear maps, i.e. linear transformations of vectors
@@ -435,15 +505,35 @@ subdivSegment x1 x2 n = f <$> [0, 1 ..] where
   f x  = x * l/fromIntegral n + fromRational (toRational xmin)
 
 
+-- | Apply an affine transformation such that the resulting vector points to the unit square
 fromFrame :: Fractional a => Frame a -> V2 a -> V2 a
 fromFrame from v = mfrom <\> (v ^-^ vfrom) where
   vfrom = v2fromPoint (_fpmin from) -- min.point vector of `from`
   mfrom = diagMat2 (width from) (height from) -- rescaling matrix of `from`
 
+-- | Apply an affine transformation to a vector that points within the unit square
 toFrame :: Num a => Frame a -> V2 a -> V2 a
 toFrame to v01 = (mto #> v01) ^+^ vto where
   vto = v2fromPoint (_fpmin to)     -- min.point vector of `to`
   mto = diagMat2 (width to) (height to)       -- rescaling matrix of `to`
+
+
+
+
+frameToAffine :: Num a => Frame a -> (DiagMat2 a, V2 a)
+frameToAffine frm = (m, v) where
+  m = diagMat2 (width frm) (height frm)
+  v = v2fromPoint (_fpmin frm)
+
+affineToFrame :: (Num a, LinearMap m (V2 a)) => m -> V2 a -> Frame a
+affineToFrame m v = frm where
+  pmin = movePoint v origin
+  pmax = movePoint (m #> v) pmin
+  frm = mkFrame pmin pmax
+
+-- | Identity of affine Frame transformations
+idFrame :: Num a => Frame a -> Frame a
+idFrame = uncurry affineToFrame . frameToAffine
 
 
 
