@@ -193,13 +193,29 @@ data ShapeDsl a =
 -- | Translate the terms of the shape DSL from the screen frame to the SVG frame (vertical mirror flip)
 toSvgFrameDsl :: Num a => FigureData a -> ShapeDsl a -> ShapeDsl a
 toSvgFrameDsl fdat s = case s of
-  Rect p w h col -> Rect p' w h col where
-    p' = movePoint v p
-    v = heightShiftV2 fdat (h + _py p)
+  cir@Circle{} -> cir
+  -- Rect p w h col -> Rect p' w h col where
+  --   p' = movePoint v p
+  --   v = V2 0 (hfig o)
 
-heightShiftV2 :: Num a => FigureData a -> a -> V2 a
-heightShiftV2 fdat h = V2 0 (hfig - h) where
-  hfig = figHeight fdat
+-- flipUD fdat p = mm #> (p -. origin) where
+--   h = figHeight fdat
+--   py = _py p
+--   mm = diagMat2 1 (h / py - 1 - k)
+--   k = maybe 
+
+class Body body where
+  bodyHeight :: body -> Maybe Double
+
+-- data Rect a where
+  
+
+  
+
+
+-- heightShiftV2 :: Num a => FigureData a -> a -> V2 a
+-- heightShiftV2 fdat h = V2 0 (hfig - h) where
+--   hfig = figHeight fdat
 
 -- | Interpret a term of the shape DSL into an SVG object
 interpSvgDsl :: Real a => ShapeDsl a -> Svg
