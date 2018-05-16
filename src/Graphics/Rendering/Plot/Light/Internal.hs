@@ -207,7 +207,8 @@ toSvgFrameDsl fdat s = case s of
 class Body body where
   bodyHeight :: body -> Maybe Double
 
--- data Rect a where
+instance Body (ShapeDsl a) where
+  -- bodyHeight
   
 
   
