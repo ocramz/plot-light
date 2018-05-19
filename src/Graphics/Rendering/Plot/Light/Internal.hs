@@ -265,35 +265,63 @@ none = S.toValue ("none" :: String)
 -- | ===================
 -- | Shape DSL 3
 
-data WrtScreen a =
-    SRCenter (Point a)
-  | SRBLCorner (Point a) deriving (Eq, Show)
+-- data WrtScreen a =
+--     SRCenter (Point a)
+--   | SRBLCorner (Point a) deriving (Eq, Show)
 
-data WrtSvg a =
-    SvgCenter (Point a)
-  | SvgBLCorner (Point a) deriving (Eq, Show)
+-- data WrtSvg a =
+--     SvgCenter (Point a)
+--   | SvgBLCorner (Point a) deriving (Eq, Show)
 
-flipUdAnchor :: Num a => FigureData a -> WrtScreen a -> WrtSvg a
-flipUdAnchor fdat sa = sa'
-  where
-    hfig = figHeight fdat
-    pVShift p = movePoint w p where
-      w = V2 0 (hfig - _py p)
-    sa' = case sa of
-      SRCenter p -> SvgCenter $ pVShift p
-      SRBLCorner p -> SvgBLCorner $ pVShift p
+-- flipUdAnchor :: Num a => FigureData a -> WrtScreen a -> WrtSvg a
+-- flipUdAnchor fdat sa = sa'
+--   where
+--     hfig = figHeight fdat
+--     pVShift p = movePoint w p where
+--       w = V2 0 (hfig - _py p)
+--     sa' = case sa of
+--       SRCenter p -> SvgCenter $ pVShift p
+--       SRBLCorner p -> SvgBLCorner $ pVShift p
 
-flipUdShape fdat sh = case sh of
-  Rect fr@(SRCenter _) _ _ _ -> undefined
+-- flipUdShape fdat sh = case sh of
+--   Rect fr@(SRCenter _) _ _ _ -> undefined
 
-data Shape r a =
-    Rect r a a (ShapeCol a)
-  | Circle r a (ShapeCol a) deriving (Eq, Show)
+-- data Shape r a =
+--     Rect r a a (ShapeCol a)
+--   | Circle r a (ShapeCol a) deriving (Eq, Show)
 
-rectSh :: Point a -> b -> b -> ShapeCol b -> Shape (WrtScreen a) b
-rectSh p = Rect (SRCenter p)
+-- rectSh :: Point a -> b -> b -> ShapeCol b -> Shape (WrtScreen a) b
+-- rectSh p = Rect (SRCenter p)
 
 
+-- | ===================
+-- | Shape DSL 4
+
+-- data WrtScreen
+-- data WrtSvg
+
+-- data Anchor r a = Center (Point a) | BLCorner (Point a) deriving (Eq, Show)
+
+-- data Shape r a = Rect (Anchor r a) a a (ShapeCol a) deriving (Eq, Show)
+
+-- -- data Shape r a = Rect (Anchor r a) a a (ShapeCol a) deriving (Eq, Show)
+
+-- rectSh :: Point a -> a -> a -> ShapeCol a -> Shape WrtScreen a
+-- rectSh p = Rect (BLCorner p)
+
+
+-- | ===================
+-- | Shape DSL 5
+
+data WrtScreen a = WrtScreen (Point a)
+data WrtSvg a = WrtSvg (Point a)
+
+data BLCorner r a
+data Center r a
+
+data Shape r a = Rect r a a (ShapeCol a)
+
+-- mkRect p = Rect (BL)
 
 
 
