@@ -180,51 +180,81 @@ m !# col = case col of
 none :: S.AttributeValue
 none = S.toValue ("none" :: String)
 
+-- | ===================
+-- | Shape DSL 1
 
--- | Shape DSL
+-- r0 = Rect (Point 20 30) 10 50.0 (shapeColNoBorder C.blue 1) 
 
-r0 = Rect (Point 20 30) 10 50.0 (shapeColNoBorder C.blue 1) 
+-- data ShapeDsl a =
+--     Rect (Point a) a a (ShapeCol a)
+--   | Circle (Point a) a (ShapeCol a)
+--   deriving (Eq, Show)
 
-data ShapeDsl a =
-    Rect (Point a) a a (ShapeCol a)
-  | Circle (Point a) a (ShapeCol a)
-  deriving (Eq, Show)
+-- -- | Translate the terms of the shape DSL from the screen frame to the SVG frame (vertical mirror flip)
+-- toSvgFrameDsl :: Num a => FigureData a -> ShapeDsl a -> ShapeDsl a
+-- toSvgFrameDsl fdat s = case s of
+--   cir@Circle{} -> cir
+--   -- Rect p w h col -> Rect p' w h col where
+--   --   p' = movePoint v p
+--   --   v = V2 0 (hfig o)
 
--- | Translate the terms of the shape DSL from the screen frame to the SVG frame (vertical mirror flip)
-toSvgFrameDsl :: Num a => FigureData a -> ShapeDsl a -> ShapeDsl a
-toSvgFrameDsl fdat s = case s of
-  cir@Circle{} -> cir
-  -- Rect p w h col -> Rect p' w h col where
-  --   p' = movePoint v p
-  --   v = V2 0 (hfig o)
-
--- flipUD fdat p = mm #> (p -. origin) where
---   h = figHeight fdat
---   py = _py p
---   mm = diagMat2 1 (h / py - 1 - k)
---   k = maybe 
-
-class Body body where
-  bodyHeight :: body -> Maybe Double
-
-instance Body (ShapeDsl a) where
-  -- bodyHeight
-  
+-- -- flipUD fdat p = mm #> (p -. origin) where
+-- --   h = figHeight fdat
+-- --   py = _py p
+-- --   mm = diagMat2 1 (h / py - 1 - k)
+-- --   k = maybe 
 
   
-
-
 -- heightShiftV2 :: Num a => FigureData a -> a -> V2 a
 -- heightShiftV2 fdat h = V2 0 (hfig - h) where
 --   hfig = figHeight fdat
 
--- | Interpret a term of the shape DSL into an SVG object
-interpSvgDsl :: Real a => ShapeDsl a -> Svg
-interpSvgDsl term = case term of
-  Rect p w h col -> rect w h col p
+-- -- | Interpret a term of the shape DSL into an SVG object
+-- interpSvgDsl :: Real a => ShapeDsl a -> Svg
+-- interpSvgDsl term = case term of
+--   Rect p w h col -> rect w h col p
 
-render :: Real a => FigureData a -> ShapeDsl a -> Svg
-render fdat = interpSvgDsl . toSvgFrameDsl fdat   
+-- render :: Real a => FigureData a -> ShapeDsl a -> Svg
+-- render fdat = interpSvgDsl . toSvgFrameDsl fdat
+
+-- | ===================
+-- | Shape DSL 2
+
+
+
+-- | Anchor point of a shape
+data ShapeAnchor a =
+    SACenter (Point a)  -- ^ Center (of mass) 
+  | SABLCorner (Point a) -- ^ Bottom left corner
+  deriving (Eq, Show)
+
+flipUdAnchor fdat sa = undefined
+  where
+    hfig = figHeight fdat
+    h = case sa of
+      (SACenter p) -> hfig - _py p 
+    -- SABottomL
+  
+
+data Shape a =
+    Rect (ShapeAnchor a) a a (ShapeCol a)
+  | Circle (ShapeAnchor a) a (ShapeCol a) deriving (Eq, Show)
+
+-- | a rectangle shape, anchored at its bottom-left corner
+rectShBl :: Point a -> a -> a -> ShapeCol a -> Shape a
+rectShBl p = Rect (SABLCorner p)
+
+-- | a circle shapr
+circleSh :: Point a -> a -> ShapeCol a -> Shape a
+circleSh p = Circle (SACenter p)
+
+
+
+
+
+
+
+-- | ===================
 
 
 -- | A rectangle, defined by its anchor point coordinates and side lengths
