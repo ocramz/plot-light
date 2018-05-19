@@ -228,12 +228,15 @@ data ShapeAnchor a =
   | SABLCorner (Point a) -- ^ Bottom left corner
   deriving (Eq, Show)
 
-flipUdAnchor fdat sa = undefined
+flipUdAnchor :: Num a => FigureData a -> ShapeAnchor a -> ShapeAnchor a
+flipUdAnchor fdat sa = sa'
   where
     hfig = figHeight fdat
-    h = case sa of
-      (SACenter p) -> hfig - _py p 
-    -- SABottomL
+    pVShift p = movePoint w p where
+      w = V2 0 (hfig - _py p)
+    sa' = case sa of
+      SACenter p -> SACenter $ pVShift p
+      SABLCorner p -> SABLCorner $ pVShift p
   
 
 data Shape a =
@@ -244,7 +247,7 @@ data Shape a =
 rectShBl :: Point a -> a -> a -> ShapeCol a -> Shape a
 rectShBl p = Rect (SABLCorner p)
 
--- | a circle shapr
+-- | a circle shape
 circleSh :: Point a -> a -> ShapeCol a -> Shape a
 circleSh p = Circle (SACenter p)
 
