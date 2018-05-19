@@ -35,7 +35,7 @@ module Graphics.Rendering.Plot.Light.Internal
   -- * Colours
   , blendTwo, palette
     -- ** Col
-  , (!#), Col(..), ShapeCol(..), col, col50, col100, shapeColBoth
+  , (!#), Col(..), ShapeCol(..), mkCol, col50, col100, shapeColBoth
   , shapeColNoBorder, shapeColNoFill
     -- * General utility
     -- ** Function interpolation
@@ -130,16 +130,16 @@ data Col a = Col {
   } deriving (Eq, Show)
 
 -- | 'Col' constructor
-col :: C.Colour Double -> a -> Col a
-col = Col
+mkCol :: C.Colour Double -> a -> Col a
+mkCol = Col
 
 -- | Full opacity colour
 col100 :: Num a => C.Colour Double -> Col a
-col100 c = col c 1
+col100 c = mkCol c 1
 
 -- | Half opacity colour
 col50 :: Fractional a => C.Colour Double -> Col a
-col50 c = col c 0.5
+col50 c = mkCol c 0.5
 
 -- | A shape can either be only filled, or only contoured, or both
 data ShapeCol a =
@@ -150,11 +150,11 @@ data ShapeCol a =
 
 -- | Construct a 'ShapeCol' for shapes that have no border stroke (i.e. have only the fill colour)
 shapeColNoBorder :: C.Colour Double -> a -> ShapeCol a
-shapeColNoBorder c a = NoBorderCol $ col c a
+shapeColNoBorder c a = NoBorderCol $ mkCol c a
 
 -- | Construct a 'ShapeCol' for shapes that have no fill colour (i.e. have only the stroke colour)
 shapeColNoFill :: C.Colour Double -> a -> a -> ShapeCol a
-shapeColNoFill c a = NoFillCol $ col c a 
+shapeColNoFill c a = NoFillCol $ mkCol c a 
 
 -- | Construct a 'ShapeCol' for shapes that have both fill and stroke colour
 shapeColBoth ::
@@ -163,7 +163,7 @@ shapeColBoth ::
   -> a                -- ^ Opacity 
   -> a                -- ^ Stroke width
   -> ShapeCol a
-shapeColBoth cs cf a = BothCol (col cs a) (col cf a)
+shapeColBoth cs cf a = BothCol (mkCol cs a) (mkCol cf a)
 
 -- | Set the fill and stroke colour and opacity attributes all at once (e.g. if the fill is set to invisible, the stroke must be visible somehow.
 (!#) :: (Attributable h, Real a) => h -> ShapeCol a -> h
@@ -220,38 +220,78 @@ none = S.toValue ("none" :: String)
 -- | ===================
 -- | Shape DSL 2
 
+-- -- | Anchor point of a shape
+-- data ShapeAnchor a =
+--     SACenter (Point a)  -- ^ Center (of mass) 
+--   | SABLCorner (Point a) -- ^ Bottom left corner
+--   deriving (Eq, Show)
+
+-- getAnchorPoint :: ShapeAnchor a -> Point a
+-- getAnchorPoint sac = case sac of
+--   SACenter p -> p
+--   SABLCorner p -> p
+
+-- flipUdAnchor :: Num a => FigureData a -> ShapeAnchor a -> ShapeAnchor a
+-- flipUdAnchor fdat sa = sa'
+--   where
+--     hfig = figHeight fdat
+--     pVShift p = movePoint w p where
+--       w = V2 0 (hfig - _py p)
+--     sa' = case sa of
+--       SACenter p -> SACenter $ pVShift p
+--       SABLCorner p -> SABLCorner $ pVShift p
+  
+-- -- | Shape DSL
+-- data Shape a =
+--     Rect (ShapeAnchor a) a a (ShapeCol a)
+--   | Circle (ShapeAnchor a) a (ShapeCol a) deriving (Eq, Show)
+
+-- -- flipShape fdat sh = sh' where
+  
+
+-- -- | a rectangle shape, anchored at its bottom-left corner
+-- rectShBl :: Point a -> a -> a -> ShapeCol a -> Shape a
+-- rectShBl p = Rect (SABLCorner p)
+
+-- -- | a circle shape
+-- circleSh :: Point a -> a -> ShapeCol a -> Shape a
+-- circleSh p = Circle (SACenter p)
+
+-- interpSvgDsl sh = case sh of
+--   Rect sac w h col -> rect w h col (getAnchorPoint sac)
+--   Circle sac r col -> circle r col (getAnchorPoint sac)
 
 
--- | Anchor point of a shape
-data ShapeAnchor a =
-    SACenter (Point a)  -- ^ Center (of mass) 
-  | SABLCorner (Point a) -- ^ Bottom left corner
-  deriving (Eq, Show)
+-- | ===================
+-- | Shape DSL 3
 
-flipUdAnchor :: Num a => FigureData a -> ShapeAnchor a -> ShapeAnchor a
+data WrtScreen a =
+    SRCenter (Point a)
+  | SRBLCorner (Point a) deriving (Eq, Show)
+
+data WrtSvg a =
+    SvgCenter (Point a)
+  | SvgBLCorner (Point a) deriving (Eq, Show)
+
+flipUdAnchor :: Num a => FigureData a -> WrtScreen a -> WrtSvg a
 flipUdAnchor fdat sa = sa'
   where
     hfig = figHeight fdat
     pVShift p = movePoint w p where
       w = V2 0 (hfig - _py p)
     sa' = case sa of
-      SACenter p -> SACenter $ pVShift p
-      SABLCorner p -> SABLCorner $ pVShift p
-  
+      SRCenter p -> SvgCenter $ pVShift p
+      SRBLCorner p -> SvgBLCorner $ pVShift p
 
-data Shape a =
-    Rect (ShapeAnchor a) a a (ShapeCol a)
-  | Circle (ShapeAnchor a) a (ShapeCol a) deriving (Eq, Show)
+flipUdShape fdat sh = case sh of
+  Rect fr@(SRCenter _) _ _ _ -> undefined
 
--- | a rectangle shape, anchored at its bottom-left corner
-rectShBl :: Point a -> a -> a -> ShapeCol a -> Shape a
-rectShBl p = Rect (SABLCorner p)
+data Shape r a =
+    Rect r a a (ShapeCol a)
+  | Circle r a (ShapeCol a) deriving (Eq, Show)
 
--- | a circle shape
-circleSh :: Point a -> a -> ShapeCol a -> Shape a
-circleSh p = Circle (SACenter p)
-
-
+rectSh :: Point a -> b -> b -> ShapeCol b -> Shape (WrtScreen a) b
+rectSh p = Rect (SRCenter p)
 
 
 
