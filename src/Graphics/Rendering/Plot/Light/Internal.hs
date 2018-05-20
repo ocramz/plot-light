@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings, DeriveFunctor, DeriveGeneric #-}
+{-# language TypeFamilies, FlexibleContexts, ConstrainedClassMethods #-}
 module Graphics.Rendering.Plot.Light.Internal
   (
   -- * Frame
@@ -313,15 +314,127 @@ none = S.toValue ("none" :: String)
 -- | ===================
 -- | Shape DSL 5
 
-data WrtScreen a = WrtScreen (Point a)
-data WrtSvg a = WrtSvg (Point a)
+-- data WrtScreen a = WrtScreen Anchor (Point a) deriving (Eq, Show)
+-- data WrtSvg a = WrtSvg Anchor (Point a) deriving (Eq, Show)
 
-data BLCorner r a
-data Center r a
+-- data Anchor = BLCorner | Center deriving (Eq, Show)
 
-data Shape r a = Rect r a a (ShapeCol a)
+-- mkBLAnchor :: Point a -> WrtScreen a
+-- mkBLAnchor = WrtScreen BLCorner
 
--- mkRect p = Rect (BL)
+-- mkCAnchor :: Point a -> WrtScreen a
+-- mkCAnchor = WrtScreen Center
+
+
+-- -- -- data Shape a = Rect (WrtScreen a) a a (ShapeCol a) deriving (Eq, Show)
+
+-- -- -- mkRect p = Rect (mkBLAnchor p)
+
+-- data Shape r a =
+--     Rect r a a (ShapeCol a)
+--   | Circle r a (ShapeCol a) deriving (Eq, Show)
+
+-- mkRectBLScreen :: Point a -> b -> b -> ShapeCol b -> Shape (WrtScreen a) b
+-- mkRectBLScreen p = Rect (mkBLAnchor p)
+
+-- -- flipUD fdat (WrtScreen anchor p) = WrtSvg anchor p' where
+-- --   hfig = figHeight fdat
+-- --   pVShift p = movePoint w p where
+-- --     w = V2 0 (hfig - _py p)  
+-- --   -- h = case anchor of
+-- --   --   BLCorner -> undefined
+
+
+-- | ===================
+-- | Shape DSL 6
+
+-- newtype WrtScreen a = WrtScreen (Point a) deriving (Eq, Show)
+-- newtype WrtSvg a = WrtSvg (Point a) deriving (Eq, Show)
+
+-- data Center = Center
+-- data BLCorner = BLCorner
+
+-- data Shape r anchor a = Rect r anchor a a (ShapeCol a) deriving (Eq, Show)
+
+-- mkRect :: Point a -> b -> b -> ShapeCol b -> Shape (WrtScreen a) BLCorner b
+-- mkRect p = Rect (WrtScreen p) BLCorner
+
+
+-- | ===================
+-- | Shape DSL 7
+
+-- data Anchor = BLCorner | Center deriving (Eq, Show)
+-- data WrtScreen a = WrtScreen Anchor (Point a) deriving (Eq, Show)
+-- data WrtSvg a = WrtSvg Anchor (Point a) deriving (Eq, Show)
+
+-- data Framed wrt a = Framed (Frame a) wrt deriving (Eq, Show)
+
+-- mkFramedBLWrtScreen :: Point a -> Point a -> Framed (WrtScreen a) a
+-- mkFramedBLWrtScreen p1 p2 = Framed (mkFrame p1 p2) (WrtScreen BLCorner p1)
+
+-- data Shape frame a = Rect frame a a (ShapeCol a)
+
+-- mkRect :: Num a => Point a -> a -> a -> ShapeCol a -> Shape (Framed (WrtScreen a) a) a
+-- mkRect p w h = Rect (mkFramedBLWrtScreen p p2) w h where
+--   v = V2 w h
+--   p2 = movePoint v p 
+
+-- | ===================
+-- | Shape DSL 8
+
+data Anchor = BLCorner | Center deriving (Eq, Show)
+data WrtScreen a = WrtScreen Anchor (Frame a) deriving (Eq, Show)
+data WrtSvg a = WrtSvg Anchor (Frame a) deriving (Eq, Show)
+
+class HasWrt w where
+  type TyWrt w :: *
+  getFrame :: w -> Frame (TyWrt w)
+  getAnchor :: Fractional (TyWrt w) => w -> Point (TyWrt w)
+
+instance HasWrt (WrtScreen a) where
+  type TyWrt (WrtScreen a) = a
+  getFrame (WrtScreen _ frm) = frm
+  getAnchor (WrtScreen anc frm) = getAnchor_ anc frm
+
+instance HasWrt (WrtSvg a) where
+  type TyWrt (WrtSvg a) = a
+  getFrame (WrtSvg _ frm) = frm
+  getAnchor (WrtSvg anc frm) = getAnchor_ anc frm  
+  
+
+getAnchor_ :: Fractional a => Anchor -> Frame a -> Point a
+getAnchor_ r frm = let pmin = _fpmin frm
+                  in
+                    case r of
+                      BLCorner -> pmin
+                      Center -> movePoint (V2 (height frm / 2) (width frm / 2)) pmin
+
+
+data Rect r a = Rect r (ShapeCol a)
+mkRect :: Frame a -> ShapeCol b -> Rect (WrtScreen a) b
+mkRect frm = Rect (WrtScreen BLCorner frm)
+
+sizesWrt :: (HasWrt w, Num (TyWrt w)) => w -> (TyWrt w, TyWrt w)
+sizesWrt r = let frm = getFrame r in (width frm, height frm)
+
+class Sized sh where
+  type TySz sh :: * 
+  sizes :: sh -> TySz sh
+
+instance (HasWrt r, Num (TyWrt r)) => Sized (Rect r a) where
+  type TySz (Rect r a) = (TyWrt r, TyWrt r)
+  sizes (Rect r a) = sizesWrt r
+
+
+
+
+  
+
+
+
+
+
+
 
 
 
