@@ -373,12 +373,20 @@ none = S.toValue ("none" :: String)
 
 data WrtScreen = WrtScreen deriving (Show)
 data WrtSvg = WrtSvg deriving (Show)
-data ExtShape r a = ExtShape r (Frame a) deriving (Eq, Show)
-data PointShape r a = PointShape r (Point a) deriving (Eq, Show)
-data Shape r a = Rect (ExtShape r a) | Circle (PointShape r a) a deriving (Eq, Show)
+data ExtSh r a = ExtSh r (Frame a) deriving (Eq, Show)
+data PointSh r a = PointSh r (Point a) deriving (Eq, Show)
+data Shape r a =
+    Rect (ExtSh r a)
+  | Circle (PointSh r a) a
+  deriving (Eq, Show)
+
+getAnchor :: Shape r a -> Point a
+getAnchor sh = case sh of
+  Rect (ExtSh _ (Frame p _)) -> p
+  Circle (PointSh _ p) _ -> p
 
 mkRect :: Frame a -> Shape WrtScreen a
-mkRect fr = Rect (ExtShape WrtScreen fr)
+mkRect fr = Rect (ExtSh WrtScreen fr)
 
 -- flipExtShape fdat esh = undefined
 --   where
@@ -387,8 +395,17 @@ mkRect fr = Rect (ExtShape WrtScreen fr)
 flipFrame fdat frm = undefined
   where
     hfig = figHeight fdat
-    (Point px1 py1, Point px2 py2) = (_fpmin &&& _fpmax) frm
-    
+    -- (Point px1 py1, Point px2 py2) = (_fpmin &&& _fpmax) frm
+
+-- | The coordinate vectors associated with the displacement between two points
+vdispl :: Num a => Point a -> Point a -> (V2 a, V2 a)
+vdispl p1 p2 = (v1 .* e1, v2 .* e2) where
+  v = p1 -. p2
+  v1 = v <.> e1
+  v2 = v <.> e2
+
+
+
 
 
 
