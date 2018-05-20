@@ -382,54 +382,98 @@ none = S.toValue ("none" :: String)
 -- | ===================
 -- | Shape DSL 8
 
-data Anchor = BLCorner | Center deriving (Eq, Show)
-data WrtScreen a = WrtScreen Anchor (Frame a) deriving (Eq, Show)
-data WrtSvg a = WrtSvg Anchor (Frame a) deriving (Eq, Show)
+-- data Anchor = BLCorner | Center deriving (Eq, Show)
+-- data WrtScreen a = WrtScreen Anchor (Frame a) deriving (Eq, Show)
+-- data WrtSvg a = WrtSvg Anchor (Frame a) deriving (Eq, Show)
 
-class HasWrt w where
-  type TyWrt w :: *
-  getFrame :: w -> Frame (TyWrt w)
-  getAnchor :: Fractional (TyWrt w) => w -> Point (TyWrt w)
+-- class HasWrt w where
+--   type TyWrt w :: *
+--   getFrame :: w -> Frame (TyWrt w)
+--   getAnchor :: Fractional (TyWrt w) => w -> Point (TyWrt w)
 
-instance HasWrt (WrtScreen a) where
-  type TyWrt (WrtScreen a) = a
-  getFrame (WrtScreen _ frm) = frm
-  getAnchor (WrtScreen anc frm) = getAnchor_ anc frm
+-- instance HasWrt (WrtScreen a) where
+--   type TyWrt (WrtScreen a) = a
+--   getFrame (WrtScreen _ frm) = frm
+--   getAnchor (WrtScreen anc frm) = getAnchor_ anc frm
 
-instance HasWrt (WrtSvg a) where
-  type TyWrt (WrtSvg a) = a
-  getFrame (WrtSvg _ frm) = frm
-  getAnchor (WrtSvg anc frm) = getAnchor_ anc frm  
+-- instance HasWrt (WrtSvg a) where
+--   type TyWrt (WrtSvg a) = a
+--   getFrame (WrtSvg _ frm) = frm
+--   getAnchor (WrtSvg anc frm) = getAnchor_ anc frm  
   
+-- getAnchor_ :: Fractional a => Anchor -> Frame a -> Point a
+-- getAnchor_ r frm = let pmin = _fpmin frm
+--                   in
+--                     case r of
+--                       BLCorner -> pmin
+--                       Center -> movePoint (V2 (height frm / 2) (width frm / 2)) pmin
 
-getAnchor_ :: Fractional a => Anchor -> Frame a -> Point a
-getAnchor_ r frm = let pmin = _fpmin frm
-                  in
-                    case r of
-                      BLCorner -> pmin
-                      Center -> movePoint (V2 (height frm / 2) (width frm / 2)) pmin
+-- -- | Rectangle shape
+-- data Rect r a = Rect r (ShapeCol a)
+-- mkRect :: Frame a -> ShapeCol b -> Rect (WrtScreen a) b
+-- mkRect frm = Rect (WrtScreen BLCorner frm)
+
+-- -- | Cirle shape
+-- data Circle r a = Circle r (ShapeCol a)
+-- mkCircle :: Frame a -> ShapeCol b -> Circle (WrtScreen a) b
+-- mkCircle frm = Circle (WrtScreen Center frm)
+
+-- sizesWrt :: (HasWrt w, Num (TyWrt w)) => w -> (TyWrt w, TyWrt w)
+-- sizesWrt r = let frm = getFrame r in (width frm, height frm)
+
+-- radiusWrt :: (HasWrt w, Fractional (TyWrt w)) => w -> TyWrt w
+-- radiusWrt r = let frm = getFrame r in width frm / 2
+
+-- class Sized sh where
+--   type TySz sh :: * 
+--   sizes :: sh -> TySz sh
+
+-- instance (HasWrt r, Num (TyWrt r)) => Sized (Rect r a) where
+--   type TySz (Rect r a) = (TyWrt r, TyWrt r)
+--   sizes (Rect r _) = sizesWrt r
+
+-- instance (HasWrt r, Fractional (TyWrt r)) => Sized (Circle r a) where
+--   type TySz (Circle r a) = TyWrt r
+--   sizes (Circle r _) = radiusWrt r
 
 
-data Rect r a = Rect r (ShapeCol a)
-mkRect :: Frame a -> ShapeCol b -> Rect (WrtScreen a) b
-mkRect frm = Rect (WrtScreen BLCorner frm)
-
-sizesWrt :: (HasWrt w, Num (TyWrt w)) => w -> (TyWrt w, TyWrt w)
-sizesWrt r = let frm = getFrame r in (width frm, height frm)
-
-class Sized sh where
-  type TySz sh :: * 
-  sizes :: sh -> TySz sh
-
-instance (HasWrt r, Num (TyWrt r)) => Sized (Rect r a) where
-  type TySz (Rect r a) = (TyWrt r, TyWrt r)
-  sizes (Rect r a) = sizesWrt r
-
-
-
-
+-- | ===================
+-- | Shape DSL 9
   
+-- data Anchor = BLCorner | Center deriving (Eq, Show)
+-- newtype WrtScreen a = WrtScreen { wrtScrenFrame :: Frame a } deriving (Eq, Show)
+-- newtype WrtSvg a = WrtSvg { wrtSvgFrame :: Frame a } deriving (Eq, Show)
 
+-- data Anchored r a = Anchored {
+--     anchor :: Anchor
+--   , anchorWrt :: r
+--   , anchoredThing :: a} deriving (Eq, Show)
+
+-- mkWrtScreen :: Anchor -> Frame a -> b -> Anchored (WrtScreen a) b
+-- mkWrtScreen anc frm = Anchored anc (WrtScreen frm)
+
+-- mkWrtSvg :: Anchor -> Frame a -> b -> Anchored (WrtSvg a) b
+-- mkWrtSvg anc frm = Anchored anc (WrtSvg frm)
+
+-- data Shape a = Rect (Point a) a a | Circle (Point a) a deriving (Eq, Show)
+
+-- -- mkRect frm = mkWrtScreen BLCorner frm (Rect w h)
+
+-- -- getAnchor_ :: Fractional a => Anchor -> Frame a -> Point a
+-- -- getAnchor_ r frm = let pmin = _fpmin frm
+-- --                   in
+-- --                     case r of
+-- --                       BLCorner -> pmin
+-- --                       Center -> movePoint (V2 (height frm / 2) (width frm / 2)) pmin
+
+-- | ===================
+-- | Shape DSL 9
+
+-- data Anchor = BLCorner | Center deriving (Eq, Show)
+-- data AnchorPoint a = WrtScreen (Point a) | WrtSvg (Point a) deriving (Eq, Show)
+-- data Anchored a = Anchored Anchor (AnchorPoint a) deriving (Eq, Show)
+-- -- data WrtScreen a = WrtScreen Anchor (Point a) deriving (Eq, Show)
+-- -- data WrtSvg a = WrtSvg Anchor (Point a) deriving (Eq, Show)
 
 
 
