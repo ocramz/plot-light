@@ -43,6 +43,7 @@ module Graphics.Rendering.Plot.Light.Internal
   , interpolateBilinear)
   where
 
+import Control.Arrow ((***), (&&&))
 import Data.Monoid ((<>))
 import qualified Data.Foldable as F (toList)
 import Data.List
@@ -296,22 +297,6 @@ none = S.toValue ("none" :: String)
 
 
 -- | ===================
--- | Shape DSL 4
-
--- data WrtScreen
--- data WrtSvg
-
--- data Anchor r a = Center (Point a) | BLCorner (Point a) deriving (Eq, Show)
-
--- data Shape r a = Rect (Anchor r a) a a (ShapeCol a) deriving (Eq, Show)
-
--- -- data Shape r a = Rect (Anchor r a) a a (ShapeCol a) deriving (Eq, Show)
-
--- rectSh :: Point a -> a -> a -> ShapeCol a -> Shape WrtScreen a
--- rectSh p = Rect (BLCorner p)
-
-
--- | ===================
 -- | Shape DSL 5
 
 -- data WrtScreen a = WrtScreen Anchor (Point a) deriving (Eq, Show)
@@ -346,98 +331,6 @@ none = S.toValue ("none" :: String)
 
 
 -- | ===================
--- | Shape DSL 6
-
--- newtype WrtScreen a = WrtScreen (Point a) deriving (Eq, Show)
--- newtype WrtSvg a = WrtSvg (Point a) deriving (Eq, Show)
-
--- data Center = Center
--- data BLCorner = BLCorner
-
--- data Shape r anchor a = Rect r anchor a a (ShapeCol a) deriving (Eq, Show)
-
--- mkRect :: Point a -> b -> b -> ShapeCol b -> Shape (WrtScreen a) BLCorner b
--- mkRect p = Rect (WrtScreen p) BLCorner
-
-
--- | ===================
--- | Shape DSL 7
-
--- data Anchor = BLCorner | Center deriving (Eq, Show)
--- data WrtScreen a = WrtScreen Anchor (Point a) deriving (Eq, Show)
--- data WrtSvg a = WrtSvg Anchor (Point a) deriving (Eq, Show)
-
--- data Framed wrt a = Framed (Frame a) wrt deriving (Eq, Show)
-
--- mkFramedBLWrtScreen :: Point a -> Point a -> Framed (WrtScreen a) a
--- mkFramedBLWrtScreen p1 p2 = Framed (mkFrame p1 p2) (WrtScreen BLCorner p1)
-
--- data Shape frame a = Rect frame a a (ShapeCol a)
-
--- mkRect :: Num a => Point a -> a -> a -> ShapeCol a -> Shape (Framed (WrtScreen a) a) a
--- mkRect p w h = Rect (mkFramedBLWrtScreen p p2) w h where
---   v = V2 w h
---   p2 = movePoint v p 
-
--- | ===================
--- | Shape DSL 8
-
--- data Anchor = BLCorner | Center deriving (Eq, Show)
--- data WrtScreen a = WrtScreen Anchor (Frame a) deriving (Eq, Show)
--- data WrtSvg a = WrtSvg Anchor (Frame a) deriving (Eq, Show)
-
--- class HasWrt w where
---   type TyWrt w :: *
---   getFrame :: w -> Frame (TyWrt w)
---   getAnchor :: Fractional (TyWrt w) => w -> Point (TyWrt w)
-
--- instance HasWrt (WrtScreen a) where
---   type TyWrt (WrtScreen a) = a
---   getFrame (WrtScreen _ frm) = frm
---   getAnchor (WrtScreen anc frm) = getAnchor_ anc frm
-
--- instance HasWrt (WrtSvg a) where
---   type TyWrt (WrtSvg a) = a
---   getFrame (WrtSvg _ frm) = frm
---   getAnchor (WrtSvg anc frm) = getAnchor_ anc frm  
-  
--- getAnchor_ :: Fractional a => Anchor -> Frame a -> Point a
--- getAnchor_ r frm = let pmin = _fpmin frm
---                   in
---                     case r of
---                       BLCorner -> pmin
---                       Center -> movePoint (V2 (height frm / 2) (width frm / 2)) pmin
-
--- -- | Rectangle shape
--- data Rect r a = Rect r (ShapeCol a)
--- mkRect :: Frame a -> ShapeCol b -> Rect (WrtScreen a) b
--- mkRect frm = Rect (WrtScreen BLCorner frm)
-
--- -- | Cirle shape
--- data Circle r a = Circle r (ShapeCol a)
--- mkCircle :: Frame a -> ShapeCol b -> Circle (WrtScreen a) b
--- mkCircle frm = Circle (WrtScreen Center frm)
-
--- sizesWrt :: (HasWrt w, Num (TyWrt w)) => w -> (TyWrt w, TyWrt w)
--- sizesWrt r = let frm = getFrame r in (width frm, height frm)
-
--- radiusWrt :: (HasWrt w, Fractional (TyWrt w)) => w -> TyWrt w
--- radiusWrt r = let frm = getFrame r in width frm / 2
-
--- class Sized sh where
---   type TySz sh :: * 
---   sizes :: sh -> TySz sh
-
--- instance (HasWrt r, Num (TyWrt r)) => Sized (Rect r a) where
---   type TySz (Rect r a) = (TyWrt r, TyWrt r)
---   sizes (Rect r _) = sizesWrt r
-
--- instance (HasWrt r, Fractional (TyWrt r)) => Sized (Circle r a) where
---   type TySz (Circle r a) = TyWrt r
---   sizes (Circle r _) = radiusWrt r
-
-
--- | ===================
 -- | Shape DSL 9
   
 -- data Anchor = BLCorner | Center deriving (Eq, Show)
@@ -466,14 +359,36 @@ none = S.toValue ("none" :: String)
 -- --                       BLCorner -> pmin
 -- --                       Center -> movePoint (V2 (height frm / 2) (width frm / 2)) pmin
 
--- | ===================
--- | Shape DSL 9
 
--- data Anchor = BLCorner | Center deriving (Eq, Show)
--- data AnchorPoint a = WrtScreen (Point a) | WrtSvg (Point a) deriving (Eq, Show)
--- data Anchored a = Anchored Anchor (AnchorPoint a) deriving (Eq, Show)
--- -- data WrtScreen a = WrtScreen Anchor (Point a) deriving (Eq, Show)
--- -- data WrtSvg a = WrtSvg Anchor (Point a) deriving (Eq, Show)
+
+
+-- | ===================
+-- | Shape DSL 11
+
+
+
+-- -- flipUD fdat sh = undefined
+-- --   where
+-- --     hfig = figHeight fdat
+
+data WrtScreen = WrtScreen deriving (Show)
+data WrtSvg = WrtSvg deriving (Show)
+data ExtShape r a = ExtShape r (Frame a) deriving (Eq, Show)
+data PointShape r a = PointShape r (Point a) deriving (Eq, Show)
+data Shape r a = Rect (ExtShape r a) | Circle (PointShape r a) a deriving (Eq, Show)
+
+mkRect :: Frame a -> Shape WrtScreen a
+mkRect fr = Rect (ExtShape WrtScreen fr)
+
+-- flipExtShape fdat esh = undefined
+--   where
+--     hfig = figHeight fdat
+
+flipFrame fdat frm = undefined
+  where
+    hfig = figHeight fdat
+    (Point px1 py1, Point px2 py2) = (_fpmin &&& _fpmax) frm
+    
 
 
 
