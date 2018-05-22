@@ -395,10 +395,20 @@ getAnchor (Shape sh) = case sh of
 -- mkRect fr = Rect (ExtSh WrtScreen fr)
 
 
--- flipFrame fdat frm = undefined
+-- flipFrame fdat frm = frm'
 --   where
 --     hfig = figHeight fdat
---     -- (Point px1 py1, Point px2 py2) = (_fpmin &&& _fpmax) frm
+--     (Point px1 py1, Point px2 py2) = (_fpmin &&& _fpmax) frm
+--     p1' = mkPoint px1 py2
+--     p2' = mkPoint px2 py1
+--     frm' = mkFrame p1' p2'
+
+-- | Re-express the coordinates of a point wrt the Y-complementary reference system
+flipPointRef :: Num a => FigureData a -> Point a -> Point a
+flipPointRef fdat p = setPointY (hfig - _py p) p
+  where
+    hfig = figHeight fdat
+    
 
 -- | The coordinate vectors associated with the displacement between two points
 vdispl :: Num a => Point a -> Point a -> (V2 a, V2 a)
