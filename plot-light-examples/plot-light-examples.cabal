@@ -62,7 +62,7 @@ executable timeseries
                      , plot-light > 0.4
                      , plot-light-examples                     
                      , attoparsec
-                     -- , attoparsec-time >= 1
+                     , attoparsec-time >= 1
                      , time
                      , text
                      , colour

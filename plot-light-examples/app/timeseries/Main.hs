@@ -7,7 +7,7 @@ import Graphics.Rendering.Plot.Light
 -- import Graphics.Rendering.Plot.Light.PlotTypes
   
 import qualified Data.Attoparsec.Text as A
--- import qualified Attoparsec.Time.Text as AT
+import qualified Attoparsec.Time.Text as AT
 import qualified Data.Text as T 
 import qualified Data.Text.IO as T (readFile, writeFile)
 import Data.Scientific (Scientific, toRealFloat)
