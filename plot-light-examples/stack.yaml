@@ -22,8 +22,8 @@ packages:
 
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
-extra-deps:
-- attoparsec-time-1
+extra-deps: []
+# - attoparsec-time-1
 # - plot-light-0.4.1
 
 # Override default flag values for local packages and extra-deps
