@@ -377,7 +377,7 @@ data WrtSvg = WrtSvg deriving (Show)
 -- | an ExtSh (extended shape) is described by a Frame
 data ExtSh r a = ExtSh r (Frame a) deriving (Eq, Show, Functor)
 
--- | a PointSh (point-line shape) is only described by a Point
+-- | a PointSh (point-like shape) is only described by a Point
 data PointSh r a = PointSh r (Point a) deriving (Eq, Show, Functor)
 
 -- data Shape r a =
@@ -394,6 +394,10 @@ getAnchor (Shape sh) = case sh of
 -- mkRect :: Frame a -> Shape WrtScreen a
 -- mkRect fr = Rect (ExtSh WrtScreen fr)
 
+mkExtSh = ExtSh WrtScreen
+
+mkPointSh = PointSh WrtScreen
+
 
 -- flipFrame fdat frm = frm'
 --   where
@@ -403,6 +407,20 @@ getAnchor (Shape sh) = case sh of
 --     p2' = mkPoint px2 py1
 --     frm' = mkFrame p1' p2'
 
+switchUdFrame :: Num a => Frame a -> Frame a
+switchUdFrame (Frame p1 p2) = mkFrame p1' p2'
+  where
+    vy = yDispl p1 p2
+    p1' = movePoint vy p1
+    p2' = movePoint (negateAG vy) p2
+
+flipExtSh fdat (ExtSh refsy frm) = undefined
+  where
+    hfig = figHeight fdat
+    frm' = switchUdFrame frm
+--     vy = yDispl p1 p2
+--     p1' = movePoint 
+
 -- | Re-express the coordinates of a point wrt the Y-complementary reference system
 flipPointRef :: Num a => FigureData a -> Point a -> Point a
 flipPointRef fdat p = setPointY (hfig - _py p) p
@@ -410,14 +428,20 @@ flipPointRef fdat p = setPointY (hfig - _py p) p
     hfig = figHeight fdat
     
 
+
+
+-- | y-component of the vector 
+yDispl :: Num a => Point a -> Point a -> V2 a
+yDispl p1 p2 = snd $ xyDispl p1 p2  
+
 -- | The coordinate vectors associated with the displacement between two points
-vdispl :: Num a => Point a -> Point a -> (V2 a, V2 a)
-vdispl p1 p2 = (v1 .* e1, v2 .* e2) where
+--
+-- invariant : p1 -. p2 == vx <> vy where (vx, vy) = xyDispl p1 p2
+xyDispl :: Num a => Point a -> Point a -> (V2 a, V2 a)
+xyDispl p1 p2 = (v1 .* e1, v2 .* e2) where
   v = p1 -. p2
   v1 = v <.> e1
   v2 = v <.> e2
-
-
 
 
 

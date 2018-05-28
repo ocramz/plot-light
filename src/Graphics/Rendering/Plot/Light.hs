@@ -6,7 +6,8 @@
 -- License     :  BSD3
 -- Maintainer  :  Marco Zocca <zocca marco gmail>
 --
--- @plot-light@ provides functionality for scientific plotting. The suffix "light" in the name is due to the library only requiring a few common Haskell dependencies and no external libraries (i.e no C/R/Python etc. bindings).
+-- @plot-light@ provides functionality for scientific plotting. The library is completely written in native Haskell, and only depends on a few common libraries, which explains the "-light" suffix.
+-- 
 --
 -- == Usage
 --

@@ -31,7 +31,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** Operations on vectors
   frameToFrame, frameToFrameValue,
   -- ** Typeclasses
-  AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..),
+  AdditiveGroup(..), negateAG, VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..),
   -- ** Utilities
   meshGrid, subdivSegment, interpolateBilinear
   )
@@ -307,7 +307,7 @@ data V2 a = V2 a a deriving (Eq)
 instance Show a => Show (V2 a) where
   show (V2 vx vy) = "(V2 "++ show vx ++", "++ show vy++")"
 
--- | V2i is a vector in R^2 having unit norm
+-- | V2i is a vector in R^2 having unit norm. NB: not closed under various operations e.g. vector sum, scalar multiplication etc.
 newtype V2i a = V2i (V2 a) deriving (Eq, Show)
 
 -- | V2i can only be constructed with this method
@@ -341,6 +341,9 @@ instance Num a => AdditiveGroup (V2 a) where
   zero = mempty
   (^+^) = mappend
   (V2 a b) ^-^ (V2 c d) = V2 (a - c) (b - d)
+
+negateAG :: AdditiveGroup v => v -> v
+negateAG v = zero ^-^ v  
 
 -- | Vector space : multiplication by a scalar quantity
 class AdditiveGroup v => VectorSpace v where
