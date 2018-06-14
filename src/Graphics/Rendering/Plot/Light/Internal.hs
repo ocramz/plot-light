@@ -367,9 +367,20 @@ none = S.toValue ("none" :: String)
 
 
 
--- -- flipUD fdat sh = undefined
--- --   where
--- --     hfig = figHeight fdat
+data Anchored r a = Anchored r a
+
+data AnchoredP r a = AnchoredP r (Point a)
+data AnchoredF r a = AnchoredF r (Frame a)
+
+mkAP :: Point a -> AnchoredP WrtScreen a
+mkAP = AnchoredP WrtScreen
+
+mkAF :: Frame a -> AnchoredF WrtScreen a
+mkAF = AnchoredF WrtScreen
+
+
+
+
 
 data WrtScreen = WrtScreen deriving (Show)
 data WrtSvg = WrtSvg deriving (Show)
@@ -377,19 +388,28 @@ data WrtSvg = WrtSvg deriving (Show)
 -- | an ExtSh (extended shape) is described by a Frame
 data ExtSh r a = ExtSh r (Frame a) deriving (Eq, Show, Functor)
 
--- | a PointSh (point-like shape) is only described by a Point
+getAnchorExtSh (ExtSh _ (Frame p _)) = p
+
+-- | a PointSh (point-like shape) is only described by a Point (its center)
 data PointSh r a = PointSh r (Point a) deriving (Eq, Show, Functor)
 
--- data Shape r a =
---     Rect (ExtSh r a)
---   | Circle (PointSh r a) a
---   deriving (Eq, Show)
-newtype Shape r a = Shape (Either (ExtSh r a) (PointSh r a)) deriving (Eq, Show)
+getAnchorPointSh (PointSh _ p) = p
 
-getAnchor :: Shape r a -> Point a
-getAnchor (Shape sh) = case sh of
-  Left (ExtSh _ (Frame p _)) -> p
-  Right (PointSh _ p) -> p
+-- -- | A Shape can be either an extended shape or a point-like shape
+-- newtype Shape r a = Shape (Either (ExtSh r a) (PointSh r a)) deriving (Eq, Show)
+
+-- getAnchor :: Shape r a -> Point a
+-- getAnchor (Shape sh) = case sh of
+--   Left (ExtSh _ (Frame p _)) -> p
+--   Right (PointSh _ p) -> p
+
+data GShape r a = Rect (ExtSh r a) | Circle (PointSh r a) deriving (Eq, Show)
+
+mkRect :: Frame a -> GShape WrtScreen a
+mkRect fr = Rect (mkExtSh fr)
+
+mkCircle :: Point a -> GShape WrtScreen a
+mkCircle p = Circle (mkPointSh p)
 
 -- mkRect :: Frame a -> Shape WrtScreen a
 -- mkRect fr = Rect (ExtSh WrtScreen fr)
