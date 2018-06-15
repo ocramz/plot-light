@@ -411,8 +411,6 @@ mkRect fr = Rect (mkExtSh fr)
 mkCircle :: Point a -> GShape WrtScreen a
 mkCircle p = Circle (mkPointSh p)
 
--- mkRect :: Frame a -> Shape WrtScreen a
--- mkRect fr = Rect (ExtSh WrtScreen fr)
 
 mkExtSh = ExtSh WrtScreen
 
