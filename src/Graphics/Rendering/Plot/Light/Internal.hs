@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings, DeriveFunctor, DeriveGeneric #-}
 {-# language TypeFamilies, FlexibleContexts, ConstrainedClassMethods #-}
+{-# language MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances #-}
 module Graphics.Rendering.Plot.Light.Internal
   (
   -- * Frame
@@ -367,17 +368,28 @@ none = S.toValue ("none" :: String)
 
 
 
-data Anchored r a = Anchored r a
+-- data Anchored r a = Anchored r a
 
-data AnchoredP r a = AnchoredP r (Point a)
-data AnchoredF r a = AnchoredF r (Frame a)
+-- data AnchoredP r a = AnchoredP r (Point a)
+-- data AnchoredF r a = AnchoredF r (Frame a)
 
-mkAP :: Point a -> AnchoredP WrtScreen a
-mkAP = AnchoredP WrtScreen
+-- mkAP :: Point a -> AnchoredP WrtScreen a
+-- mkAP = AnchoredP WrtScreen
 
-mkAF :: Frame a -> AnchoredF WrtScreen a
-mkAF = AnchoredF WrtScreen
+-- mkAF :: Frame a -> AnchoredF WrtScreen a
+-- mkAF = AnchoredF WrtScreen
 
+
+
+
+class AnchoredC sh a | sh -> a where
+  getAnchor :: sh -> Point a
+
+instance AnchoredC (ExtSh r a) a where
+  getAnchor (ExtSh _ (Frame p _)) = p
+
+instance AnchoredC (PointSh r a) a where
+  getAnchor (PointSh _ p) = p
 
 
 
@@ -388,22 +400,15 @@ data WrtSvg = WrtSvg deriving (Show)
 -- | an ExtSh (extended shape) is described by a Frame
 data ExtSh r a = ExtSh r (Frame a) deriving (Eq, Show, Functor)
 
-getAnchorExtSh (ExtSh _ (Frame p _)) = p
 
 -- | a PointSh (point-like shape) is only described by a Point (its center)
 data PointSh r a = PointSh r (Point a) deriving (Eq, Show, Functor)
 
-getAnchorPointSh (PointSh _ p) = p
 
--- -- | A Shape can be either an extended shape or a point-like shape
--- newtype Shape r a = Shape (Either (ExtSh r a) (PointSh r a)) deriving (Eq, Show)
-
--- getAnchor :: Shape r a -> Point a
--- getAnchor (Shape sh) = case sh of
---   Left (ExtSh _ (Frame p _)) -> p
---   Right (PointSh _ p) -> p
 
 data GShape r a = Rect (ExtSh r a) | Circle (PointSh r a) deriving (Eq, Show)
+
+
 
 mkRect :: Frame a -> GShape WrtScreen a
 mkRect fr = Rect (mkExtSh fr)
