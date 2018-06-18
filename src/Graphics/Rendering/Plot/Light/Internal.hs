@@ -385,11 +385,13 @@ none = S.toValue ("none" :: String)
 class AnchoredC sh a | sh -> a where
   getAnchor :: sh -> Point a
 
-instance AnchoredC (ExtSh r a) a where
+instance AnchoredC (ExtSh WrtScreen a) a where
   getAnchor (ExtSh _ (Frame p _)) = p
 
-instance AnchoredC (PointSh r a) a where
+instance AnchoredC (PointSh WrtScreen a) a where
   getAnchor (PointSh _ p) = p
+
+instance AnchoredC (PointSh WrtSvg a) a where  
 
 
 
@@ -406,14 +408,16 @@ data PointSh r a = PointSh r (Point a) deriving (Eq, Show, Functor)
 
 
 
-data GShape r a = Rect (ExtSh r a) | Circle (PointSh r a) deriving (Eq, Show)
+data Shape r a = Rect (ExtSh r a) | Circle (PointSh r a) deriving (Eq, Show)
 
 
 
-mkRect :: Frame a -> GShape WrtScreen a
+
+
+mkRect :: Frame a -> Shape WrtScreen a
 mkRect fr = Rect (mkExtSh fr)
 
-mkCircle :: Point a -> GShape WrtScreen a
+mkCircle :: Point a -> Shape WrtScreen a
 mkCircle p = Circle (mkPointSh p)
 
 
@@ -433,16 +437,20 @@ mkPointSh = PointSh WrtScreen
 switchUdFrame :: Num a => Frame a -> Frame a
 switchUdFrame (Frame p1 p2) = mkFrame p1' p2'
   where
-    vy = yDispl p1 p2
+    (_, vy) = xyDispl p1 p2  -- y component of the displacement vector
     p1' = movePoint vy p1
     p2' = movePoint (negateAG vy) p2
 
-flipExtSh fdat (ExtSh refsy frm) = undefined
-  where
-    hfig = figHeight fdat
-    frm' = switchUdFrame frm
---     vy = yDispl p1 p2
---     p1' = movePoint 
+-- flipExtSh fdat (ExtSh WrtScreen frm) = ExtSh WrtSvg frm'
+--   where
+--     hfig = figHeight fdat
+--     frm' = switchUdFrame frm
+-- --     vy = yDispl p1 p2
+-- --     p1' = movePoint 
+
+flipPointSh :: Num a => FigureData a -> PointSh WrtScreen a -> PointSh WrtSvg a
+flipPointSh fdat (PointSh WrtScreen p) = PointSh WrtSvg p'
+  where p' = flipPointRef fdat p
 
 -- | Re-express the coordinates of a point wrt the Y-complementary reference system
 flipPointRef :: Num a => FigureData a -> Point a -> Point a
@@ -453,9 +461,9 @@ flipPointRef fdat p = setPointY (hfig - _py p) p
 
 
 
--- | y-component of the vector 
-yDispl :: Num a => Point a -> Point a -> V2 a
-yDispl p1 p2 = snd $ xyDispl p1 p2  
+-- -- | y-component of the vector 
+-- yDispl :: Num a => Point a -> Point a -> V2 a
+-- yDispl p1 p2 = snd $ xyDispl p1 p2  
 
 -- | The coordinate vectors associated with the displacement between two points
 --
