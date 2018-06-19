@@ -238,13 +238,18 @@ data Shape r a =
   | SquareCenteredSh r a (ShapeCol a) (Point a)
   | LineSh r (LineOptions a) (Point a) (Point a) 
   | CircleSh r a (ShapeCol a) (Point a)
-  | PolyLineSh r (LineOptions a) StrokeLineJoin_ [Point a]
+  | PolyLineSh r (LineOptions a) StrokeLineJoin_ [Point a] deriving (Eq, Show)
   -- | FilledPolyLine
 
--- getCenterPoint sh = case sh of
---   RectCenteredSh _ _ _ _ p -> p
---   SquareCenteredSh _ _ _ p -> p
---   LineSh
+-- | Apply a unary function to all points used in a 'Shape'
+liftShape1 :: (Point a -> Point a) -> Shape WrtScreen a -> Shape WrtSvg a
+liftShape1 f sh = case sh of
+  RectCenteredSh WrtScreen w h c p -> RectCenteredSh WrtSvg w h c (f p)
+  SquareCenteredSh _ w c p -> SquareCenteredSh WrtSvg w c (f p)
+  LineSh _ lo p1 p2 -> LineSh WrtSvg lo (f p1) (f p2)
+  CircleSh _ r c p -> CircleSh WrtSvg r c (f p)
+  PolyLineSh _ lo slj ps -> PolyLineSh WrtSvg lo slj (f `map` ps)
+
   
 
 mkRectCentered :: a -> a -> ShapeCol a -> Point a -> Shape WrtScreen a
@@ -256,18 +261,15 @@ mkSquareCentered = SquareCenteredSh WrtScreen
 mkCircle :: a -> ShapeCol a -> Point a -> Shape WrtScreen a
 mkCircle = CircleSh WrtScreen
 
-renderShape :: (Fractional a, Ord a) =>
+
+renderShape :: Fractional a =>
                Frame a  -- ^ Starting frame
-            -> Frame a  -- ^ Destination frame
-            -> Shape WrtScreen a -- ^ Shape, defined on the screen frame
-            -> Maybe (Shape WrtSvg a) -- ^ Shape on the SVG frame
-renderShape from to sh =
-  let ftrans = screenFrameToSVGFrameP from to in
-  case sh of
-    RectCenteredSh WrtScreen w h shc p -> do
-      let p' = ftrans p
-      if isPointInFrame from p then 
-        pure $ RectCenteredSh WrtSvg w h shc p' else Nothing
+            -> Frame a -- ^ Destination frame
+            -> Shape WrtScreen a  -- ^ Shape, defined on the screen frame
+            -> Shape WrtSvg a 
+renderShape from to = liftShape1 (screenFrameToSVGFrameP from to)
+
+
     
 -- | Given :
 --
