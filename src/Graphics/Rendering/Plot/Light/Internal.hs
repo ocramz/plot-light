@@ -382,48 +382,51 @@ none = S.toValue ("none" :: String)
 
 
 
-class AnchoredC sh a | sh -> a where
-  getAnchor :: sh -> Point a
+-- class AnchoredC sh a | sh -> a where
+--   getAnchor :: sh -> Point a
 
-instance AnchoredC (ExtSh WrtScreen a) a where
-  getAnchor (ExtSh _ (Frame p _)) = p
+-- instance AnchoredC (ExtSh WrtScreen a) a where
+--   getAnchor (ExtSh _ (Frame p _)) = p
 
-instance AnchoredC (PointSh WrtScreen a) a where
-  getAnchor (PointSh _ p) = p
+-- instance AnchoredC (PointSh WrtScreen a) a where
+--   getAnchor (PointSh _ p) = p
 
-instance AnchoredC (PointSh WrtSvg a) a where  
-
-
+-- instance AnchoredC (PointSh WrtSvg a) a where  
 
 
+
+-- | Screen reference system (origin is bottom-left screen corner)
 data WrtScreen = WrtScreen deriving (Show)
+-- | SVG reference system (origin is top-left screen corner)
 data WrtSvg = WrtSvg deriving (Show)
 
--- | an ExtSh (extended shape) is described by a Frame
-data ExtSh r a = ExtSh r (Frame a) deriving (Eq, Show, Functor)
+-- -- | an ExtSh (extended shape) is described by a Frame
+-- data ExtSh r a = ExtSh r (Frame a) deriving (Eq, Show, Functor)
 
 
--- | a PointSh (point-like shape) is only described by a Point (its center)
-data PointSh r a = PointSh r (Point a) deriving (Eq, Show, Functor)
+-- -- | a PointSh (point-like shape) is only described by a Point (its center)
+-- data PointSh r a = PointSh r (Point a) deriving (Eq, Show, Functor)
+
+
+-- -- data Anchored r a = Anchored r a deriving (Eq, Show, Functor)
+
+-- -- mkWrtScreen :: a -> Anchored WrtScreen a
+-- -- mkWrtScreen = Anchored WrtScreen
 
 
 
-data Shape r a = Rect (ExtSh r a) | Circle (PointSh r a) deriving (Eq, Show)
+-- -- data Shape r a = Rect (ExtSh r a) | Circle (PointSh r a) deriving (Eq, Show)
+
+-- -- mkRect :: Frame a -> Shape WrtScreen a
+-- -- mkRect fr = Rect (mkExtSh fr)
+
+-- -- mkCircle :: Point a -> Shape WrtScreen a
+-- -- mkCircle p = Circle (mkPointSh p)
 
 
+-- -- mkExtSh = ExtSh WrtScreen
 
-
-
-mkRect :: Frame a -> Shape WrtScreen a
-mkRect fr = Rect (mkExtSh fr)
-
-mkCircle :: Point a -> Shape WrtScreen a
-mkCircle p = Circle (mkPointSh p)
-
-
-mkExtSh = ExtSh WrtScreen
-
-mkPointSh = PointSh WrtScreen
+-- -- mkPointSh = PointSh WrtScreen
 
 
 -- flipFrame fdat frm = frm'
@@ -441,29 +444,27 @@ switchUdFrame (Frame p1 p2) = mkFrame p1' p2'
     p1' = movePoint vy p1
     p2' = movePoint (negateAG vy) p2
 
--- flipExtSh fdat (ExtSh WrtScreen frm) = ExtSh WrtSvg frm'
---   where
---     hfig = figHeight fdat
---     frm' = switchUdFrame frm
--- --     vy = yDispl p1 p2
--- --     p1' = movePoint 
+-- -- flipExtSh fdat (ExtSh WrtScreen frm) = ExtSh WrtSvg frm'
+-- --   where
+-- --     hfig = figHeight fdat
+-- --     frm' = switchUdFrame frm
+-- -- --     vy = yDispl p1 p2
+-- -- --     p1' = movePoint 
 
-flipPointSh :: Num a => FigureData a -> PointSh WrtScreen a -> PointSh WrtSvg a
-flipPointSh fdat (PointSh WrtScreen p) = PointSh WrtSvg p'
-  where p' = flipPointRef fdat p
+-- flipPointSh :: Num a => FigureData a -> PointSh WrtScreen a -> PointSh WrtSvg a
+-- flipPointSh fdat (PointSh WrtScreen p) = PointSh WrtSvg p'
+--   where p' = flipPointRef fdat p
 
--- | Re-express the coordinates of a point wrt the Y-complementary reference system
+-- | Re-express the coordinates of a Point wrt the Y-complementary reference system
 flipPointRef :: Num a => FigureData a -> Point a -> Point a
 flipPointRef fdat p = setPointY (hfig - _py p) p
   where
     hfig = figHeight fdat
-    
 
+-- | Re-express the coordinates of a Frame wrt the Y-complementary reference system after 
+flipFrameRef fdat = both (flipPointRef fdat) . switchUdFrame where
+  both f (Frame p1 p2) = Frame (f p1) (f p2)    
 
-
--- -- | y-component of the vector 
--- yDispl :: Num a => Point a -> Point a -> V2 a
--- yDispl p1 p2 = snd $ xyDispl p1 p2  
 
 -- | The coordinate vectors associated with the displacement between two points
 --
@@ -474,6 +475,24 @@ xyDispl p1 p2 = (v1 .* e1, v2 .* e2) where
   v1 = v <.> e1
   v2 = v <.> e2
 
+
+
+
+
+
+-- | ===================
+-- | higher-kinded data approach
+
+-- data Anchored r f a = Anchored { anchor :: r, anchoredPoints :: f (Point a)}
+
+-- mkWrtScreen :: f (Point a) -> Anchored WrtScreen f a
+-- mkWrtScreen = Anchored WrtScreen
+
+
+
+
+  
+  
 
 
 
