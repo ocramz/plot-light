@@ -482,7 +482,7 @@ pointRange n p q = [ movePoint (fromIntegral x .* vnth) p | x <- [0 .. n]]
 
 -- | A list of `nx` by `ny` points in the plane arranged on the vertices of a rectangular mesh.
 --
--- NB: Only the minimum x, y coordinate point is included in the output mesh. This is intentional, since the output from this can be used as an input to functions that use a corner rather than the center point as refernce (e.g. `rect`)
+-- | NB: Only the minimum x, y coordinate point is included in the output mesh. This is intentional, since the output from this can be used as an input to functions that use a corner rather than the center point as refernce (e.g. `rect`)
 meshGrid
   :: (Enum a, RealFrac a) =>
      Frame a  
@@ -490,13 +490,12 @@ meshGrid
   -> Int      -- ^ " y axis
   -> [Point a]
 meshGrid (Frame (Point xmi ymi) (Point xma yma)) nx ny =
-  [Point x y |
-      x <- take nx $ subdivSegment xmi xma nx,
-      y <- take ny $ subdivSegment ymi yma ny]
+  Point <$> take nx (subdivSegment xmi xma nx) <*> take ny (subdivSegment ymi yma ny)
 
 data MeshGrid a = MeshGrid (Frame a) Int Int deriving (Eq, Show, Generic)
 
--- meshGridDefault = MeshGrid
+meshGrid' :: (Enum a, RealFrac a) => MeshGrid a -> [Point a]
+meshGrid' (MeshGrid frm nx ny) = meshGrid frm nx ny
   
 
 subdivSegment :: (Real a, Enum b, RealFrac b) => a -> a -> Int -> [b]
