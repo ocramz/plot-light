@@ -257,12 +257,19 @@ mkCircle :: a -> ShapeCol a -> Point a -> Shape WrtScreen a
 mkCircle = CircleSh WrtScreen
 
 
-convertShape :: Fractional a =>
+convertShapeRef :: Fractional a =>
                Frame a  -- ^ Starting frame
             -> Frame a -- ^ Destination frame
             -> Shape WrtScreen a  -- ^ Shape, defined on the screen frame
             -> Shape WrtSvg a 
-convertShape from to = liftShape1 (screenFrameToSVGFrameP from to)
+convertShapeRef from to = liftShape1 (screenFrameToSVGFrameP from to)
+
+
+-- | We can directly render a 'Shape' that's in the SVG reference system
+renderShape :: (Show a, RealFrac a) => Shape WrtSvg a -> Svg
+renderShape sh = case sh of
+  RectCenteredSh WrtSvg w h col p -> rectCentered w h col p
+
 
 
 -- | Apply a unary function to all points used in a 'Shape'
@@ -281,7 +288,9 @@ liftShape1 f sh = case sh of
 -- * a destination frame
 -- * a point assumed to be bound by the starting frame
 --
--- compose the affine 
+-- compose the affine transformations required to move the point from starting to destination frame.
+--
+-- NB : this should be the /only/ function dedicated to transforming point coordinates
 screenFrameToSVGFrameP :: Fractional a => Frame a -> Frame a -> Point a -> Point a
 screenFrameToSVGFrameP from to = flip movePoint origin . toFrame to . flipUD . getV01
   where

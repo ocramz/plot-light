@@ -49,7 +49,7 @@ import Data.Semigroup (Semigroup(..))
 
 -- | A `Point` object defines a point in the plane
 data Point a = Point { _px :: a,
-                       _py :: a } deriving (Eq, Generic, Functor)
+                       _py :: a } deriving (Eq, Generic)
 
 instance Ord a => Ord (Point a) where
   (Point x1 y1) <= (Point x2 y2) = x1 <= x2 && y1 <= y2
@@ -110,7 +110,7 @@ data LabeledPoint l a =
    _lp :: Point a,
    -- | Data associated with the `LabeledPoint`
    _lplabel :: l
-   } deriving (Eq, Show, Functor)
+   } deriving (Eq, Show)
 
 
 mkLabeledPoint :: Point a -> l -> LabeledPoint l a
@@ -131,7 +131,7 @@ mapLabel f (LabeledPoint p l) = LabeledPoint p (f l)
 data Frame a = Frame {
    _fpmin :: Point a,
    _fpmax :: Point a
-   } deriving (Eq, Show, Generic, Functor)
+   } deriving (Eq, Show, Generic)
 
 -- | The semigroup operation (`mappend`) applied on two `Frames` results in a new `Frame` that bounds both.
 
