@@ -183,182 +183,6 @@ m !# col = case col of
 none :: S.AttributeValue
 none = S.toValue ("none" :: String)
 
--- | ===================
--- | Shape DSL 1
-
--- r0 = Rect (Point 20 30) 10 50.0 (shapeColNoBorder C.blue 1) 
-
--- data ShapeDsl a =
---     Rect (Point a) a a (ShapeCol a)
---   | Circle (Point a) a (ShapeCol a)
---   deriving (Eq, Show)
-
--- -- | Translate the terms of the shape DSL from the screen frame to the SVG frame (vertical mirror flip)
--- toSvgFrameDsl :: Num a => FigureData a -> ShapeDsl a -> ShapeDsl a
--- toSvgFrameDsl fdat s = case s of
---   cir@Circle{} -> cir
---   -- Rect p w h col -> Rect p' w h col where
---   --   p' = movePoint v p
---   --   v = V2 0 (hfig o)
-
--- -- flipUD fdat p = mm #> (p -. origin) where
--- --   h = figHeight fdat
--- --   py = _py p
--- --   mm = diagMat2 1 (h / py - 1 - k)
--- --   k = maybe 
-
-  
--- heightShiftV2 :: Num a => FigureData a -> a -> V2 a
--- heightShiftV2 fdat h = V2 0 (hfig - h) where
---   hfig = figHeight fdat
-
--- -- | Interpret a term of the shape DSL into an SVG object
--- interpSvgDsl :: Real a => ShapeDsl a -> Svg
--- interpSvgDsl term = case term of
---   Rect p w h col -> rect w h col p
-
--- render :: Real a => FigureData a -> ShapeDsl a -> Svg
--- render fdat = interpSvgDsl . toSvgFrameDsl fdat
-
--- | ===================
--- | Shape DSL 2
-
--- -- | Anchor point of a shape
--- data ShapeAnchor a =
---     SACenter (Point a)  -- ^ Center (of mass) 
---   | SABLCorner (Point a) -- ^ Bottom left corner
---   deriving (Eq, Show)
-
--- getAnchorPoint :: ShapeAnchor a -> Point a
--- getAnchorPoint sac = case sac of
---   SACenter p -> p
---   SABLCorner p -> p
-
--- flipUdAnchor :: Num a => FigureData a -> ShapeAnchor a -> ShapeAnchor a
--- flipUdAnchor fdat sa = sa'
---   where
---     hfig = figHeight fdat
---     pVShift p = movePoint w p where
---       w = V2 0 (hfig - _py p)
---     sa' = case sa of
---       SACenter p -> SACenter $ pVShift p
---       SABLCorner p -> SABLCorner $ pVShift p
-  
--- -- | Shape DSL
--- data Shape a =
---     Rect (ShapeAnchor a) a a (ShapeCol a)
---   | Circle (ShapeAnchor a) a (ShapeCol a) deriving (Eq, Show)
-
--- -- flipShape fdat sh = sh' where
-  
-
--- -- | a rectangle shape, anchored at its bottom-left corner
--- rectShBl :: Point a -> a -> a -> ShapeCol a -> Shape a
--- rectShBl p = Rect (SABLCorner p)
-
--- -- | a circle shape
--- circleSh :: Point a -> a -> ShapeCol a -> Shape a
--- circleSh p = Circle (SACenter p)
-
--- interpSvgDsl sh = case sh of
---   Rect sac w h col -> rect w h col (getAnchorPoint sac)
---   Circle sac r col -> circle r col (getAnchorPoint sac)
-
-
--- | ===================
--- | Shape DSL 3
-
--- data WrtScreen a =
---     SRCenter (Point a)
---   | SRBLCorner (Point a) deriving (Eq, Show)
-
--- data WrtSvg a =
---     SvgCenter (Point a)
---   | SvgBLCorner (Point a) deriving (Eq, Show)
-
--- flipUdAnchor :: Num a => FigureData a -> WrtScreen a -> WrtSvg a
--- flipUdAnchor fdat sa = sa'
---   where
---     hfig = figHeight fdat
---     pVShift p = movePoint w p where
---       w = V2 0 (hfig - _py p)
---     sa' = case sa of
---       SRCenter p -> SvgCenter $ pVShift p
---       SRBLCorner p -> SvgBLCorner $ pVShift p
-
--- flipUdShape fdat sh = case sh of
---   Rect fr@(SRCenter _) _ _ _ -> undefined
-
--- data Shape r a =
---     Rect r a a (ShapeCol a)
---   | Circle r a (ShapeCol a) deriving (Eq, Show)
-
--- rectSh :: Point a -> b -> b -> ShapeCol b -> Shape (WrtScreen a) b
--- rectSh p = Rect (SRCenter p)
-
-
--- | ===================
--- | Shape DSL 5
-
--- data WrtScreen a = WrtScreen Anchor (Point a) deriving (Eq, Show)
--- data WrtSvg a = WrtSvg Anchor (Point a) deriving (Eq, Show)
-
--- data Anchor = BLCorner | Center deriving (Eq, Show)
-
--- mkBLAnchor :: Point a -> WrtScreen a
--- mkBLAnchor = WrtScreen BLCorner
-
--- mkCAnchor :: Point a -> WrtScreen a
--- mkCAnchor = WrtScreen Center
-
-
--- -- -- data Shape a = Rect (WrtScreen a) a a (ShapeCol a) deriving (Eq, Show)
-
--- -- -- mkRect p = Rect (mkBLAnchor p)
-
--- data Shape r a =
---     Rect r a a (ShapeCol a)
---   | Circle r a (ShapeCol a) deriving (Eq, Show)
-
--- mkRectBLScreen :: Point a -> b -> b -> ShapeCol b -> Shape (WrtScreen a) b
--- mkRectBLScreen p = Rect (mkBLAnchor p)
-
--- -- flipUD fdat (WrtScreen anchor p) = WrtSvg anchor p' where
--- --   hfig = figHeight fdat
--- --   pVShift p = movePoint w p where
--- --     w = V2 0 (hfig - _py p)  
--- --   -- h = case anchor of
--- --   --   BLCorner -> undefined
-
-
--- | ===================
--- | Shape DSL 9
-  
--- data Anchor = BLCorner | Center deriving (Eq, Show)
--- newtype WrtScreen a = WrtScreen { wrtScrenFrame :: Frame a } deriving (Eq, Show)
--- newtype WrtSvg a = WrtSvg { wrtSvgFrame :: Frame a } deriving (Eq, Show)
-
--- data Anchored r a = Anchored {
---     anchor :: Anchor
---   , anchorWrt :: r
---   , anchoredThing :: a} deriving (Eq, Show)
-
--- mkWrtScreen :: Anchor -> Frame a -> b -> Anchored (WrtScreen a) b
--- mkWrtScreen anc frm = Anchored anc (WrtScreen frm)
-
--- mkWrtSvg :: Anchor -> Frame a -> b -> Anchored (WrtSvg a) b
--- mkWrtSvg anc frm = Anchored anc (WrtSvg frm)
-
--- data Shape a = Rect (Point a) a a | Circle (Point a) a deriving (Eq, Show)
-
--- -- mkRect frm = mkWrtScreen BLCorner frm (Rect w h)
-
--- -- getAnchor_ :: Fractional a => Anchor -> Frame a -> Point a
--- -- getAnchor_ r frm = let pmin = _fpmin frm
--- --                   in
--- --                     case r of
--- --                       BLCorner -> pmin
--- --                       Center -> movePoint (V2 (height frm / 2) (width frm / 2)) pmin
 
 
 
@@ -367,75 +191,12 @@ none = S.toValue ("none" :: String)
 -- | Shape DSL 11
 
 
-
--- data Anchored r a = Anchored r a
-
--- data AnchoredP r a = AnchoredP r (Point a)
--- data AnchoredF r a = AnchoredF r (Frame a)
-
--- mkAP :: Point a -> AnchoredP WrtScreen a
--- mkAP = AnchoredP WrtScreen
-
--- mkAF :: Frame a -> AnchoredF WrtScreen a
--- mkAF = AnchoredF WrtScreen
-
-
-
-
--- class AnchoredC sh a | sh -> a where
---   getAnchor :: sh -> Point a
-
--- instance AnchoredC (ExtSh WrtScreen a) a where
---   getAnchor (ExtSh _ (Frame p _)) = p
-
--- instance AnchoredC (PointSh WrtScreen a) a where
---   getAnchor (PointSh _ p) = p
-
--- instance AnchoredC (PointSh WrtSvg a) a where  
-
-
-
 -- | Screen reference system (origin is bottom-left screen corner)
 data WrtScreen = WrtScreen deriving (Show)
 -- | SVG reference system (origin is top-left screen corner)
 data WrtSvg = WrtSvg deriving (Show)
 
--- -- | an ExtSh (extended shape) is described by a Frame
--- data ExtSh r a = ExtSh r (Frame a) deriving (Eq, Show, Functor)
 
-
--- -- | a PointSh (point-like shape) is only described by a Point (its center)
--- data PointSh r a = PointSh r (Point a) deriving (Eq, Show, Functor)
-
-
--- -- data Anchored r a = Anchored r a deriving (Eq, Show, Functor)
-
--- -- mkWrtScreen :: a -> Anchored WrtScreen a
--- -- mkWrtScreen = Anchored WrtScreen
-
-
-
--- -- data Shape r a = Rect (ExtSh r a) | Circle (PointSh r a) deriving (Eq, Show)
-
--- -- mkRect :: Frame a -> Shape WrtScreen a
--- -- mkRect fr = Rect (mkExtSh fr)
-
--- -- mkCircle :: Point a -> Shape WrtScreen a
--- -- mkCircle p = Circle (mkPointSh p)
-
-
--- -- mkExtSh = ExtSh WrtScreen
-
--- -- mkPointSh = PointSh WrtScreen
-
-
--- flipFrame fdat frm = frm'
---   where
---     hfig = figHeight fdat
---     (Point px1 py1, Point px2 py2) = (_fpmin &&& _fpmax) frm
---     p1' = mkPoint px1 py2
---     p2' = mkPoint px2 py1
---     frm' = mkFrame p1' p2'
 
 switchUdFrame :: Num a => Frame a -> Frame a
 switchUdFrame (Frame p1 p2) = mkFrame p1' p2'
@@ -444,16 +205,7 @@ switchUdFrame (Frame p1 p2) = mkFrame p1' p2'
     p1' = movePoint vy p1
     p2' = movePoint (negateAG vy) p2
 
--- -- flipExtSh fdat (ExtSh WrtScreen frm) = ExtSh WrtSvg frm'
--- --   where
--- --     hfig = figHeight fdat
--- --     frm' = switchUdFrame frm
--- -- --     vy = yDispl p1 p2
--- -- --     p1' = movePoint 
 
--- flipPointSh :: Num a => FigureData a -> PointSh WrtScreen a -> PointSh WrtSvg a
--- flipPointSh fdat (PointSh WrtScreen p) = PointSh WrtSvg p'
---   where p' = flipPointRef fdat p
 
 -- | Re-express the coordinates of a Point wrt the Y-complementary reference system
 flipPointRef :: Num a => FigureData a -> Point a -> Point a
@@ -478,12 +230,7 @@ xyDispl p1 p2 = (v1 .* e1, v2 .* e2) where
   v2 = v <.> e2
 
 
-getFrame :: (Functor t, Foldable t, Ord a) => t (Point a) -> Frame a
-getFrame ps = Frame p1 p2 where
-  psx = _px <$> ps
-  psy = _py <$> ps
-  p1 = Point (minimum psx) (minimum psy)
-  p2 = Point (maximum psx) (maximum psy)
+
 
 
 
