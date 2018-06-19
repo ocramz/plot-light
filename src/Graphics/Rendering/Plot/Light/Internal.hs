@@ -44,10 +44,9 @@ module Graphics.Rendering.Plot.Light.Internal
   , interpolateBilinear)
   where
 
-import Control.Arrow ((***), (&&&))
+-- import Control.Arrow ((***), (&&&))
 import Data.Monoid ((<>))
 
-import Data.Functor.Identity
 import qualified Data.Foldable as F (toList)
 import Data.List
 -- import Control.Arrow ((&&&), (***))
@@ -200,12 +199,12 @@ data WrtSvg = WrtSvg deriving (Show)
 
 
 
-switchUdFrame :: Num a => Frame a -> Frame a
-switchUdFrame (Frame p1 p2) = mkFrame p1' p2'
-  where
-    (_, vy) = xyDispl p1 p2  -- y component of the displacement vector
-    p1' = movePoint vy p1
-    p2' = movePoint (negateAG vy) p2
+-- switchUdFrame :: Num a => Frame a -> Frame a
+-- switchUdFrame (Frame p1 p2) = mkFrame p1' p2'
+--   where
+--     (_, vy) = xyDispl p1 p2  -- y component of the displacement vector
+--     p1' = movePoint vy p1
+--     p2' = movePoint (negateAG vy) p2
 
 
 
@@ -216,10 +215,10 @@ flipPointRef fdat p = setPointY (hfig - _py p) p
     hfig = figHeight fdat
 
 -- | Re-express the coordinates of a Frame wrt the Y-complementary reference system after recomputing the Frame extrema.
-flipFrameRef :: Num a => FigureData a -> Frame a -> Frame a
-flipFrameRef fdat = both (flipPointRef fdat) . switchUdFrame
-  where
-    both f (Frame p1 p2) = Frame (f p1) (f p2)    
+-- flipFrameRef :: Num a => FigureData a -> Frame a -> Frame a
+-- flipFrameRef fdat = both (flipPointRef fdat) . switchUdFrame
+--   where
+--     both f (Frame p1 p2) = Frame (f p1) (f p2)    
 
 
 -- | The coordinate vectors associated with the displacement between two points
@@ -253,8 +252,15 @@ mkRectCentered = RectCenteredSh WrtScreen
 mkSquareCentered :: a -> ShapeCol a -> Point a -> Shape WrtScreen a
 mkSquareCentered = SquareCenteredSh WrtScreen
 
+mkLine :: LineOptions a -> Point a -> Point a -> Shape WrtScreen a
+mkLine = LineSh WrtScreen
+
 mkCircle :: a -> ShapeCol a -> Point a -> Shape WrtScreen a
 mkCircle = CircleSh WrtScreen
+
+mkPolyLine :: LineOptions a -> StrokeLineJoin_ -> [Point a] -> Shape WrtScreen a
+mkPolyLine = PolyLineSh WrtScreen
+
 
 
 convertShapeRef :: Fractional a =>
@@ -297,10 +303,6 @@ screenFrameToSVGFrameP from to = flip movePoint origin . toFrame to . flipUD . g
     flipUD (V2 vx vy) = V2 vx (1 - vy)
     getV01 pp = fromFrame from (v2fromPoint pp)
 
-
-
-flipQ f predic | predic = f
-               | otherwise = id
 
 
 
