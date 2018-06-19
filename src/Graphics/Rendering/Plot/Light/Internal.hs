@@ -239,7 +239,9 @@ data Shape r a =
   | LineSh r (LineOptions a) (Point a) (Point a) 
   | CircleSh r a (ShapeCol a) (Point a)
   | PolyLineSh r (LineOptions a) StrokeLineJoin_ [Point a] deriving (Eq, Show)
-  -- | FilledPolyLine
+
+
+-- | FilledPolyLine
 
 -- | Apply a unary function to all points used in a 'Shape'
 liftShape1 :: (Point a -> Point a) -> Shape WrtScreen a -> Shape WrtSvg a
