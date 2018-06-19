@@ -527,11 +527,15 @@ frameToAffine frm = (m, v) where
   m = diagMat2 (width frm) (height frm)
   v = v2fromPoint (_fpmin frm)
 
+
 affineToFrame :: (Num a, LinearMap m (V2 a)) => m -> V2 a -> Frame a
-affineToFrame m v = frm where
-  pmin = movePoint v origin
-  pmax = movePoint (m #> v) pmin
-  frm = mkFrame pmin pmax
+affineToFrame m v = mkFrame pmin pmax
+  where
+    p11 = Point 1 1
+    v01 = origin -. p11
+    pmin = movePoint v origin
+    pmax = movePoint (v ^+^ (m #> v01)) origin
+    
 
 -- | Identity of affine Frame transformations
 idFrame :: Num a => Frame a -> Frame a

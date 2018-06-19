@@ -461,9 +461,11 @@ flipPointRef fdat p = setPointY (hfig - _py p) p
   where
     hfig = figHeight fdat
 
--- | Re-express the coordinates of a Frame wrt the Y-complementary reference system after 
-flipFrameRef fdat = both (flipPointRef fdat) . switchUdFrame where
-  both f (Frame p1 p2) = Frame (f p1) (f p2)    
+-- | Re-express the coordinates of a Frame wrt the Y-complementary reference system after recomputing the Frame extrema.
+flipFrameRef :: Num a => FigureData a -> Frame a -> Frame a
+flipFrameRef fdat = both (flipPointRef fdat) . switchUdFrame
+  where
+    both f (Frame p1 p2) = Frame (f p1) (f p2)    
 
 
 -- | The coordinate vectors associated with the displacement between two points
@@ -475,6 +477,13 @@ xyDispl p1 p2 = (v1 .* e1, v2 .* e2) where
   v1 = v <.> e1
   v2 = v <.> e2
 
+
+getFrame :: (Functor t, Foldable t, Ord a) => t (Point a) -> Frame a
+getFrame ps = Frame p1 p2 where
+  psx = _px <$> ps
+  psy = _py <$> ps
+  p1 = Point (minimum psx) (minimum psy)
+  p2 = Point (maximum psx) (maximum psy)
 
 
 
