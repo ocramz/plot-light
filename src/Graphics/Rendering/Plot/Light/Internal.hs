@@ -46,6 +46,8 @@ module Graphics.Rendering.Plot.Light.Internal
 
 import Control.Arrow ((***), (&&&))
 import Data.Monoid ((<>))
+
+import Data.Functor.Identity
 import qualified Data.Foldable as F (toList)
 import Data.List
 -- import Control.Arrow ((&&&), (***))
@@ -243,15 +245,6 @@ data Shape r a =
 
 -- | FilledPolyLine
 
--- | Apply a unary function to all points used in a 'Shape'
-liftShape1 :: (Point a -> Point a) -> Shape WrtScreen a -> Shape WrtSvg a
-liftShape1 f sh = case sh of
-  RectCenteredSh WrtScreen w h c p -> RectCenteredSh WrtSvg w h c (f p)
-  SquareCenteredSh _ w c p -> SquareCenteredSh WrtSvg w c (f p)
-  LineSh _ lo p1 p2 -> LineSh WrtSvg lo (f p1) (f p2)
-  CircleSh _ r c p -> CircleSh WrtSvg r c (f p)
-  PolyLineSh _ lo slj ps -> PolyLineSh WrtSvg lo slj (f `map` ps)
-
   
 
 mkRectCentered :: a -> a -> ShapeCol a -> Point a -> Shape WrtScreen a
@@ -264,13 +257,22 @@ mkCircle :: a -> ShapeCol a -> Point a -> Shape WrtScreen a
 mkCircle = CircleSh WrtScreen
 
 
-renderShape :: Fractional a =>
+convertShape :: Fractional a =>
                Frame a  -- ^ Starting frame
             -> Frame a -- ^ Destination frame
             -> Shape WrtScreen a  -- ^ Shape, defined on the screen frame
             -> Shape WrtSvg a 
-renderShape from to = liftShape1 (screenFrameToSVGFrameP from to)
+convertShape from to = liftShape1 (screenFrameToSVGFrameP from to)
 
+
+-- | Apply a unary function to all points used in a 'Shape'
+liftShape1 :: (Point a -> Point a) -> Shape WrtScreen a -> Shape WrtSvg a
+liftShape1 f sh = case sh of
+  RectCenteredSh WrtScreen w h c p -> RectCenteredSh WrtSvg w h c (f p)
+  SquareCenteredSh _ w c p -> SquareCenteredSh WrtSvg w c (f p)
+  LineSh _ lo p1 p2 -> LineSh WrtSvg lo (f p1) (f p2)
+  CircleSh _ r c p -> CircleSh WrtSvg r c (f p)
+  PolyLineSh _ lo slj ps -> PolyLineSh WrtSvg lo slj (f `map` ps)
 
     
 -- | Given :
