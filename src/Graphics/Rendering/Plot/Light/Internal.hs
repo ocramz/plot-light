@@ -18,7 +18,7 @@ module Graphics.Rendering.Plot.Light.Internal
     -- ** Circle
     circle,
     -- ** Lines
-    line, tick, ticks, axis,
+    line, line', tick, ticks, axis,
     -- ** Polylines
     polyline, filledPolyline, filledBand, strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..),
     -- ** Text
@@ -70,7 +70,7 @@ import qualified Data.Colour.Names as C
 import qualified Data.Colour.SRGB as C
 
 import GHC.Real
-import GHC.Generics
+import GHC.Generics hiding (from, to)
 import Data.Fixed
 
 import Graphics.Rendering.Plot.Light.Internal.Geometry
@@ -230,8 +230,62 @@ xyDispl p1 p2 = (v1 .* e1, v2 .* e2) where
   v2 = v <.> e2
 
 
+-- | A DSL for geometrical shapes.
+--
+-- NB the 'Point' parameter always refers to the center of the shape.
+data Shape r a =
+    RectCenteredSh r a a (ShapeCol a) (Point a)
+  | SquareCenteredSh r a (ShapeCol a) (Point a)
+  | LineSh r (LineOptions a) (Point a) (Point a) 
+  | CircleSh r a (ShapeCol a) (Point a)
+  | PolyLineSh r (LineOptions a) StrokeLineJoin_ [Point a]
+  -- | FilledPolyLine
+
+-- getCenterPoint sh = case sh of
+--   RectCenteredSh _ _ _ _ p -> p
+--   SquareCenteredSh _ _ _ p -> p
+--   LineSh
+  
+
+mkRectCentered :: a -> a -> ShapeCol a -> Point a -> Shape WrtScreen a
+mkRectCentered = RectCenteredSh WrtScreen
+
+mkSquareCentered :: a -> ShapeCol a -> Point a -> Shape WrtScreen a
+mkSquareCentered = SquareCenteredSh WrtScreen
+
+mkCircle :: a -> ShapeCol a -> Point a -> Shape WrtScreen a
+mkCircle = CircleSh WrtScreen
+
+renderShape :: (Fractional a, Ord a) =>
+               Frame a  -- ^ Starting frame
+            -> Frame a  -- ^ Destination frame
+            -> Shape WrtScreen a -- ^ Shape, defined on the screen frame
+            -> Maybe (Shape WrtSvg a) -- ^ Shape on the SVG frame
+renderShape from to sh =
+  let ftrans = screenFrameToSVGFrameP from to in
+  case sh of
+    RectCenteredSh WrtScreen w h shc p -> do
+      let p' = ftrans p
+      if isPointInFrame from p then 
+        pure $ RectCenteredSh WrtSvg w h shc p' else Nothing
+    
+-- | Given :
+--
+-- * a starting frame
+-- * a destination frame
+-- * a point assumed to be bound by the starting frame
+--
+-- compose the affine 
+screenFrameToSVGFrameP :: Fractional a => Frame a -> Frame a -> Point a -> Point a
+screenFrameToSVGFrameP from to = flip movePoint origin . toFrame to . flipUD . getV01
+  where
+    flipUD (V2 vx vy) = V2 vx (1 - vy)
+    getV01 pp = fromFrame from (v2fromPoint pp)
 
 
+
+flipQ f predic | predic = f
+               | otherwise = id
 
 
 
@@ -365,6 +419,10 @@ line (Point x1 y1) (Point x2 y2) sw lstr col =
     svg0 = S.line ! SA.x1 (vd x1) ! SA.y1 (vd y1) ! SA.x2 (vd x2)  ! SA.y2 (vd y2) ! SA.stroke (colourAttr col) ! SA.strokeWidth (vd sw)
   in case lstr of Continuous -> svg0
                   Dashed d -> svg0 ! strokeDashArray d
+
+-- | Same as 'line' but using 'LineOptions'
+line' :: (Show a, RealFrac a) => Point a -> Point a -> LineOptions a -> Svg
+line' p1 p2 (LineOptions sw lstr col) = line p1 p2 sw lstr col
 
 
 strokeDashArray :: Real a => [a] -> S.Attribute
@@ -649,7 +707,9 @@ polyline sw strTy slj col lis =
                    Dashed d -> svg0 ! strokeDashArray d
 
 
-
+-- | Same as 'polyline' but using 'LineOptions'
+polyline' :: (Foldable t, Show a, RealFrac a) => LineOptions a -> StrokeLineJoin_ -> t (Point a) -> Svg
+polyline' (LineOptions sw strTy col) slj lis = polyline sw strTy slj col lis
 
 
 
@@ -670,7 +730,7 @@ filledPolyline col opac lis = S.polyline ! SA.points (S.toValue $ unwords $ map 
 --
 -- This element can be used to overlay uncertainty ranges (e.g. the first standard deviation) associated with a given data series.
 filledBand :: (Foldable t, Real o, Show a) =>
-    C.Colour Double          -- ^ Fill colour
+              C.Colour Double -- ^ Fill colour
            -> o              -- ^ Fill opacity
            -> (l -> a) -- ^ Band maximum value
            -> (l -> a) -- ^ Band minimum value

@@ -7,7 +7,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   (
   -- * Geometry
   -- ** Point
-  Point(..), mkPoint, setPointX, setPointY,
+  Point(..), mkPoint, setPointX, setPointY, midPoint, centerOfMass, 
   -- ** LabeledPoint
   LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel,
   -- ** Frame
@@ -29,7 +29,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** Operations on points
   movePoint, moveLabeledPoint, moveLabeledPointV2, moveLabeledPointBwFrames, (-.), pointRange,
   -- ** Operations on vectors
-  frameToFrame, frameToFrameValue,
+  frameToFrame, frameToFrameValue, fromFrame, toFrame,
   -- ** Typeclasses
   AdditiveGroup(..), negateAG, VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..),
   -- ** Utilities
@@ -71,6 +71,14 @@ lift1Point f (Point x y) = f x y
 pointInf, pointSup :: (Ord a) => Point a -> Point a -> Point a
 pointInf = lift2Point min
 pointSup = lift2Point max
+
+midPoint :: Fractional a => Point a -> Point a -> Point a
+midPoint = lift2Point (\a b -> 1/2 * (a + b))
+
+centerOfMass :: (Foldable t, Num a) => t (Point a) -> Point a
+centerOfMass ps = movePoint (foldMap v2fromPoint ps) origin
+  where
+    n = fromIntegral $ length ps
 
 -- | The origin of the axes, point (0, 0)
 origin :: Num a => Point a
@@ -350,6 +358,9 @@ class AdditiveGroup v => VectorSpace v where
   type Scalar v :: *
   -- | Scalar multiplication
   (.*) :: Scalar v -> v -> v
+
+(./) :: (VectorSpace v, Fractional (Scalar v)) => v -> Scalar v -> v
+v ./ n = recip n .* v
   
 instance Num a => VectorSpace (V2 a) where
   type Scalar (V2 a) = a
@@ -568,6 +579,8 @@ frameToFrame from to fliplr flipud v = toFrame to v01'
          | fliplr = flipLR01 v01
          | flipud = flipUD01 v01
          | otherwise = v01
+
+         
 
 
 flipLR01, flipUD01 :: Num a => V2 a -> V2 a
