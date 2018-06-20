@@ -292,6 +292,9 @@ data Wrt r a = Wrt r a deriving (Eq, Show, Functor)
 screenToSvg :: Wrt Screen a -> Wrt SVG a
 screenToSvg (Wrt Screen x) = Wrt SVG x
 
+wrtScreen :: a -> Wrt Screen a
+wrtScreen = Wrt Screen
+
 -- type FramedShape r x a = Framed r (Shape x a)
 
 -- * Constructors
