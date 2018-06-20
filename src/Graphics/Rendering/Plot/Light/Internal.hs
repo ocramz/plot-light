@@ -48,6 +48,7 @@ module Graphics.Rendering.Plot.Light.Internal
 import Data.Monoid ((<>))
 
 import qualified Data.Foldable as F (toList)
+
 import Data.List
 -- import Control.Arrow ((&&&), (***))
 import Control.Monad (forM, forM_)
@@ -149,7 +150,7 @@ col50 c = mkCol c 0.5
 data ShapeCol a =
     NoBorderCol (Col a)  -- ^ Only fill colour
   | NoFillCol (Col a) a   -- ^ Only border colour + stroke width
-  | BothCol (Col a) (Col a) a -- ^ Fill and border colours
+  | BothCol (Col a) (Col a) a -- ^ Fill and border colours + stroke width
   deriving (Eq, Show)
 
 -- | Construct a 'ShapeCol' for shapes that have no border stroke (i.e. have only the fill colour)
@@ -193,9 +194,9 @@ none = S.toValue ("none" :: String)
 
 
 -- | Screen reference system (origin is bottom-left screen corner)
-data WrtScreen = WrtScreen deriving (Show)
+data Screen = Screen deriving (Show)
 -- | SVG reference system (origin is top-left screen corner)
-data WrtSvg = WrtSvg deriving (Show)
+data SVG = SVG deriving (Show)
 
 
 
@@ -235,14 +236,33 @@ data Shape x a =
   | PolyLineSh (LineOptions x) StrokeLineJoin_ [a]
   deriving (Eq, Show, Functor)
 
+
 -- FilledPolyLine
 -- ...
 
--- | An abstract type for attaching reference frame information to a type 'a'
-data Framed r a = Framed r a deriving (Eq, Show, Functor)
 
-screenToSvg :: Framed WrtScreen a -> Framed WrtSvg a
-screenToSvg (Framed WrtScreen x) = Framed WrtSvg x
+-- | the type parameter 'a' will be plugged with 'Point'
+data Sh p a =
+     Rec (ShapeCol p) a a    -- ^ Corner points
+   | Lin (LineOptions p) a a  -- ^ End points
+   | Cir (ShapeCol p) a a  -- ^ Center, one point on the circumference
+   | Pol (LineOptions p) StrokeLineJoin_ [a] -- ^ Points
+     deriving (Eq, Show, Functor)
+
+-- shp0 col p1@Point{} p2 = Cir col p1 p2
+
+data STest a = S1 a a deriving (Eq, Show, Functor)
+
+s0 = S1 (Point 0 0) (Point 1 1)
+
+
+
+
+-- | An abstract type for attaching reference frame information to a type 'a'
+data Wrt r a = Wrt r a deriving (Eq, Show, Functor)
+
+screenToSvg :: Wrt Screen a -> Wrt SVG a
+screenToSvg (Wrt Screen x) = Wrt SVG x
 
 -- type FramedShape r x a = Framed r (Shape x a)
 
@@ -252,32 +272,32 @@ mkRectCenteredSh :: x  -- ^ Width
                  -> x  -- ^ Height 
                  -> ShapeCol x 
                  -> Point t  
-                 -> Framed WrtScreen (Shape x (Point t))
-mkRectCenteredSh w h col p@Point{} = Framed WrtScreen $ RectCenteredSh w h col p
+                 -> Wrt Screen (Shape x (Point t))
+mkRectCenteredSh w h col p@Point{} = Wrt Screen $ RectCenteredSh w h col p
 
 mkSquareCenteredSh :: x   -- ^ Side length
                    -> ShapeCol x
                    -> Point t
-                   -> Framed WrtScreen (Shape x (Point t))
-mkSquareCenteredSh w col p@Point{} = Framed WrtScreen $ SquareCenteredSh w col p
+                   -> Wrt Screen (Shape x (Point t))
+mkSquareCenteredSh w col p@Point{} = Wrt Screen $ SquareCenteredSh w col p
 
 mkCircleSh :: x -- ^ Radius
            -> ShapeCol x
            -> Point t
-           -> Framed WrtScreen (Shape x (Point t))
-mkCircleSh radius col p@Point{} = Framed WrtScreen $ CircleSh radius col p
+           -> Wrt Screen (Shape x (Point t))
+mkCircleSh radius col p@Point{} = Wrt Screen $ CircleSh radius col p
 
 mkLineSh :: LineOptions x
          -> Point t   
          -> Point t
-         -> Framed WrtScreen (Shape x (Point t))
-mkLineSh lopts p1@Point{} p2 = Framed WrtScreen $ LineSh lopts p1 p2
+         -> Wrt Screen (Shape x (Point t))
+mkLineSh lopts p1@Point{} p2 = Wrt Screen $ LineSh lopts p1 p2
 
 mkPolyLineSh :: LineOptions x
              -> StrokeLineJoin_
              -> [Point t]
-             -> Framed WrtScreen (Shape x (Point t))
-mkPolyLineSh lopts slj ps@(Point{} : _) = Framed WrtScreen $ PolyLineSh lopts slj ps
+             -> Wrt Screen (Shape x (Point t))
+mkPolyLineSh lopts slj ps@(Point{} : _) = Wrt Screen $ PolyLineSh lopts slj ps
 
 
 
@@ -292,11 +312,11 @@ mkPolyLineSh lopts slj ps@(Point{} : _) = Framed WrtScreen $ PolyLineSh lopts sl
 --
 -- NB : this should be the /only/ function dedicated to transforming point coordinates
 convertShapeRef :: Fractional a =>
-                   Framed WrtScreen (Frame a)
-                -> Framed WrtSvg (Frame a)
-                -> Framed WrtScreen (Shape x (Point a))
-                -> Framed WrtSvg (Shape x (Point a))
-convertShapeRef (Framed WrtScreen from) (Framed WrtSvg to) = liftShape1 (screenFrameToSVGFrameP from to)
+                   Wrt Screen (Frame a)
+                -> Wrt SVG (Frame a)
+                -> Wrt Screen (Shape x (Point a))
+                -> Wrt SVG (Shape x (Point a))
+convertShapeRef (Wrt Screen from) (Wrt SVG to) = liftShape1 (screenFrameToSVGFrameP from to)
   where
     flipUD :: Num a => V2 a -> V2 a
     flipUD (V2 vx vy) = V2 vx (1 - vy)
@@ -304,7 +324,7 @@ convertShapeRef (Framed WrtScreen from) (Framed WrtSvg to) = liftShape1 (screenF
     screenFrameToSVGFrameP :: Fractional a => Frame a -> Frame a -> Point a -> Point a
     screenFrameToSVGFrameP fromf tof = pointFromV2 . toFrame tof . flipUD . fromFrame fromf . v2fromPoint
     
-    liftShape1 :: (Point a -> Point b) -> Framed WrtScreen (Shape x (Point a)) -> Framed WrtSvg (Shape x (Point b))
+    liftShape1 :: (Point a -> Point b) -> Wrt Screen (Shape x (Point a)) -> Wrt SVG (Shape x (Point b))
     liftShape1 f sh = screenToSvg $ f <$$> sh    
 
 
@@ -318,8 +338,8 @@ convertShapeRef (Framed WrtScreen from) (Framed WrtSvg to) = liftShape1 (screenF
 
 
 -- | We can directly render a 'Shape' that's in the SVG reference system
-renderShape :: (Show a, RealFrac a) => Framed WrtSvg (Shape a (Point a)) -> Svg
-renderShape (Framed WrtSvg sh) = case sh of
+renderShape :: (Show a, RealFrac a) => Wrt SVG (Shape a (Point a)) -> Svg
+renderShape (Wrt SVG sh) = case sh of
   RectCenteredSh w h col p -> rectCentered w h col p
   SquareCenteredSh w col p -> squareCentered w col p
   CircleSh rad col p -> circle rad col p
