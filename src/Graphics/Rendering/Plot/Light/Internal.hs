@@ -199,13 +199,6 @@ data WrtSvg = WrtSvg deriving (Show)
 
 
 
--- switchUdFrame :: Num a => Frame a -> Frame a
--- switchUdFrame (Frame p1 p2) = mkFrame p1' p2'
---   where
---     (_, vy) = xyDispl p1 p2  -- y component of the displacement vector
---     p1' = movePoint vy p1
---     p2' = movePoint (negateAG vy) p2
-
 
 
 -- | Re-express the coordinates of a Point wrt the Y-complementary reference system
@@ -248,8 +241,8 @@ data Shape x a =
 -- | An abstract type for attaching reference frame information to a type 'a'
 data Framed r a = Framed r a deriving (Eq, Show, Functor)
 
-toSvgFrame' :: Framed WrtScreen a -> Framed WrtSvg a
-toSvgFrame' (Framed WrtScreen x) = Framed WrtSvg x
+screenToSvg :: Framed WrtScreen a -> Framed WrtSvg a
+screenToSvg (Framed WrtScreen x) = Framed WrtSvg x
 
 -- type FramedShape r x a = Framed r (Shape x a)
 
@@ -275,9 +268,11 @@ mkCircleSh radius col p@Point{} = Framed WrtScreen $ CircleSh radius col p
 
 -- | Apply a unary function to all points used in a 'Shape'.
 --
--- This can only map from 'WrtScreen'-labeled shapes to 'WrtSvg'-labeled ones.  
+-- This can only map from 'WrtScreen'-labeled shapes to 'WrtSvg'-labeled ones.
+--
+-- NB : this is just a specialization of 'fmap . fmap'
 liftShape1 :: (Point a -> Point b) -> Framed WrtScreen (Shape x (Point a)) -> Framed WrtSvg (Shape x (Point b))
-liftShape1 f sh = toSvgFrame' $ f <$$> sh
+liftShape1 f sh = screenToSvg $ f <$$> sh
 
 (<$$>) :: (Functor f, Functor g) => (x -> y) -> g (f x) -> g (f y)
 (<$$>) = fmap . fmap
@@ -294,11 +289,10 @@ convertShapeRef :: Fractional a =>
 convertShapeRef from to = liftShape1 (screenFrameToSVGFrameP from to)
 
 
--- -- | We can directly render a 'Shape' that's in the SVG reference system
--- renderShape :: (Show a, RealFrac a) => Shape WrtSvg a -> Svg
--- renderShape sh = case sh of
---   RectCenteredSh WrtSvg w h col p -> rectCentered w h col p
-
+-- | We can directly render a 'Shape' that's in the SVG reference system
+renderShape :: (Show a, RealFrac a) => Framed WrtSvg (Shape a (Point a)) -> Svg
+renderShape (Framed WrtSvg sh) = case sh of
+  RectCenteredSh w h col p -> rectCentered w h col p
 
 
 
