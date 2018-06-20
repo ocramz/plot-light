@@ -264,6 +264,14 @@ mkCircleSh radius col p@Point{} = Framed WrtScreen $ CircleSh radius col p
 
 
 
+-- | Given a 'Shape' whose center lies in the starting 'Frame' in the screen reference system and a destination frame in the
+-- SVG reference system, transform the center point of the Shape such that it lies in the second Frame.
+convertShapeRef :: Fractional a =>
+                   Frame a
+                -> Frame a
+                -> Framed WrtScreen (Shape x (Point a))
+                -> Framed WrtSvg (Shape x (Point a))
+convertShapeRef from to = liftShape1 (screenFrameToSVGFrameP from to)
 
 
 -- | Apply a unary function to all points used in a 'Shape'.
@@ -276,24 +284,6 @@ liftShape1 f sh = screenToSvg $ f <$$> sh
 
 (<$$>) :: (Functor f, Functor g) => (x -> y) -> g (f x) -> g (f y)
 (<$$>) = fmap . fmap
-
-
-
- 
-
-convertShapeRef :: Fractional a =>
-                   Frame a
-                -> Frame a
-                -> Framed WrtScreen (Shape x (Point a))
-                -> Framed WrtSvg (Shape x (Point a))
-convertShapeRef from to = liftShape1 (screenFrameToSVGFrameP from to)
-
-
--- | We can directly render a 'Shape' that's in the SVG reference system
-renderShape :: (Show a, RealFrac a) => Framed WrtSvg (Shape a (Point a)) -> Svg
-renderShape (Framed WrtSvg sh) = case sh of
-  RectCenteredSh w h col p -> rectCentered w h col p
-
 
 
     
@@ -312,6 +302,11 @@ screenFrameToSVGFrameP from to = pointFromV2 . toFrame to . flipUD . fromFrame f
     flipUD (V2 vx vy) = V2 vx (1 - vy)
 
 
+
+-- | We can directly render a 'Shape' that's in the SVG reference system
+renderShape :: (Show a, RealFrac a) => Framed WrtSvg (Shape a (Point a)) -> Svg
+renderShape (Framed WrtSvg sh) = case sh of
+  RectCenteredSh w h col p -> rectCentered w h col p
 
 
 
