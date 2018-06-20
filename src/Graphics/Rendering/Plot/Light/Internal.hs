@@ -241,19 +241,47 @@ data Shape x a =
 -- ...
 
 
--- | the type parameter 'a' will be plugged with 'Point'
-data Sh p a =
-     Rec (ShapeCol p) a a    -- ^ Corner points
-   | Lin (LineOptions p) a a  -- ^ End points
-   | Cir (ShapeCol p) a a  -- ^ Center, one point on the circumference
-   | Pol (LineOptions p) StrokeLineJoin_ [a] -- ^ Points
-     deriving (Eq, Show, Functor)
+-- -- | the type parameter 'a' will be plugged with 'Point'
+-- data Sh p a =
+--      Rec (ShapeCol p) a a    -- ^ Corner points
+--    | Lin (LineOptions p) a a  -- ^ End points
+--    | Cir (ShapeCol p) a a  -- ^ Center, one point on the circumference
+--    | Pol (LineOptions p) StrokeLineJoin_ [a] -- ^ Points
+--      deriving (Eq, Show, Functor)
 
--- shp0 col p1@Point{} p2 = Cir col p1 p2
+-- -- shp0 col p1@Point{} p2 = Cir col p1 p2
 
-data STest a = S1 a a deriving (Eq, Show, Functor)
+-- data STest a = S1 a a deriving (Eq, Show, Functor)
 
-s0 = S1 (Point 0 0) (Point 1 1)
+-- s0 = S1 (Point 0 0) (Point 1 1)
+
+
+-- | A thing of type 'a' in a 'Frame'
+data Framed r a = Framed (Frame r) a deriving (Eq, Show, Functor)
+
+mkFramed :: Point r -> Point r -> a -> Framed r a
+mkFramed p1 p2 = Framed (mkFrame p1 p2)
+
+
+data Sh a =
+    R a a
+  | C a a
+  | L [a] deriving (Eq, Show, Functor)
+
+toFramed :: Ord r => Sh (Point r) -> Framed r (Sh (Point r))
+toFramed sh = case sh of
+  r@(R p1 p2) -> mkFramed p1 p2 r
+  l@(L ps) -> Framed (frameFromPoints ps) l
+
+-- data Sh p =
+--     Rec (ShapeCol p)
+--   | Lin (LineOptions p)
+--   | Cir (ShapeCol p)
+--   | Pol (LineOptions p) StrokeLineJoin_ deriving (Eq, Show)
+
+-- toFramed sh = case sh of
+--   Rec shc
+
 
 
 
