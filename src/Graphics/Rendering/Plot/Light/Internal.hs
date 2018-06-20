@@ -232,7 +232,7 @@ data Shape x a =
   | SquareCenteredSh x (ShapeCol x) a
   | LineSh (LineOptions x) a a
   | CircleSh x (ShapeCol x) a
-  | PolyLine (LineOptions x) StrokeLineJoin_ [a]
+  | PolyLineSh (LineOptions x) StrokeLineJoin_ [a]
   deriving (Eq, Show, Functor)
 
 -- FilledPolyLine
@@ -246,20 +246,38 @@ screenToSvg (Framed WrtScreen x) = Framed WrtSvg x
 
 -- type FramedShape r x a = Framed r (Shape x a)
 
-mkRectCenteredSh ::
-     x  -- ^ Width 
-  -> x  -- ^ Height 
-  -> ShapeCol x 
-  -> Point t  
-  -> Framed WrtScreen (Shape x (Point t))
+-- * Constructors
+
+mkRectCenteredSh :: x  -- ^ Width 
+                 -> x  -- ^ Height 
+                 -> ShapeCol x 
+                 -> Point t  
+                 -> Framed WrtScreen (Shape x (Point t))
 mkRectCenteredSh w h col p@Point{} = Framed WrtScreen $ RectCenteredSh w h col p
 
-mkCircleSh ::
-     x -- ^ Radius
-  -> ShapeCol x
-  -> Point t
-  -> Framed WrtScreen (Shape x (Point t))
+mkSquareCenteredSh :: x   -- ^ Side length
+                   -> ShapeCol x
+                   -> Point t
+                   -> Framed WrtScreen (Shape x (Point t))
+mkSquareCenteredSh w col p@Point{} = Framed WrtScreen $ SquareCenteredSh w col p
+
+mkCircleSh :: x -- ^ Radius
+           -> ShapeCol x
+           -> Point t
+           -> Framed WrtScreen (Shape x (Point t))
 mkCircleSh radius col p@Point{} = Framed WrtScreen $ CircleSh radius col p
+
+mkLineSh :: LineOptions x
+         -> Point t   
+         -> Point t
+         -> Framed WrtScreen (Shape x (Point t))
+mkLineSh lopts p1@Point{} p2 = Framed WrtScreen $ LineSh lopts p1 p2
+
+mkPolyLineSh :: LineOptions x
+             -> StrokeLineJoin_
+             -> [Point t]
+             -> Framed WrtScreen (Shape x (Point t))
+mkPolyLineSh lopts slj ps@(Point{} : _) = Framed WrtScreen $ PolyLineSh lopts slj ps
 
 
 
@@ -284,8 +302,6 @@ liftShape1 f sh = screenToSvg $ f <$$> sh
 
 (<$$>) :: (Functor f, Functor g) => (x -> y) -> g (f x) -> g (f y)
 (<$$>) = fmap . fmap
-
-
     
 -- | Given :
 --
@@ -307,17 +323,10 @@ screenFrameToSVGFrameP from to = pointFromV2 . toFrame to . flipUD . fromFrame f
 renderShape :: (Show a, RealFrac a) => Framed WrtSvg (Shape a (Point a)) -> Svg
 renderShape (Framed WrtSvg sh) = case sh of
   RectCenteredSh w h col p -> rectCentered w h col p
-
-
-
--- | ===================
--- | higher-kinded data approach
-
--- data Anchored r f a = Anchored { anchor :: r, anchoredPoints :: f (Point a)}
-
--- mkWrtScreen :: f (Point a) -> Anchored WrtScreen f a
--- mkWrtScreen = Anchored WrtScreen
-
+  SquareCenteredSh w col p -> squareCentered w col p
+  CircleSh rad col p -> circle rad col p
+  LineSh lopts p1 p2 -> line' p1 p2 lopts
+  PolyLineSh lopts slj ps -> polyline' lopts slj ps
 
 
 
