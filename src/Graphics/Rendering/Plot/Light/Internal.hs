@@ -232,25 +232,8 @@ xyDispl p1 p2 = (v1 .* e1, v2 .* e2) where
 
 
 -- | A DSL for geometrical shapes.
---
--- NB the 'Point' parameter always refers to the center of the shape.
--- data Shape r a =
---     RectCenteredSh r a a (ShapeCol a) (Point a)
---   | SquareCenteredSh r a (ShapeCol a) (Point a)
---   | LineSh r (LineOptions a) (Point a) (Point a) 
---   | CircleSh r a (ShapeCol a) (Point a)
---   | PolyLineSh r (LineOptions a) StrokeLineJoin_ [Point a] deriving (Eq, Show)
-
-
--- data Shape r x a =
---     RectCenteredSh x x (ShapeCol x) a
---   | SquareCenteredSh x (ShapeCol x) a
---   | LineSh (LineOptions x) a a
---   | CircleSh x (ShapeCol x) a
---   | PolyLine (LineOptions x) StrokeLineJoin_ [a]
---   deriving (Eq, Show, Functor)
-
-
+-- |
+-- | NB : the 'Point' parameter always refers to the center of the shape.
 data Shape x a =
     RectCenteredSh x x (ShapeCol x) a
   | SquareCenteredSh x (ShapeCol x) a
@@ -259,6 +242,8 @@ data Shape x a =
   | PolyLine (LineOptions x) StrokeLineJoin_ [a]
   deriving (Eq, Show, Functor)
 
+-- FilledPolyLine
+-- ...
 
 -- | An abstract type for attaching reference frame information to a type 'a'
 data Framed r a = Framed r a deriving (Eq, Show, Functor)
@@ -266,37 +251,47 @@ data Framed r a = Framed r a deriving (Eq, Show, Functor)
 toSvgFrame' :: Framed WrtScreen a -> Framed WrtSvg a
 toSvgFrame' (Framed WrtScreen x) = Framed WrtSvg x
 
-type FramedShape r x a = Framed r (Shape x a)
+-- type FramedShape r x a = Framed r (Shape x a)
 
--- mkCir0 :: a -> ShapeCol a -> a -> a -> Framed WrtScreen (Shape a (Point a))
-mkCir0 radius col px py = CircleSh radius col (Point px py)
+mkRectCenteredSh ::
+     x  -- ^ Width 
+  -> x  -- ^ Height 
+  -> ShapeCol x 
+  -> Point t  
+  -> Framed WrtScreen (Shape x (Point t))
+mkRectCenteredSh w h col p@Point{} = Framed WrtScreen $ RectCenteredSh w h col p
 
-cir0 = mkCir0 3 (shapeColNoBorder C.blue 0.5) 3 4
+mkCircleSh ::
+     x -- ^ Radius
+  -> ShapeCol x
+  -> Point t
+  -> Framed WrtScreen (Shape x (Point t))
+mkCircleSh radius col p@Point{} = Framed WrtScreen $ CircleSh radius col p
 
-mkCir1 c = Framed WrtScreen c
 
 
-cir1 = mkCir1 cir0
 
+
+
+-- | Apply a unary function to all points used in a 'Shape'.
+--
+-- This can only map from 'WrtScreen'-labeled shapes to 'WrtSvg'-labeled ones.  
+liftShape1 :: (Point a -> Point b) -> Framed WrtScreen (Shape x (Point a)) -> Framed WrtSvg (Shape x (Point b))
+liftShape1 f sh = toSvgFrame' $ f <$$> sh
 
 (<$$>) :: (Functor f, Functor g) => (x -> y) -> g (f x) -> g (f y)
 (<$$>) = fmap . fmap
-  
-
-
--- | FilledPolyLine
-
-  
 
 
 
+ 
 
--- convertShapeRef :: Fractional a =>
---                Frame a  -- ^ Starting frame
---             -> Frame a -- ^ Destination frame
---             -> Shape WrtScreen a  -- ^ Shape, defined on the screen frame
---             -> Shape WrtSvg a 
--- convertShapeRef from to = liftShape1 (screenFrameToSVGFrameP from to)
+convertShapeRef :: Fractional a =>
+                   Frame a
+                -> Frame a
+                -> Framed WrtScreen (Shape x (Point a))
+                -> Framed WrtSvg (Shape x (Point a))
+convertShapeRef from to = liftShape1 (screenFrameToSVGFrameP from to)
 
 
 -- -- | We can directly render a 'Shape' that's in the SVG reference system
@@ -306,16 +301,6 @@ cir1 = mkCir1 cir0
 
 
 
--- -- | Apply a unary function to all points used in a 'Shape'.
--- --
--- -- This can only map from 'WrtScreen'-labeled shapes to 'WrtSvg'-labeled ones.
--- liftShape1 :: (Point a -> Point a) -> Shape WrtScreen a -> Shape WrtSvg a
--- liftShape1 f sh = case sh of
---   RectCenteredSh WrtScreen w h c p -> RectCenteredSh WrtSvg w h c (f p)
---   SquareCenteredSh _ w c p -> SquareCenteredSh WrtSvg w c (f p)
---   LineSh _ lo p1 p2 -> LineSh WrtSvg lo (f p1) (f p2)
---   CircleSh _ r c p -> CircleSh WrtSvg r c (f p)
---   PolyLineSh _ lo slj ps -> PolyLineSh WrtSvg lo slj (f `map` ps)
 
     
 -- | Given :
