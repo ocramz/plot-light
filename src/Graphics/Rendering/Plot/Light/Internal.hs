@@ -282,40 +282,38 @@ mkPolyLineSh lopts slj ps@(Point{} : _) = Framed WrtScreen $ PolyLineSh lopts sl
 
 
 
--- | Given a 'Shape' whose center lies in the starting 'Frame' in the screen reference system and a destination frame in the
--- SVG reference system, transform the center point of the Shape such that it lies in the second Frame.
+-- | Given :
+--
+-- * a starting frame (in the screen reference)
+-- * a destination frame (in the SVG reference)
+-- * a 'Shape' whose anchoring point is assumed to be bound by the starting frame
+--
+-- compose the affine transformations required to move the 'Shape' from starting to destination frame.
+--
+-- NB : this should be the /only/ function dedicated to transforming point coordinates
 convertShapeRef :: Fractional a =>
-                   Frame a
-                -> Frame a
+                   Framed WrtScreen (Frame a)
+                -> Framed WrtSvg (Frame a)
                 -> Framed WrtScreen (Shape x (Point a))
                 -> Framed WrtSvg (Shape x (Point a))
-convertShapeRef from to = liftShape1 (screenFrameToSVGFrameP from to)
+convertShapeRef (Framed WrtScreen from) (Framed WrtSvg to) = liftShape1 (screenFrameToSVGFrameP from to)
+  where
+    flipUD :: Num a => V2 a -> V2 a
+    flipUD (V2 vx vy) = V2 vx (1 - vy)
+    
+    screenFrameToSVGFrameP :: Fractional a => Frame a -> Frame a -> Point a -> Point a
+    screenFrameToSVGFrameP fromf tof = pointFromV2 . toFrame tof . flipUD . fromFrame fromf . v2fromPoint
+    
+    liftShape1 :: (Point a -> Point b) -> Framed WrtScreen (Shape x (Point a)) -> Framed WrtSvg (Shape x (Point b))
+    liftShape1 f sh = screenToSvg $ f <$$> sh    
 
 
--- | Apply a unary function to all points used in a 'Shape'.
---
--- This can only map from 'WrtScreen'-labeled shapes to 'WrtSvg'-labeled ones.
---
--- NB : this is just a specialization of 'fmap . fmap'
-liftShape1 :: (Point a -> Point b) -> Framed WrtScreen (Shape x (Point a)) -> Framed WrtSvg (Shape x (Point b))
-liftShape1 f sh = screenToSvg $ f <$$> sh
 
 (<$$>) :: (Functor f, Functor g) => (x -> y) -> g (f x) -> g (f y)
 (<$$>) = fmap . fmap
     
--- | Given :
---
--- * a starting frame
--- * a destination frame
--- * a point assumed to be bound by the starting frame
---
--- compose the affine transformations required to move the point from starting to destination frame.
---
--- NB : this should be the /only/ function dedicated to transforming point coordinates
-screenFrameToSVGFrameP :: Fractional a => Frame a -> Frame a -> Point a -> Point a
-screenFrameToSVGFrameP from to = pointFromV2 . toFrame to . flipUD . fromFrame from . v2fromPoint
-  where
-    flipUD (V2 vx vy) = V2 vx (1 - vy)
+
+
 
 
 
