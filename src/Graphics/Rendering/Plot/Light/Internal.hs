@@ -286,6 +286,17 @@ toFramed sh = case sh of
 
 
 
+
+-- wrtScreen . toFramed
+--   :: Ord r => Sh (Point r) -> Wrt Screen (Framed r (Sh (Point r)))
+
+
+
+
+
+
+
+
 -- | An abstract type for attaching reference frame information to a type 'a'
 data Wrt r a = Wrt r a deriving (Eq, Show, Functor)
 
