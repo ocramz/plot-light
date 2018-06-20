@@ -50,6 +50,7 @@ import Data.Monoid ((<>))
 import qualified Data.Foldable as F (toList)
 
 import Data.List
+import Data.Functor.Identity
 -- import Control.Arrow ((&&&), (***))
 import Control.Monad (forM, forM_)
 import Control.Monad.State
@@ -283,6 +284,8 @@ toFramed sh = case sh of
 --   Rec shc
 
 
+
+data Fr r f a x = Fr r (Frame a) (f (Point a)) x
 
 
 
