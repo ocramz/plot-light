@@ -361,17 +361,15 @@ convertShapeRef :: Fractional a =>
                 -> Wrt SVG (Frame a)
                 -> Wrt Screen (Shape x (Point a))
                 -> Wrt SVG (Shape x (Point a))
-convertShapeRef (Wrt Screen from) (Wrt SVG to) = liftShape1 (screenFrameToSVGFrameP from to)
-  where
-    flipUD :: Num a => V2 a -> V2 a
-    flipUD (V2 vx vy) = V2 vx (1 - vy)
-    
-    screenFrameToSVGFrameP :: Fractional a => Frame a -> Frame a -> Point a -> Point a
-    screenFrameToSVGFrameP fromf tof = pointFromV2 . toFrame tof . flipUD . fromFrame fromf . v2fromPoint
-    
+convertShapeRef (Wrt Screen from) (Wrt SVG to) = liftShape1 (screenFrameToSVGFrameP from to)    
     liftShape1 :: (Point a -> Point b) -> Wrt Screen (Shape x (Point a)) -> Wrt SVG (Shape x (Point b))
     liftShape1 f sh = screenToSvg $ f <$$> sh    
 
+screenFrameToSVGFrameP :: Fractional a => Frame a -> Frame a -> Point a -> Point a
+screenFrameToSVGFrameP fromf tof = pointFromV2 . toFrame tof . flipUD . fromFrame fromf . v2fromPoint
+  where
+    flipUD :: Num a => V2 a -> V2 a
+    flipUD (V2 vx vy) = V2 vx (1 - vy)
 
 
 (<$$>) :: (Functor f, Functor g) => (x -> y) -> g (f x) -> g (f y)
