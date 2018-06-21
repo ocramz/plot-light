@@ -361,7 +361,7 @@ convertShapeRef :: Fractional a =>
                 -> Wrt SVG (Frame a)
                 -> Wrt Screen (Shape x (Point a))
                 -> Wrt SVG (Shape x (Point a))
-convertShapeRef (Wrt Screen from) (Wrt SVG to) = liftShape1 (screenFrameToSVGFrameP from to)    
+convertShapeRef (Wrt Screen from) (Wrt SVG to) = liftShape1 (screenFrameToSVGFrameP from to)  where
     liftShape1 :: (Point a -> Point b) -> Wrt Screen (Shape x (Point a)) -> Wrt SVG (Shape x (Point b))
     liftShape1 f sh = screenToSvg $ f <$$> sh    
 
