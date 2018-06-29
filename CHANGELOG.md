@@ -1,4 +1,8 @@
-	0.4
+	0.4.4
+
+	Introduced an EDSL for manipulating and rendering geometric shapes.
+
+	0.4	
 
 	Remove data-default-*
 	Improve shape colour representation: shapes can have a colour fill, a coloured contour, or both (see 'ShapeCol').

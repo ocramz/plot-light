@@ -229,141 +229,120 @@ xyDispl p1 p2 = (v1 .* e1, v2 .* e2) where
 -- | A DSL for geometrical shapes.
 -- |
 -- | NB : the 'Point' parameter always refers to the center of the shape.
-data Shape x a =
-    RectCenteredSh x x (ShapeCol x) a
-  | SquareCenteredSh x (ShapeCol x) a
-  | LineSh (LineOptions x) a a
-  | CircleSh x (ShapeCol x) a
-  | PolyLineSh (LineOptions x) StrokeLineJoin_ [a]
+data Shape p a =
+    RectCenteredSh p p (ShapeCol p) a
+  | SquareCenteredSh p (ShapeCol p) a
+  | LineSh (LineOptions p) a a
+  | CircleSh p (ShapeCol p) a
+  | PolyLineSh (LineOptions p) StrokeLineJoin_ [a]
   deriving (Eq, Show, Functor)
 
 
--- FilledPolyLine
--- ...
+-- -- FilledPolyLine
+-- -- ...
 
 
--- -- | the type parameter 'a' will be plugged with 'Point'
--- data Sh p a =
---      Rec (ShapeCol p) a a    -- ^ Corner points
---    | Lin (LineOptions p) a a  -- ^ End points
---    | Cir (ShapeCol p) a a  -- ^ Center, one point on the circumference
---    | Pol (LineOptions p) StrokeLineJoin_ [a] -- ^ Points
---      deriving (Eq, Show, Functor)
+-- | A thing of type 'sh' in a 'Frame'
+-- 
+-- | the Frame parameter denotes the destination frame
+--
+-- NB : we can put more than one shape in a Frame
+data Wrt r a sh = Wrt r (Frame a) sh deriving (Eq, Show, Functor)
 
--- -- shp0 col p1@Point{} p2 = Cir col p1 p2
-
--- data STest a = S1 a a deriving (Eq, Show, Functor)
-
--- s0 = S1 (Point 0 0) (Point 1 1)
-
-
--- | A thing of type 'a' in a 'Frame'
-data Framed r a = Framed (Frame r) a deriving (Eq, Show, Functor)
-
-mkFramed :: Point r -> Point r -> a -> Framed r a
-mkFramed p1 p2 = Framed (mkFrame p1 p2)
-
-
-data Sh a =
-    R a a
-  | C a a
-  | L [a] deriving (Eq, Show, Functor)
-
-toFramed :: Ord r => Sh (Point r) -> Framed r (Sh (Point r))
-toFramed sh = case sh of
-  r@(R p1 p2) -> mkFramed p1 p2 r
-  l@(L ps) -> Framed (frameFromPoints ps) l
-
--- data Sh p =
---     Rec (ShapeCol p)
---   | Lin (LineOptions p)
---   | Cir (ShapeCol p)
---   | Pol (LineOptions p) StrokeLineJoin_ deriving (Eq, Show)
-
--- toFramed sh = case sh of
---   Rec shc
-
-
-
-data Fr r f a x = Fr r (Frame a) (f (Point a)) x
-
-
-
-
--- wrtScreen . toFramed
---   :: Ord r => Sh (Point r) -> Wrt Screen (Framed r (Sh (Point r)))
-
-
-
-
-
-
-
-
--- | An abstract type for attaching reference frame information to a type 'a'
-data Wrt r a = Wrt r a deriving (Eq, Show, Functor)
-
-screenToSvg :: Wrt Screen a -> Wrt SVG a
-screenToSvg (Wrt Screen x) = Wrt SVG x
-
-wrtScreen :: a -> Wrt Screen a
+wrtScreen :: Frame a -> sh -> Wrt Screen a sh
 wrtScreen = Wrt Screen
 
--- type FramedShape r x a = Framed r (Shape x a)
 
--- * Constructors
+-- mkFramed :: Point r -> Point r -> a -> Framed r a
+-- mkFramed p1 p2 = Framed (mkFrame p1 p2)
 
-mkRectCenteredSh :: x  -- ^ Width 
+-- -- toFramed :: Ord r => Sh (Point r) -> Framed r (Sh (Point r))
+-- -- toFramed sh = case sh of
+-- --   r@(R p1 p2) -> mkFramed p1 p2 r
+-- --   l@(L ps) -> Framed (frameFromPoints ps) l
+
+
+
+
+
+
+
+
+-- -- wrtScreen . toFramed
+-- --   :: Ord r => Sh (Point r) -> Wrt Screen (Framed r (Sh (Point r)))
+
+
+
+
+
+
+
+
+-- -- | An abstract type for attaching reference frame information to a type 'a'
+-- data Wrt r a = Wrt r a deriving (Eq, Show, Functor)
+
+-- screenToSvg :: Wrt Screen a -> Wrt SVG a
+-- screenToSvg (Wrt Screen x) = Wrt SVG x
+
+-- wrtScreen :: a -> Wrt Screen a
+-- wrtScreen = Wrt Screen
+
+-- -- type FramedShape r x a = Framed r (Shape x a)
+
+-- -- * Constructors
+
+mkRectCenteredSh :: Frame a 
+                 -> x  -- ^ Width 
                  -> x  -- ^ Height 
                  -> ShapeCol x 
                  -> Point t  
-                 -> Wrt Screen (Shape x (Point t))
-mkRectCenteredSh w h col p@Point{} = Wrt Screen $ RectCenteredSh w h col p
+                 -> Wrt Screen a (Shape x (Point t))
+mkRectCenteredSh fr w h col p@Point{} = wrtScreen fr $ RectCenteredSh w h col p
 
-mkSquareCenteredSh :: x   -- ^ Side length
-                   -> ShapeCol x
-                   -> Point t
-                   -> Wrt Screen (Shape x (Point t))
-mkSquareCenteredSh w col p@Point{} = Wrt Screen $ SquareCenteredSh w col p
+-- mkSquareCenteredSh :: x   -- ^ Side length
+--                    -> ShapeCol x
+--                    -> Point t
+--                    -> Wrt Screen (Shape x (Point t))
+-- mkSquareCenteredSh w col p@Point{} = wrtScreen $ SquareCenteredSh w col p
 
-mkCircleSh :: x -- ^ Radius
-           -> ShapeCol x
-           -> Point t
-           -> Wrt Screen (Shape x (Point t))
-mkCircleSh radius col p@Point{} = Wrt Screen $ CircleSh radius col p
+-- mkCircleSh :: x -- ^ Radius
+--            -> ShapeCol x
+--            -> Point t
+--            -> Wrt Screen (Shape x (Point t))
+-- mkCircleSh radius col p@Point{} = wrtScreen $ CircleSh radius col p
 
-mkLineSh :: LineOptions x
-         -> Point t   
-         -> Point t
-         -> Wrt Screen (Shape x (Point t))
-mkLineSh lopts p1@Point{} p2 = Wrt Screen $ LineSh lopts p1 p2
+-- mkLineSh :: LineOptions x
+--          -> Point t   
+--          -> Point t
+--          -> Wrt Screen (Shape x (Point t))
+-- mkLineSh lopts p1@Point{} p2 = wrtScreen $ LineSh lopts p1 p2
 
-mkPolyLineSh :: LineOptions x
-             -> StrokeLineJoin_
-             -> [Point t]
-             -> Wrt Screen (Shape x (Point t))
-mkPolyLineSh lopts slj ps@(Point{} : _) = Wrt Screen $ PolyLineSh lopts slj ps
-
-
+-- mkPolyLineSh :: LineOptions x
+--              -> StrokeLineJoin_
+--              -> [Point t]
+--              -> Wrt Screen (Shape x (Point t))
+-- mkPolyLineSh lopts slj ps@(Point{} : _) = wrtScreen $ PolyLineSh lopts slj ps
 
 
--- | Given :
---
--- * a starting frame (in the screen reference)
--- * a destination frame (in the SVG reference)
--- * a 'Shape' whose anchoring point is assumed to be bound by the starting frame
---
--- compose the affine transformations required to move the 'Shape' from starting to destination frame.
---
--- NB : this should be the /only/ function dedicated to transforming point coordinates
-convertShapeRef :: Fractional a =>
-                   Wrt Screen (Frame a)
-                -> Wrt SVG (Frame a)
-                -> Wrt Screen (Shape x (Point a))
-                -> Wrt SVG (Shape x (Point a))
-convertShapeRef (Wrt Screen from) (Wrt SVG to) = liftShape1 (screenFrameToSVGFrameP from to)  where
-    liftShape1 :: (Point a -> Point b) -> Wrt Screen (Shape x (Point a)) -> Wrt SVG (Shape x (Point b))
-    liftShape1 f sh = screenToSvg $ f <$$> sh    
+
+
+-- -- | Given :
+-- --
+-- -- * a starting frame (in the screen reference)
+-- -- * a destination frame (in the SVG reference)
+-- -- * a 'Shape' whose anchoring point is assumed to be bound by the starting frame
+-- --
+-- -- compose the affine transformations required to move the 'Shape' from starting to destination frame.
+-- --
+-- -- NB : this should be the /only/ function dedicated to transforming point coordinates
+-- -- convertShapeRef :: Fractional a =>
+-- --                    Wrt Screen (Frame a)
+-- --                 -> Wrt SVG (Frame a)
+-- --                 -> Wrt Screen (Shape x (Point a))
+-- --                 -> Wrt SVG (Shape x (Point a))
+-- convertShapeRef (Wrt Screen from) (Wrt SVG to) = liftShape1 (screenFrameToSVGFrameP from to)  where
+--     liftShape1 :: (Point a -> Point b) -> Wrt Screen (Shape x (Point a)) -> Wrt SVG (Shape x (Point b))
+--     liftShape1 f sh = screenToSvg $ f <$$> sh    
 
 screenFrameToSVGFrameP :: Fractional a => Frame a -> Frame a -> Point a -> Point a
 screenFrameToSVGFrameP fromf tof = pointFromV2 . toFrame tof . flipUD . fromFrame fromf . v2fromPoint
@@ -372,22 +351,22 @@ screenFrameToSVGFrameP fromf tof = pointFromV2 . toFrame tof . flipUD . fromFram
     flipUD (V2 vx vy) = V2 vx (1 - vy)
 
 
-(<$$>) :: (Functor f, Functor g) => (x -> y) -> g (f x) -> g (f y)
-(<$$>) = fmap . fmap
+-- (<$$>) :: (Functor f, Functor g) => (x -> y) -> g (f x) -> g (f y)
+-- (<$$>) = fmap . fmap
     
 
 
 
 
 
--- | We can directly render a 'Shape' that's in the SVG reference system
-renderShape :: (Show a, RealFrac a) => Wrt SVG (Shape a (Point a)) -> Svg
-renderShape (Wrt SVG sh) = case sh of
-  RectCenteredSh w h col p -> rectCentered w h col p
-  SquareCenteredSh w col p -> squareCentered w col p
-  CircleSh rad col p -> circle rad col p
-  LineSh lopts p1 p2 -> line' p1 p2 lopts
-  PolyLineSh lopts slj ps -> polyline' lopts slj ps
+-- -- | We can directly render a 'Shape' that's in the SVG reference system
+-- renderShape :: (Show a, RealFrac a) => Wrt SVG (Shape a (Point a)) -> Svg
+-- renderShape (Wrt SVG sh) = case sh of
+--   RectCenteredSh w h col p -> rectCentered w h col p
+--   SquareCenteredSh w col p -> squareCentered w col p
+--   CircleSh rad col p -> circle rad col p
+--   LineSh lopts p1 p2 -> line' p1 p2 lopts
+--   PolyLineSh lopts slj ps -> polyline' lopts slj ps
 
 
 
