@@ -250,14 +250,7 @@ data Shape p a =
 
 
 
--- | Compute the 'Frame' that envelopes a 'Foldable' container (e.g. a list or vector) of 'Shape's.
---
--- The result can be used as the "from" Frame used to compute the Screen-SVG coordinate transform
-wrappingFrame :: (Foldable t, Fractional a, Ord a) =>
-                 t (Shape a (Point a))
-              -> Frame a
-wrappingFrame shs = foldr fc mempty shs where
-  fc acc b = mkShapeFrame acc `mappend` b
+
 
 
 
@@ -272,6 +265,15 @@ wrapped to shs = wssh where
 
 
   
+
+-- | Compute the 'Frame' that envelopes a 'Foldable' container (e.g. a list or vector) of 'Shape's.
+--
+-- The result can be used as the "from" Frame used to compute the Screen-SVG coordinate transform
+wrappingFrame :: (Foldable t, Fractional a, Ord a) =>
+                 t (Shape a (Point a))
+              -> Frame a
+wrappingFrame shs = foldr fc mempty shs where
+  fc acc b = mkShapeFrame acc `mappend` b
 
 
 mkShapeFrame :: (Fractional a, Ord a) => Shape a (Point a) -> Frame a
