@@ -256,10 +256,10 @@ type Sh a = Shape a (Point a)
 
 
 
--- | !!! borked (cannot say `convertShapeRef from to wssh`)
-wrapped to shs = wssh where
-  from = wrappingFrame shs
-  wssh = wrtScreen to shs
+-- -- | !!! borked (cannot say `convertShapeRef from to wssh`)
+-- wrapped to shs = wssh where
+--   from = wrappingFrame shs
+--   wssh = wrtScreen to shs
 
 
 
@@ -267,20 +267,19 @@ wrapped to shs = wssh where
   
 
 -- | Compute the 'Frame' that envelopes a 'Foldable' container (e.g. a list or vector) of 'Shape's.
---
--- The result can be used as the "from" Frame used to compute the Screen-SVG coordinate transform
-wrappingFrame :: (Foldable t, Fractional a, Ord a) =>
-                 t (Shape a (Point a))
-              -> Frame a
-wrappingFrame shs = foldr fc mempty shs where
-  fc acc b = mkShapeFrame acc `mappend` b
+-- --
+-- -- The result can be used as the "from" Frame used to compute the Screen-SVG coordinate transform
+-- wrappingFrame :: (Foldable t, Fractional a, Ord a) =>
+--                  t (Shape a (Point a))
+--               -> Frame a
+-- wrappingFrame shs = foldr fc mempty shs where
+--   fc acc b = mkShapeFrame acc `mappend` b
 
 
 mkShapeFrame :: (Fractional a, Ord a) => Shape a (Point a) -> Frame a
 mkShapeFrame sh = let
   mkFrameDs p dx dy = mkFrame p1 p2 where
-    p1 = movePoint v p
-    p2 = movePoint (negateAG v) p
+    (p1, p2) = (movePoint v &&& movePoint (negateAG v)) p
     v = V2 dx dy
   in
   case sh of
