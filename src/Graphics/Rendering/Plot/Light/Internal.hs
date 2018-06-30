@@ -60,6 +60,7 @@ import Data.Scientific (Scientific, toRealFloat)
 
 -- import Data.Foldable
 import qualified Data.Text as T
+import qualified Data.Text.IO as T
 -- import qualified Data.Vector as V
 
 import Text.Blaze.Internal (Attributable(..))
@@ -128,6 +129,7 @@ svgHeader w h  =
   ! SA.viewbox (vds [xmin fd, ymin fd, xmax fd, ymax fd]) where
      fd = mkFrameOrigin w h
 
+svgHeader' fdat = svgHeader (figWidth fdat) (figHeight fdat)
 
 
 -- | A Col is both a 'Colour' and an alpha (opacity) coefficient
@@ -251,7 +253,27 @@ data Shape p a =
 
 
 
-type Sh a = Shape a (Point a)
+c0 = CircleSh 10 (shapeColNoBorder C.red 0.9) (Point 10 20)
+c1 = CircleSh 5 (shapeColNoBorder C.orange 0.9) (Point 5 15)
+c2 = CircleSh 15 (shapeColNoBorder C.blue 0.3) (Point 12 17)
+c3 = CircleSh 20 (shapeColNoBorder C.yellow 1) (Point 0 0)
+
+shs :: [Shape Double (Point Double)]
+shs = [c0,c1,c2,c3]
+
+
+
+test0 =
+  do
+  let
+    figdata = figureDataDefault
+    to = frameFromFigData figdata
+  -- in
+    -- wrapped to shs
+    svg_t = svgHeader' figdata $ render0 to shs
+  T.writeFile "examples/ex_dsl1.svg" $ T.pack $ renderSvg svg_t
+
+
 
 
 render0 :: (Functor t, Foldable t, Show a, RealFrac a) =>
@@ -259,16 +281,12 @@ render0 :: (Functor t, Foldable t, Show a, RealFrac a) =>
         -> t (Shape a (Point a))
         -> Svg
 render0 to shs = renderShape `mapM_` shs' where
-  (Wrt SVG from shs') = wrapped to shs 
+  (Wrt SVG _ shs') = wrapped to shs 
 
 
-wrapped :: (Functor t, Foldable t, Fractional a, Ord a) =>
-           Frame a
-        -> t (Shape a (Point a))
-        -> Wrt SVG a (t (Shape a (Point a)))
-wrapped to shs = convertShapeRef from to wssh where
-  from = wrappingFrame shs
-  wssh = wrtScreen to shs
+
+
+
 
 
 
@@ -282,6 +300,14 @@ renderShape sh = case sh of
       PolyLineSh lopts slj ps -> polyline' lopts slj ps
 
 
+
+wrapped :: (Functor t, Foldable t, Fractional a, Ord a) =>
+           Frame a
+        -> t (Shape a (Point a))
+        -> Wrt SVG a (t (Shape a (Point a)))
+wrapped to shs = convertShapeRef from to wssh where
+  from = wrappingFrame shs
+  wssh = wrtScreen to shs
   
 
 -- | Compute the 'Frame' that envelopes a 'Foldable' container (e.g. a list or vector) of 'Shape's.
@@ -297,7 +323,7 @@ wrappingFrame shs = foldr fc mempty shs where
 mkShapeFrame :: (Fractional a, Ord a) => Shape a (Point a) -> Frame a
 mkShapeFrame sh = let
   mkFrameDs p dx dy = mkFrame p1 p2 where
-    (p1, p2) = (movePoint v &&& movePoint (negateAG v)) p
+    (p1, p2) = (movePoint (negateAG v) &&& movePoint v) p
     v = V2 dx dy
   in
   case sh of
