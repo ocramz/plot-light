@@ -250,12 +250,28 @@ data Shape p a =
 
 
 
--- | Compute the 'Frame' that envelopes a 'Foldable' container (e.g. a list or vector) of 'Shape's
+-- | Compute the 'Frame' that envelopes a 'Foldable' container (e.g. a list or vector) of 'Shape's.
+--
+-- The result can be used as the "from" Frame used to compute the Screen-SVG coordinate transform
 wrappingFrame :: (Foldable t, Fractional a, Ord a) =>
                  t (Shape a (Point a))
               -> Frame a
 wrappingFrame shs = foldr fc mempty shs where
   fc acc b = mkShapeFrame acc `mappend` b
+
+
+
+
+
+-- | !!! borked (cannot say `convertShapeRef from to wssh`)
+wrapped to shs = wssh where
+  from = wrappingFrame shs
+  wssh = wrtScreen to shs
+
+
+
+
+  
 
 
 mkShapeFrame :: (Fractional a, Ord a) => Shape a (Point a) -> Frame a
@@ -293,7 +309,6 @@ data Wrt r a sh = Wrt r (Frame a) sh deriving (Eq, Show, Functor)
 
 wrtScreen :: Frame a -> sh -> Wrt Screen a sh
 wrtScreen = Wrt Screen
-
 
 screenToSvg :: Wrt Screen a sh -> Wrt SVG a sh
 screenToSvg (Wrt Screen fr x) = Wrt SVG fr x
