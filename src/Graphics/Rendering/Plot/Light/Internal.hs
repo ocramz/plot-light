@@ -265,12 +265,12 @@ c1 = CircleSh 5 (shapeColNoBorder C.orange 0.9) (Point 5 15)
 c2 = CircleSh 15 (shapeColNoBorder C.blue 0.3) (Point 12 17)
 c3 = CircleSh 20 (shapeColNoBorder C.yellow 1) (Point 0 0)
 
-r0 = RectSh 10 20 (shapeColNoBorder C.red 0.9) (Point 10 20)
-r1 = RectSh 20 30 (shapeColNoBorder C.blue 0.3) (Point 0 0)
-
+r0 = RectSh 10 10 (shapeColNoBorder C.red 1) (Point 10 20)
+r1 = RectSh 10 10 (shapeColNoBorder C.blue 1) (Point 0 0)
+r2 = RectSh 50 10 (shapeColNoBorder C.orange 0.7) (Point 5 10)
 
 shs :: [Shape Double (Point Double)]
-shs = [r0, r1]
+shs = [r0, r1, r2]
 -- shs = [c0,c1,c2]
 
 
@@ -280,21 +280,25 @@ test0 =
   let
     figdata = figureDataDefault
     to = frameFromFigData figdata
-  -- in
-    -- wrapped to shs
+    (rout, rin) = rectsFigData figdata (shapeColNoFill C.black 1 1)
     svg_t = svgHeader' figdata $ do
       render0 to shs
-      renderShape $ rectFigData figdata (shapeColNoFill C.black 1 1)
+      renderShape rout
+      renderShape rin
   T.writeFile "examples/ex_dsl1.svg" $ T.pack $ renderSvg svg_t
 
 
--- | Draw a rectangle as border of the renderable figure
-rectFigData :: Num p => FigureData p -> ShapeCol p -> Shape p (Point p)
-rectFigData fd col = RectSh w h col p1 where
-  fr = frameFromFigData fd
-  p1 = _fpmin fr
-  w = width fr
-  h = height fr
+-- | Rectangles based on the inner and outer frames of the drawable canvas
+rectsFigData :: (Num a, Num a1) =>
+                FigureData a1
+             -> ShapeCol a1
+             -> (Shape a1 (Point a), Shape a1 (Point a1))
+rectsFigData fd col = (rOut, rIn)
+  where
+    frIn = frameFromFigData fd
+    pIn = _fpmin frIn
+    rIn = RectSh (width frIn) (height frIn) col pIn
+    rOut = RectSh (figWidth fd) (figHeight fd) col (Point 0 0)
 
 
 
@@ -316,7 +320,7 @@ render0 to shs = renderShape `mapM_` shs' where
 renderShape :: (Show a, RealFrac a) => Shape a (Point a) -> Svg
 renderShape sh = case sh of
       RectCenteredSh w h col p -> rectCentered w h col p
-      RectSh w h col p -> rect w h col p
+      RectSh w h col p -> rect w h col p -- $ movePoint (V2 0 (-h)) p
       SquareCenteredSh w col p -> squareCentered w col p
       CircleSh rad col p -> circle rad col p
       LineSh lopts p1 p2 -> line' p1 p2 lopts
@@ -336,11 +340,22 @@ wrapped to shs = convertShapeRef from to wssh where
 -- | Compute the 'Frame' that envelopes a 'Foldable' container (e.g. a list or vector) of 'Shape's.
 --
 -- The result can be used as the "from" Frame used to compute the Screen-SVG coordinate transform
-wrappingFrame :: (Foldable t, Fractional a, Ord a) =>
+wrappingFrame :: (Foldable t, Num a, Ord a) =>
                  t (Shape a (Point a))
               -> Frame a
 wrappingFrame shs = foldr fc mempty shs where
-  fc acc b = mkShapeFrame acc `mappend` b
+  fc acc b = mkShapeFrame' acc `mappend` b
+
+
+mkShapeFrame' :: Ord a => Shape t (Point a) -> Frame a
+mkShapeFrame' sh = case sh of
+    RectCenteredSh _ _ _ p -> mkFrame p p
+    RectSh _ _ _ p -> mkFrame p p
+    SquareCenteredSh _ _ p -> mkFrame p p
+    LineSh _ p1 p2 -> mkFrame p1 p2
+    CircleSh _ _ p -> mkFrame p p
+    PolyLineSh _ _ ps -> frameFromPoints ps
+  
 
 
 mkShapeFrame :: (Fractional a, Ord a) => Shape a (Point a) -> Frame a
