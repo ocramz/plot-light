@@ -254,26 +254,44 @@ data Shape p a =
 type Sh a = Shape a (Point a)
 
 
+render0 :: (Functor t, Foldable t, Show a, RealFrac a) =>
+           Frame a
+        -> t (Shape a (Point a))
+        -> Svg
+render0 to shs = renderShape `mapM_` shs' where
+  (Wrt SVG from shs') = wrapped to shs 
 
 
--- -- | !!! borked (cannot say `convertShapeRef from to wssh`)
--- wrapped to shs = wssh where
---   from = wrappingFrame shs
---   wssh = wrtScreen to shs
+wrapped :: (Functor t, Foldable t, Fractional a, Ord a) =>
+           Frame a
+        -> t (Shape a (Point a))
+        -> Wrt SVG a (t (Shape a (Point a)))
+wrapped to shs = convertShapeRef from to wssh where
+  from = wrappingFrame shs
+  wssh = wrtScreen to shs
 
 
+
+-- | NB : We must only render a 'Shape' that's in the SVG reference system
+renderShape :: (Show a, RealFrac a) => Shape a (Point a) -> Svg
+renderShape sh = case sh of
+      RectCenteredSh w h col p -> rectCentered w h col p
+      SquareCenteredSh w col p -> squareCentered w col p
+      CircleSh rad col p -> circle rad col p
+      LineSh lopts p1 p2 -> line' p1 p2 lopts
+      PolyLineSh lopts slj ps -> polyline' lopts slj ps
 
 
   
 
 -- | Compute the 'Frame' that envelopes a 'Foldable' container (e.g. a list or vector) of 'Shape's.
--- --
--- -- The result can be used as the "from" Frame used to compute the Screen-SVG coordinate transform
--- wrappingFrame :: (Foldable t, Fractional a, Ord a) =>
---                  t (Shape a (Point a))
---               -> Frame a
--- wrappingFrame shs = foldr fc mempty shs where
---   fc acc b = mkShapeFrame acc `mappend` b
+--
+-- The result can be used as the "from" Frame used to compute the Screen-SVG coordinate transform
+wrappingFrame :: (Foldable t, Fractional a, Ord a) =>
+                 t (Shape a (Point a))
+              -> Frame a
+wrappingFrame shs = foldr fc mempty shs where
+  fc acc b = mkShapeFrame acc `mappend` b
 
 
 mkShapeFrame :: (Fractional a, Ord a) => Shape a (Point a) -> Frame a
@@ -321,52 +339,34 @@ mkRectCenteredSh :: Frame a
                  -> Wrt Screen a (Shape x (Point t))
 mkRectCenteredSh fr w h col p@Point{} = wrtScreen fr $ RectCenteredSh w h col p
 
--- mkSquareCenteredSh :: x   -- ^ Side length
---                    -> ShapeCol x
---                    -> Point t
---                    -> Wrt Screen (Shape x (Point t))
--- mkSquareCenteredSh w col p@Point{} = wrtScreen $ SquareCenteredSh w col p
-
--- mkCircleSh :: x -- ^ Radius
---            -> ShapeCol x
---            -> Point t
---            -> Wrt Screen (Shape x (Point t))
--- mkCircleSh radius col p@Point{} = wrtScreen $ CircleSh radius col p
-
--- mkLineSh :: LineOptions x
---          -> Point t   
---          -> Point t
---          -> Wrt Screen (Shape x (Point t))
--- mkLineSh lopts p1@Point{} p2 = wrtScreen $ LineSh lopts p1 p2
-
--- mkPolyLineSh :: LineOptions x
---              -> StrokeLineJoin_
---              -> [Point t]
---              -> Wrt Screen (Shape x (Point t))
--- mkPolyLineSh lopts slj ps@(Point{} : _) = wrtScreen $ PolyLineSh lopts slj ps
 
 
 
 
--- -- | Given :
--- --
--- -- * a starting frame (in the screen reference)
--- -- * a destination frame (in the SVG reference)
--- -- * a 'Shape' whose anchoring point is assumed to be bound by the starting frame
--- --
--- -- compose the affine transformations required to move the 'Shape' from starting to destination frame.
+
+-- | Given :
+--
+-- * a starting frame (in the screen reference)
+-- * a destination frame (in the SVG reference)
+-- * a 'Shape' whose anchoring point is assumed to be bound by the starting frame
+--
+-- compose the affine transformations required to move the 'Shape' from starting to destination frame.
 -- --
 -- -- NB : this should be the /only/ function dedicated to transforming point coordinates
-convertShapeRef :: (Functor f, Fractional b) =>
-                   Frame b
-                -> Frame b
-                -> Wrt Screen a (f (Point b))
-                -> Wrt SVG a (f (Point b))
+convertShapeRef :: (Functor f, Functor g, Fractional a1) =>
+                   Frame a1
+                -> Frame a1
+                -> Wrt Screen a (g (f (Point a1)))
+                -> Wrt SVG a (g (f (Point a1)))
 convertShapeRef from to =
   liftShape1 (screenFrameToSVGFrameP from to)
 
-liftShape1 :: Functor f => (x -> y) -> Wrt Screen a (f x) -> Wrt SVG a (f y)
-liftShape1 f sh = screenToSvg $ f <$$> sh    
+-- liftShape1 :: Functor f => (x -> y) -> Wrt Screen a (f x) -> Wrt SVG a (f y)
+liftShape1 :: (Functor f, Functor g) =>
+              (x -> y)
+           -> Wrt Screen a (g (f x))
+           -> Wrt SVG a (g (f y))
+liftShape1 f sh = screenToSvg $ f <$$$> sh    
 
 screenFrameToSVGFrameP :: Fractional a => Frame a -> Frame a -> Point a -> Point a
 screenFrameToSVGFrameP fromf tof = pointFromV2 . toFrame tof . flipUD . fromFrame fromf . v2fromPoint
@@ -374,6 +374,11 @@ screenFrameToSVGFrameP fromf tof = pointFromV2 . toFrame tof . flipUD . fromFram
     flipUD :: Num a => V2 a -> V2 a
     flipUD (V2 vx vy) = V2 vx (1 - vy)
 
+
+
+
+(<$$$>) :: (Functor f, Functor g, Functor h) => (x -> y) -> h (g (f x)) -> h (g (f y))
+(<$$$>) = fmap . fmap . fmap
 
 (<$$>) :: (Functor f, Functor g) => (x -> y) -> g (f x) -> g (f y)
 (<$$>) = fmap . fmap
@@ -383,14 +388,7 @@ screenFrameToSVGFrameP fromf tof = pointFromV2 . toFrame tof . flipUD . fromFram
 
 
 
--- -- | We can directly render a 'Shape' that's in the SVG reference system
--- renderShape :: (Show a, RealFrac a) => Wrt SVG (Shape a (Point a)) -> Svg
--- renderShape (Wrt SVG sh) = case sh of
---   RectCenteredSh w h col p -> rectCentered w h col p
---   SquareCenteredSh w col p -> squareCentered w col p
---   CircleSh rad col p -> circle rad col p
---   LineSh lopts p1 p2 -> line' p1 p2 lopts
---   PolyLineSh lopts slj ps -> polyline' lopts slj ps
+
 
 
 
