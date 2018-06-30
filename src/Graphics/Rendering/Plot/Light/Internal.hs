@@ -234,6 +234,59 @@ xyDispl p1 p2 = (v1 .* e1, v2 .* e2) where
   v2 = v <.> e2
 
 
+
+
+
+
+-- | A DSL for geometrical shapes.
+-- |
+
+
+data Sh p a =
+    RectC (ShapeCol p) a a
+  | Rect (ShapeCol p) a a
+  | SqrC (ShapeCol p) a 
+  | Line (LineOptions p) a a
+  | Circ (ShapeCol p) a a
+  | PolyLine (LineOptions p) StrokeLineJoin_ [a]
+  deriving (Eq, Show, Functor)
+
+
+mkShFrame sh = case sh of
+  RectC _ p1 p2 -> mkFrame p1 p2
+  Rect _ p1 p2 -> mkFrame p1 p2
+  SqrC _ p -> mkFrame p p
+
+
+mkRect :: (Num a, Ord a) => a -> a -> ShapeCol p -> Point a -> Maybe (Sh p (Point a))
+mkRect w h col p
+  | w > 0 && h > 0 = Just $ Rect col p p2
+  | otherwise = Nothing where
+      p2 = movePoint (V2 w h) p
+
+mkCirc :: (Num a, Ord a) => a -> ShapeCol p -> Point a -> Maybe (Sh p (Point a))
+mkCirc r col p
+  | r > 0 = Just $ Circ col p p2
+  | otherwise = Nothing where
+      p2 = movePoint (V2 0 r) p
+
+mkLine :: Eq a => LineOptions p -> Point a -> Point a -> Maybe (Sh p (Point a))
+mkLine lo p1 p2 | p1 /= p2 = Just $ Line lo p1 p2
+                | otherwise = Nothing
+
+mkPolyLine :: LineOptions p -> StrokeLineJoin_ -> [Point t] -> Sh p (Point t)
+mkPolyLine lo slj ps@(Point{} : _) = PolyLine lo slj ps
+
+
+
+
+
+
+
+
+
+-- | =============
+
 -- | A DSL for geometrical shapes.
 -- |
 -- | NB : the 'Point' parameter always refers to the center of the shape.
@@ -320,7 +373,7 @@ render0 to shs = renderShape `mapM_` shs' where
 renderShape :: (Show a, RealFrac a) => Shape a (Point a) -> Svg
 renderShape sh = case sh of
       RectCenteredSh w h col p -> rectCentered w h col p
-      RectSh w h col p -> rect w h col p -- $ movePoint (V2 0 (-h)) p
+      RectSh w h col p -> rect w h col p 
       SquareCenteredSh w col p -> squareCentered w col p
       CircleSh rad col p -> circle rad col p
       LineSh lopts p1 p2 -> line' p1 p2 lopts
