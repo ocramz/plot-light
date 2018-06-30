@@ -315,12 +315,12 @@ data V2 a = V2 a a deriving (Eq)
 instance Show a => Show (V2 a) where
   show (V2 vx vy) = "(V2 "++ show vx ++", "++ show vy++")"
 
--- | V2i is a vector in R^2 having unit norm. NB: not closed under various operations e.g. vector sum, scalar multiplication etc.
-newtype V2i a = V2i (V2 a) deriving (Eq, Show)
+-- -- | V2i is a vector in R^2 having unit norm. NB: not closed under various operations e.g. vector sum, scalar multiplication etc.
+-- newtype V2i a = V2i (V2 a) deriving (Eq, Show)
 
--- | V2i can only be constructed with this method
-mkV2i :: Floating a => V2 a -> V2i a
-mkV2i v = V2i $ normalize2 v
+-- -- | V2i can only be constructed with this method
+-- mkV2i :: Floating a => V2 a -> V2i a
+-- mkV2i v = V2i $ normalize2 v
 
 
 instance Num a => Semigroup (V2 a) where

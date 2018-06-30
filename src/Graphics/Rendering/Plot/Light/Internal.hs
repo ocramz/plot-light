@@ -52,7 +52,7 @@ import qualified Data.Foldable as F (toList)
 
 import Data.List
 import Data.Functor.Identity
--- import Control.Arrow ((&&&), (***))
+import Control.Arrow (Arrow(..), (&&&), (***))
 import Control.Monad (forM, forM_)
 import Control.Monad.State
 -- import Data.Semigroup (Min(..), Max(..))
@@ -251,7 +251,7 @@ data Shape p a =
 
 
 
-
+type Sh a = Shape a (Point a)
 
 
 
@@ -277,26 +277,21 @@ wrappingFrame shs = foldr fc mempty shs where
 
 
 mkShapeFrame :: (Fractional a, Ord a) => Shape a (Point a) -> Frame a
-mkShapeFrame sh = case sh of
-  RectCenteredSh w h _ pc -> mkFrameFromCp pc w h
-  SquareCenteredSh w _ pc -> mkFrameFromCp pc w w
+mkShapeFrame sh = let
+  mkFrameDs p dx dy = mkFrame p1 p2 where
+    p1 = movePoint v p
+    p2 = movePoint (negateAG v) p
+    v = V2 dx dy
+  in
+  case sh of
+  RectCenteredSh w h _ pc -> mkFrameDs pc (w/2) (h/2) 
+  SquareCenteredSh w _ pc -> mkFrameDs pc (w/2) (w/2)  
   LineSh _ p1 p2 -> mkFrame p1 p2
-  CircleSh r _ pc ->
-    let r2 = 2 * r
-    in mkFrameFromCp pc r2 r2
+  CircleSh r _ pc -> mkFrameDs pc r r
   PolyLineSh _ _ ps -> frameFromPoints ps  
 
--- | Create a Frame from a center point, width, height
-mkFrameFromCp :: Fractional a =>
-               Point a   -- ^ Center point
-            -> a  -- ^ Width
-            -> a  -- ^ Height
-            -> Frame a
-mkFrameFromCp p@(Point px py) w h = mkFrame p1 p2 where
-  wh = w / 2
-  hh = h / 2
-  p1 = Point (px + wh) (py + hh)
-  p2 = Point (px - wh) (py - hh)
+
+
 
 
 -- | A thing of type 'sh' in a 'Frame'
