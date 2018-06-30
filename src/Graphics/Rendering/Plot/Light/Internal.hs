@@ -12,7 +12,7 @@ module Graphics.Rendering.Plot.Light.Internal
     -- * LabeledPoint
   , LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel, Axis(..), axes, meshGrid, subdivSegment,
     -- * SVG elements
-    svgHeader, toPlot,
+    svgHeader, svgHeader', toPlot,
     -- ** Rectangle/square
     rect, rectCentered, rectCenteredMidpointBase, squareCentered,
     -- ** Circle
@@ -129,6 +129,7 @@ svgHeader w h  =
   ! SA.viewbox (vds [xmin fd, ymin fd, xmax fd, ymax fd]) where
      fd = mkFrameOrigin w h
 
+svgHeader' :: Real a => FigureData a -> Svg -> Svg
 svgHeader' fdat = svgHeader (figWidth fdat) (figHeight fdat)
 
 
@@ -162,7 +163,11 @@ shapeColNoBorder :: C.Colour Double -> a -> ShapeCol a
 shapeColNoBorder c a = NoBorderCol $ mkCol c a
 
 -- | Construct a 'ShapeCol' for shapes that have no fill colour (i.e. have only the stroke colour)
-shapeColNoFill :: C.Colour Double -> a -> a -> ShapeCol a
+shapeColNoFill ::
+  C.Colour Double -- ^ Border colour
+  -> a  -- ^ Opacity
+  -> a  -- ^ Stroke width
+  -> ShapeCol a
 shapeColNoFill c a = NoFillCol $ mkCol c a 
 
 -- | Construct a 'ShapeCol' for shapes that have both fill and stroke colour
@@ -236,6 +241,7 @@ xyDispl p1 p2 = (v1 .* e1, v2 .* e2) where
 -- NB2 : the 'a' type parameter appears where the Point parameter used to be
 data Shape p a =
     RectCenteredSh p p (ShapeCol p) a
+  | RectSh p p (ShapeCol p) a
   | SquareCenteredSh p (ShapeCol p) a
   | LineSh (LineOptions p) a a
   | CircleSh p (ShapeCol p) a
@@ -253,13 +259,19 @@ data Shape p a =
 
 
 
+
 c0 = CircleSh 10 (shapeColNoBorder C.red 0.9) (Point 10 20)
 c1 = CircleSh 5 (shapeColNoBorder C.orange 0.9) (Point 5 15)
 c2 = CircleSh 15 (shapeColNoBorder C.blue 0.3) (Point 12 17)
 c3 = CircleSh 20 (shapeColNoBorder C.yellow 1) (Point 0 0)
 
+r0 = RectSh 10 20 (shapeColNoBorder C.red 0.9) (Point 10 20)
+r1 = RectSh 20 30 (shapeColNoBorder C.blue 0.3) (Point 0 0)
+
+
 shs :: [Shape Double (Point Double)]
-shs = [c0,c1,c2,c3]
+shs = [r0, r1]
+-- shs = [c0,c1,c2]
 
 
 
@@ -270,9 +282,19 @@ test0 =
     to = frameFromFigData figdata
   -- in
     -- wrapped to shs
-    svg_t = svgHeader' figdata $ render0 to shs
+    svg_t = svgHeader' figdata $ do
+      render0 to shs
+      renderShape $ rectFigData figdata (shapeColNoFill C.black 1 1)
   T.writeFile "examples/ex_dsl1.svg" $ T.pack $ renderSvg svg_t
 
+
+-- | Draw a rectangle as border of the renderable figure
+rectFigData :: Num p => FigureData p -> ShapeCol p -> Shape p (Point p)
+rectFigData fd col = RectSh w h col p1 where
+  fr = frameFromFigData fd
+  p1 = _fpmin fr
+  w = width fr
+  h = height fr
 
 
 
@@ -294,6 +316,7 @@ render0 to shs = renderShape `mapM_` shs' where
 renderShape :: (Show a, RealFrac a) => Shape a (Point a) -> Svg
 renderShape sh = case sh of
       RectCenteredSh w h col p -> rectCentered w h col p
+      RectSh w h col p -> rect w h col p
       SquareCenteredSh w col p -> squareCentered w col p
       CircleSh rad col p -> circle rad col p
       LineSh lopts p1 p2 -> line' p1 p2 lopts
@@ -327,7 +350,8 @@ mkShapeFrame sh = let
     v = V2 dx dy
   in
   case sh of
-  RectCenteredSh w h _ pc -> mkFrameDs pc (w/2) (h/2) 
+  RectCenteredSh w h _ pc -> mkFrameDs pc (w/2) (h/2)
+  RectSh w h _ p -> mkFrame p $ movePoint (V2 w h) p
   SquareCenteredSh w _ pc -> mkFrameDs pc (w/2) (w/2)  
   LineSh _ p1 p2 -> mkFrame p1 p2
   CircleSh r _ pc -> mkFrameDs pc r r
