@@ -45,7 +45,8 @@ module Graphics.Rendering.Plot.Light.Internal
   where
 
 -- import Control.Arrow ((***), (&&&))
-import Data.Monoid ((<>))
+-- import Data.Semigroup (Semigroup(..))
+import Data.Monoid
 
 import qualified Data.Foldable as F (toList)
 
@@ -229,6 +230,8 @@ xyDispl p1 p2 = (v1 .* e1, v2 .* e2) where
 -- | A DSL for geometrical shapes.
 -- |
 -- | NB : the 'Point' parameter always refers to the center of the shape.
+--
+-- NB2 : the 'a' type parameter appears where the Point parameter used to be
 data Shape p a =
     RectCenteredSh p p (ShapeCol p) a
   | SquareCenteredSh p (ShapeCol p) a
@@ -237,9 +240,45 @@ data Shape p a =
   | PolyLineSh (LineOptions p) StrokeLineJoin_ [a]
   deriving (Eq, Show, Functor)
 
-
 -- -- FilledPolyLine
 -- -- ...
+
+-- -- example smart constructor
+-- mkRC :: p -> p -> ShapeCol p -> Point t -> Shape p (Point t)
+-- mkRC w h col p@Point{} = RectCenteredSh w h col p 
+
+
+
+
+-- | Compute the 'Frame' that envelopes a 'Foldable' container (e.g. a list or vector) of 'Shape's
+wrappingFrame :: (Foldable t, Fractional a, Ord a) =>
+                 t (Shape a (Point a))
+              -> Frame a
+wrappingFrame shs = foldr fc mempty shs where
+  fc acc b = mkShapeFrame acc `mappend` b
+
+
+mkShapeFrame :: (Fractional a, Ord a) => Shape a (Point a) -> Frame a
+mkShapeFrame sh = case sh of
+  RectCenteredSh w h _ pc -> mkFrameFromCp pc w h
+  SquareCenteredSh w _ pc -> mkFrameFromCp pc w w
+  LineSh _ p1 p2 -> mkFrame p1 p2
+  CircleSh r _ pc ->
+    let r2 = 2 * r
+    in mkFrameFromCp pc r2 r2
+  PolyLineSh _ _ ps -> frameFromPoints ps  
+
+-- | Create a Frame from a center point, width, height
+mkFrameFromCp :: Fractional a =>
+               Point a   -- ^ Center point
+            -> a  -- ^ Width
+            -> a  -- ^ Height
+            -> Frame a
+mkFrameFromCp p@(Point px py) w h = mkFrame p1 p2 where
+  wh = w / 2
+  hh = h / 2
+  p1 = Point (px + wh) (py + hh)
+  p2 = Point (px - wh) (py - hh)
 
 
 -- | A thing of type 'sh' in a 'Frame'
@@ -249,45 +288,17 @@ data Shape p a =
 -- NB : we can put more than one shape in a Frame
 data Wrt r a sh = Wrt r (Frame a) sh deriving (Eq, Show, Functor)
 
+-- instance Semigroup (Wrt r a sh) where
+-- instance Monoid (Wrt r a sh) where 
+
 wrtScreen :: Frame a -> sh -> Wrt Screen a sh
 wrtScreen = Wrt Screen
 
 
--- mkFramed :: Point r -> Point r -> a -> Framed r a
--- mkFramed p1 p2 = Framed (mkFrame p1 p2)
-
--- -- toFramed :: Ord r => Sh (Point r) -> Framed r (Sh (Point r))
--- -- toFramed sh = case sh of
--- --   r@(R p1 p2) -> mkFramed p1 p2 r
--- --   l@(L ps) -> Framed (frameFromPoints ps) l
+screenToSvg :: Wrt Screen a sh -> Wrt SVG a sh
+screenToSvg (Wrt Screen fr x) = Wrt SVG fr x
 
 
-
-
-
-
-
-
--- -- wrtScreen . toFramed
--- --   :: Ord r => Sh (Point r) -> Wrt Screen (Framed r (Sh (Point r)))
-
-
-
-
-
-
-
-
--- -- | An abstract type for attaching reference frame information to a type 'a'
--- data Wrt r a = Wrt r a deriving (Eq, Show, Functor)
-
--- screenToSvg :: Wrt Screen a -> Wrt SVG a
--- screenToSvg (Wrt Screen x) = Wrt SVG x
-
--- wrtScreen :: a -> Wrt Screen a
--- wrtScreen = Wrt Screen
-
--- -- type FramedShape r x a = Framed r (Shape x a)
 
 -- -- * Constructors
 
@@ -335,14 +346,16 @@ mkRectCenteredSh fr w h col p@Point{} = wrtScreen fr $ RectCenteredSh w h col p
 -- -- compose the affine transformations required to move the 'Shape' from starting to destination frame.
 -- --
 -- -- NB : this should be the /only/ function dedicated to transforming point coordinates
--- -- convertShapeRef :: Fractional a =>
--- --                    Wrt Screen (Frame a)
--- --                 -> Wrt SVG (Frame a)
--- --                 -> Wrt Screen (Shape x (Point a))
--- --                 -> Wrt SVG (Shape x (Point a))
--- convertShapeRef (Wrt Screen from) (Wrt SVG to) = liftShape1 (screenFrameToSVGFrameP from to)  where
---     liftShape1 :: (Point a -> Point b) -> Wrt Screen (Shape x (Point a)) -> Wrt SVG (Shape x (Point b))
---     liftShape1 f sh = screenToSvg $ f <$$> sh    
+convertShapeRef :: (Functor f, Fractional b) =>
+                   Frame b
+                -> Frame b
+                -> Wrt Screen a (f (Point b))
+                -> Wrt SVG a (f (Point b))
+convertShapeRef from to =
+  liftShape1 (screenFrameToSVGFrameP from to)
+
+liftShape1 :: Functor f => (x -> y) -> Wrt Screen a (f x) -> Wrt SVG a (f y)
+liftShape1 f sh = screenToSvg $ f <$$> sh    
 
 screenFrameToSVGFrameP :: Fractional a => Frame a -> Frame a -> Point a -> Point a
 screenFrameToSVGFrameP fromf tof = pointFromV2 . toFrame tof . flipUD . fromFrame fromf . v2fromPoint
@@ -351,8 +364,8 @@ screenFrameToSVGFrameP fromf tof = pointFromV2 . toFrame tof . flipUD . fromFram
     flipUD (V2 vx vy) = V2 vx (1 - vy)
 
 
--- (<$$>) :: (Functor f, Functor g) => (x -> y) -> g (f x) -> g (f y)
--- (<$$>) = fmap . fmap
+(<$$>) :: (Functor f, Functor g) => (x -> y) -> g (f x) -> g (f y)
+(<$$>) = fmap . fmap
     
 
 
