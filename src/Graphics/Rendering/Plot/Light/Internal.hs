@@ -238,44 +238,46 @@ xyDispl p1 p2 = (v1 .* e1, v2 .* e2) where
 
 
 
--- | A DSL for geometrical shapes.
--- |
+-- -- | A DSL for geometrical shapes.
+-- -- |
+
+-- data Sh p a =
+--     RectC (ShapeCol p) a a
+--   | Rect (ShapeCol p) a a
+--   | SqrC (ShapeCol p) a 
+--   | Line (LineOptions p) a a
+--   | Circ (ShapeCol p) a a
+--   | PolyLine (LineOptions p) StrokeLineJoin_ [a]
+--   deriving (Eq, Show, Functor)
+
+-- mkShFrame sh = case sh of
+--   RectC _ p1 p2 -> mkFrame p1 p2
+--   Rect _ p1 p2 -> mkFrame p1 p2
+--   SqrC _ p -> mkFrame p p
+
+-- mkRect :: (Num a, Ord a) => a -> a -> ShapeCol p -> Point a -> Maybe (Sh p (Point a))
+-- mkRect w h col p
+--   | w > 0 && h > 0 = Just $ Rect col p p2
+--   | otherwise = Nothing where
+--       p2 = movePoint (V2 w h) p
+
+-- mkCirc :: (Num a, Ord a) => a -> ShapeCol p -> Point a -> Maybe (Sh p (Point a))
+-- mkCirc r col p
+--   | r > 0 = Just $ Circ col p p2
+--   | otherwise = Nothing where
+--       p2 = movePoint (V2 0 r) p
+
+-- mkLine :: Eq a => LineOptions p -> Point a -> Point a -> Maybe (Sh p (Point a))
+-- mkLine lo p1 p2 | p1 /= p2 = Just $ Line lo p1 p2
+--                 | otherwise = Nothing
+
+-- mkPolyLine :: LineOptions p -> StrokeLineJoin_ -> [Point t] -> Sh p (Point t)
+-- mkPolyLine lo slj ps@(Point{} : _) = PolyLine lo slj ps
 
 
-data Sh p a =
-    RectC (ShapeCol p) a a
-  | Rect (ShapeCol p) a a
-  | SqrC (ShapeCol p) a 
-  | Line (LineOptions p) a a
-  | Circ (ShapeCol p) a a
-  | PolyLine (LineOptions p) StrokeLineJoin_ [a]
-  deriving (Eq, Show, Functor)
+data F a = Fa a | Fb a a | Fc [a] deriving (Show, Functor)
 
 
-mkShFrame sh = case sh of
-  RectC _ p1 p2 -> mkFrame p1 p2
-  Rect _ p1 p2 -> mkFrame p1 p2
-  SqrC _ p -> mkFrame p p
-
-
-mkRect :: (Num a, Ord a) => a -> a -> ShapeCol p -> Point a -> Maybe (Sh p (Point a))
-mkRect w h col p
-  | w > 0 && h > 0 = Just $ Rect col p p2
-  | otherwise = Nothing where
-      p2 = movePoint (V2 w h) p
-
-mkCirc :: (Num a, Ord a) => a -> ShapeCol p -> Point a -> Maybe (Sh p (Point a))
-mkCirc r col p
-  | r > 0 = Just $ Circ col p p2
-  | otherwise = Nothing where
-      p2 = movePoint (V2 0 r) p
-
-mkLine :: Eq a => LineOptions p -> Point a -> Point a -> Maybe (Sh p (Point a))
-mkLine lo p1 p2 | p1 /= p2 = Just $ Line lo p1 p2
-                | otherwise = Nothing
-
-mkPolyLine :: LineOptions p -> StrokeLineJoin_ -> [Point t] -> Sh p (Point t)
-mkPolyLine lo slj ps@(Point{} : _) = PolyLine lo slj ps
 
 
 
@@ -318,9 +320,9 @@ c1 = CircleSh 5 (shapeColNoBorder C.orange 0.9) (Point 5 15)
 c2 = CircleSh 15 (shapeColNoBorder C.blue 0.3) (Point 12 17)
 c3 = CircleSh 20 (shapeColNoBorder C.yellow 1) (Point 0 0)
 
-r0 = RectSh 10 10 (shapeColNoBorder C.red 1) (Point 10 20)
-r1 = RectSh 10 10 (shapeColNoBorder C.blue 1) (Point 0 0)
-r2 = RectSh 50 10 (shapeColNoBorder C.orange 0.7) (Point 5 10)
+r0 = RectCenteredSh 10 10 (shapeColNoBorder C.red 1) (Point 10 20)
+r1 = RectCenteredSh 10 10 (shapeColNoBorder C.blue 0.5) (Point 0 0)
+r2 = RectCenteredSh 50 10 (shapeColNoBorder C.orange 0.7) (Point 5 10)
 
 shs :: [Shape Double (Point Double)]
 shs = [r0, r1, r2]
