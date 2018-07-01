@@ -52,7 +52,7 @@ import qualified Data.Foldable as F (toList)
 
 import Data.List
 import Data.Functor.Identity
-import Control.Arrow (Arrow(..), (&&&), (***))
+-- import Control.Arrow (Arrow(..), (&&&), (***))
 import Control.Monad (forM, forM_)
 import Control.Monad.State
 -- import Data.Semigroup (Min(..), Max(..))
@@ -275,7 +275,7 @@ xyDispl p1 p2 = (v1 .* e1, v2 .* e2) where
 -- mkPolyLine lo slj ps@(Point{} : _) = PolyLine lo slj ps
 
 
-data F a = Fa a | Fb a a | Fc [a] deriving (Show, Functor)
+
 
 
 
@@ -399,11 +399,11 @@ wrappingFrame :: (Foldable t, Num a, Ord a) =>
                  t (Shape a (Point a))
               -> Frame a
 wrappingFrame shs = foldr fc mempty shs where
-  fc acc b = mkShapeFrame' acc `mappend` b
+  fc acc b = mkShapeFrame acc `mappend` b
 
 
-mkShapeFrame' :: Ord a => Shape t (Point a) -> Frame a
-mkShapeFrame' sh = case sh of
+mkShapeFrame :: Ord a => Shape t (Point a) -> Frame a
+mkShapeFrame sh = case sh of
     RectCenteredSh _ _ _ p -> mkFrame p p
     RectSh _ _ _ p -> mkFrame p p
     SquareCenteredSh _ _ p -> mkFrame p p
@@ -413,19 +413,19 @@ mkShapeFrame' sh = case sh of
   
 
 
-mkShapeFrame :: (Fractional a, Ord a) => Shape a (Point a) -> Frame a
-mkShapeFrame sh = let
-  mkFrameDs p dx dy = mkFrame p1 p2 where
-    (p1, p2) = (movePoint (negateAG v) &&& movePoint v) p
-    v = V2 dx dy
-  in
-  case sh of
-  RectCenteredSh w h _ pc -> mkFrameDs pc (w/2) (h/2)
-  RectSh w h _ p -> mkFrame p $ movePoint (V2 w h) p
-  SquareCenteredSh w _ pc -> mkFrameDs pc (w/2) (w/2)  
-  LineSh _ p1 p2 -> mkFrame p1 p2
-  CircleSh r _ pc -> mkFrameDs pc r r
-  PolyLineSh _ _ ps -> frameFromPoints ps  
+-- mkShapeFrame :: (Fractional a, Ord a) => Shape a (Point a) -> Frame a
+-- mkShapeFrame sh = let
+--   mkFrameDs p dx dy = mkFrame p1 p2 where
+--     (p1, p2) = (movePoint (negateAG v) &&& movePoint v) p
+--     v = V2 dx dy
+--   in
+--   case sh of
+--   RectCenteredSh w h _ pc -> mkFrameDs pc (w/2) (h/2)
+--   RectSh w h _ p -> mkFrame p $ movePoint (V2 w h) p
+--   SquareCenteredSh w _ pc -> mkFrameDs pc (w/2) (w/2)  
+--   LineSh _ p1 p2 -> mkFrame p1 p2
+--   CircleSh r _ pc -> mkFrameDs pc r r
+--   PolyLineSh _ _ ps -> frameFromPoints ps  
 
 
 
