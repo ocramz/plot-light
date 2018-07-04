@@ -8,7 +8,7 @@ module Graphics.Rendering.Plot.Light.Internal
     -- frameToFrame,
     frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, frameToAffine, fromToStretchRatios, 
     -- * FigureData
-    FigureData(..), figFWidth, figFHeight, figureDataDefault
+    FigureData(..), figFWidth, figFHeight, figureDataDefault, withSvg
     -- * Point
   , Point(..), mkPoint, origin
     -- * LabeledPoint
@@ -138,6 +138,12 @@ svgHeader w h  =
 
 svgHeader' :: Real a => FigureData a -> Svg -> Svg
 svgHeader' fdat = svgHeader (figWidth fdat) (figHeight fdat)
+
+withSvg :: Real a => FigureData a -> (FigureData a -> Svg) -> Svg
+withSvg figdat fn = do
+  let svg_t = fn figdat
+  svgHeader' figdat svg_t
+
 
 
 -- | A Col is both a 'Colour' and an alpha (opacity) coefficient
@@ -303,6 +309,7 @@ xyDispl p1 p2 = (v1 .* e1, v2 .* e2) where
 -- NB2 : the 'a' type parameter appears where the Point parameter used to be
 data Shape p a =
     RectCenteredSh p p (ShapeCol p) a
+  | RectCenteredMidpointBaseSh p p (ShapeCol p) a  
   | RectSh p p (ShapeCol p) a
   | SquareCenteredSh p (ShapeCol p) a
   | LineSh (LineOptions p) a a
@@ -347,7 +354,7 @@ test0 =
       render0 to shs
       renderShape rout
       renderShape rin
-  T.writeFile "examples/ex_dsl1.svg" $ T.pack $ renderSvg svg_t
+  T.writeFile "examples/ex_dsl2.svg" $ T.pack $ renderSvg svg_t
 
 
 -- | Rectangles based on the inner and outer frames of the drawable canvas
@@ -381,13 +388,21 @@ render0 to shs = renderShape `mapM_` shs' where
 
 -- | NB : We must only render a 'Shape' that's in the SVG reference system
 renderShape :: (Show a, RealFrac a) => Shape a (Point a) -> Svg
-renderShape sh = case sh of
-      RectCenteredSh w h col p -> rectCentered w h col p
-      RectSh w h col p -> rect w h col p 
+renderShape sh =
+  let
+    fv h p = movePoint (V2 0 (- h)) p  -- vertical correction for corner-anchored shapes
+  in
+  case sh of
+      RectCenteredSh w h col p -> rectCentered w h col p 
+      RectCenteredMidpointBaseSh w h col p -> rectCentered w h col (fv h p)      
+      RectSh w h col p -> rect w h col (fv h p) 
       SquareCenteredSh w col p -> squareCentered w col p
       CircleSh rad col p -> circle rad col p
       LineSh lopts p1 p2 -> line' p1 p2 lopts
       PolyLineSh lopts slj ps -> polyline' lopts slj ps
+
+
+
 
 
 -- |
