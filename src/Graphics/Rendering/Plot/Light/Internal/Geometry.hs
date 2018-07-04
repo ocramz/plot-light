@@ -27,7 +27,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** Vector construction
   v2fromEndpoints, v2fromPoint,
   -- ** Operations on points
-  movePoint, moveLabeledPoint, moveLabeledPointV2, moveLabeledPointBwFrames, (-.), pointRange,
+  movePoint, moveLabeledPoint, moveLabeledPointV2, moveLabeledPointBwFrames, (-.), pointRange, 
   -- ** Operations on vectors
   frameToFrame, frameToFrameP, frameToFrameValue, fromFrame, toFrame,
   -- ** Typeclasses

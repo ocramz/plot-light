@@ -320,9 +320,9 @@ c1 = CircleSh 5 (shapeColNoBorder C.orange 0.9) (Point 5 15)
 c2 = CircleSh 15 (shapeColNoBorder C.blue 0.3) (Point 12 17)
 c3 = CircleSh 20 (shapeColNoBorder C.yellow 1) (Point 0 0)
 
-r0 = RectCenteredSh 10 10 (shapeColNoBorder C.red 1) (Point 10 20)
-r1 = RectCenteredSh 10 10 (shapeColNoBorder C.blue 0.5) (Point 0 0)
-r2 = RectCenteredSh 50 10 (shapeColNoBorder C.orange 0.7) (Point 5 10)
+r0 = RectSh 10 10 (shapeColNoBorder C.red 1) (Point 10 20)
+r1 = RectSh 10 10 (shapeColNoBorder C.blue 0.5) (Point 0 0)
+r2 = RectSh 50 10 (shapeColNoBorder C.orange 0.7) (Point 5 10)
 
 shs :: [Shape Double (Point Double)]
 shs = [r0, r1, r2]
@@ -337,23 +337,24 @@ test0 =
     to = frameFromFigData figdata
     (rout, rin) = rectsFigData figdata 
     svg_t = svgHeader' figdata $ do
-      -- render0 to shs
+      render0 to shs
       renderShape rout
       renderShape rin
   T.writeFile "examples/ex_dsl1.svg" $ T.pack $ renderSvg svg_t
 
 
 -- | Rectangles based on the inner and outer frames of the drawable canvas
-rectsFigData :: (Num a, Num a1) =>
-                FigureData a1
-             -> (Shape a1 (Point a), Shape a1 (Point a1))
+-- rectsFigData :: (Num a, Num a1) =>
+--                 FigureData a1
+--              -> (Shape a1 (Point a), Shape a1 (Point a1))
 rectsFigData fd = (rOut, rIn)
   where
     col = shapeColNoFill C.black 1 1
     frIn = frameFromFigData fd
-    pIn = _fpmin frIn
-    rIn = RectSh (width frIn) (height frIn) col pIn
-    rOut = RectSh (figWidth fd) (figHeight fd) col (Point 0 0)
+    -- pIn = _fpmin frIn
+    pc = midPoint (_fpmin frIn) (_fpmax frIn)
+    rIn = RectCenteredSh (width frIn) (height frIn) col pc -- pIn
+    rOut = RectCenteredSh (figWidth fd) (figHeight fd) col pc -- (Point 0 0)
 
 
 
