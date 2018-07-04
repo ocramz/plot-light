@@ -35,11 +35,14 @@ dats = [1,2,46,30,4,7,73,12,23,90,34,24,5,6,12,3,55,61,70,80,75,90,65,68,34,23,3
 
 -- dats = [1,1,1,2,2,3,4,4,4,4,5,5,5,5,5,5,5,5,5,5,6,6,6]
 
-main = do
-  let
-    kol = shapeColNoBorder C.red 1
-    svg_t = svgHeader xPlot yPlot $ histogramD' frameTo kol 10 dats
-  T.writeFile fnameOut $ T.pack $ renderSvg svg_t
+
+main = error "undefined"
+
+-- main = do
+--   let
+--     kol = shapeColNoBorder C.red 1
+--     -- svg_t = svgHeader xPlot yPlot $ histogramD' frameTo kol 10 dats
+--   T.writeFile fnameOut $ T.pack $ renderSvg svg_t
 
 
 -- | Returns the 'Frame' associated with a 'Histogram' along with the bins as 'LabeledPoint's (where the point coordinates lie on the X axis and the label contains the histogram count)
@@ -59,24 +62,24 @@ histGeometry hist = (frm, hlps) where
   frm = mkFrame p1 p2
 
 
-histogramD' :: Foldable v =>
-               Frame Double
-            -> ShapeCol Double
-            -> Int
-            -> v Double
-            -> Svg
-histogramD' frameTo col n dats = do
-  axes fdat (frameFromFigData fdat) 1 C.black 10 10 
-  toBottomLeftSvgOrigin fdat $ 
-    forM_ lps' $ \(LabeledPoint p l) -> rectCenteredMidpointBase binw' (hMult * l) col p
-  where
-    hist = histo n dats
-    (frameFrom, lps) = histGeometry hist
-    lps' = moveLabeledPointBwFrames frameFrom frameTo False False `map` lps
-    binw = H.binSize $ H.bins hist  -- bin width
-    hMult = 0.9 * sy -- height multiplication coeff. (hack)
-    (sx, sy) = fromToStretchRatios frameFrom frameTo
-    binw' = sx * binw
+-- histogramD' :: Foldable v =>
+--                Frame Double
+--             -> ShapeCol Double
+--             -> Int
+--             -> v Double
+--             -> Svg
+-- histogramD' frameTo col n dats = do
+--   axes fdat (frameFromFigData fdat) 1 C.black 10 10 
+--   toBottomLeftSvgOrigin fdat $ 
+--     forM_ lps' $ \(LabeledPoint p l) -> rectCenteredMidpointBase binw' (hMult * l) col p
+--   where
+--     hist = histo n dats
+--     (frameFrom, lps) = histGeometry hist
+--     lps' = moveLabeledPointBwFrames frameFrom frameTo False False `map` lps
+--     binw = H.binSize $ H.bins hist  -- bin width
+--     hMult = 0.9 * sy -- height multiplication coeff. (hack)
+--     (sx, sy) = fromToStretchRatios frameFrom frameTo
+--     binw' = sx * binw
     
 
 

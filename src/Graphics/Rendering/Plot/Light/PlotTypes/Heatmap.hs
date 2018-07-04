@@ -1,5 +1,7 @@
 {-# language RecordWildCards #-}
-module Graphics.Rendering.Plot.Light.PlotTypes.Heatmap (heatmap, heatmap', plotFun2) where
+module Graphics.Rendering.Plot.Light.PlotTypes.Heatmap (
+  -- heatmap, heatmap',
+  plotFun2) where
 
 import Control.Monad.State
 import Data.Scientific (Scientific, toRealFloat)
@@ -45,44 +47,46 @@ heatmapDefaults = Heatmap mesh pal 0 1
 
 
 -- | `heatmap` assumes the input data corresponds to evenly sampled values of a scalar-valued field, and it maps the data values onto the provided `palette` (which can be created e.g. with `brewerSet`).
-heatmap
-  :: FigureData Rational   -- ^ Figure data
-     -> [C.Colour Double]  -- ^ Colour palette
-     -> [[Scientific]]     -- ^ Data
-     -> Svg
-heatmap fdat palette d = do
-  let (nh, nw, vmin, vmax, d') = prepData d
-      w = figFWidth fdat / nw
-      h = figFHeight fdat / nh
-      from = Frame (Point 0 0) (Point 1 1)
-      to = frameFromFigData fdat
-  forM_ d' (pixel palette w h vmin vmax . toFigFrame from to) 
+-- heatmap
+--   :: FigureData Rational   -- ^ Figure data
+--      -> [C.Colour Double]  -- ^ Colour palette
+--      -> [[Scientific]]     -- ^ Data
+--      -> Svg
+-- heatmap fdat palette d = do
+--   let (nh, nw, vmin, vmax, d') = prepData d
+--       w = figFWidth fdat / nw
+--       h = figFHeight fdat / nh
+--       from = Frame (Point 0 0) (Point 1 1)
+--       to = frameFromFigData fdat
+--   forM_ d' (pixel palette w h vmin vmax . toFigFrame from to) 
 
 -- | `heatmap'` renders one SVG pixel for every `LabeledPoint` supplied as input. The `LabeledPoint`s must be bounded by the `Frame`.
-heatmap'
-  :: (Foldable f, Functor f, Show a, RealFrac a, RealFrac t) =>
-     FigureData a         -- ^ Figure data
-     -> [C.Colour Double] -- ^ Colour palette
-     -> Frame a           -- ^ Frame containing the data
-     -> a                 -- ^ Number of points along x axis
-     -> a                 -- ^ " y axis
-     -> f (LabeledPoint t a) -- ^ Data
-     -> Svg
-heatmap' fdat palette from nw nh lp = do
-  let
-    w = figFWidth fdat / nw
-    h = figFHeight fdat / nh
-    to = frameFromFigData fdat
-    (vmin, vmax) = (minimum &&& maximum) (_lplabel <$> lp)
-  forM_ lp (pixel' palette w h vmin vmax . moveLabeledPointBwFrames from to False False)
+-- heatmap'
+--   :: (Foldable f, Functor f, Show a, RealFrac a, RealFrac t) =>
+--      FigureData a         -- ^ Figure data
+--      -> [C.Colour Double] -- ^ Colour palette
+--      -> Frame a           -- ^ Frame containing the data
+--      -> a                 -- ^ Number of points along x axis
+--      -> a                 -- ^ " y axis
+--      -> f (LabeledPoint t a) -- ^ Data
+--      -> Svg
+-- heatmap' fdat palette from nw nh lp = do
+--   let
+--     w = figFWidth fdat / nw
+--     h = figFHeight fdat / nh
+--     to = frameFromFigData fdat
+--     (vmin, vmax) = (minimum &&& maximum) (_lplabel <$> lp)
+--   forM_ lp (pixel' palette w h vmin vmax . moveLabeledPointBwFrames from to False False)
 
   
 
 
-toFigFrame
-  :: Fractional a =>
-     Frame a -> Frame a -> LabeledPoint l Rational -> LabeledPoint l a
-toFigFrame from to = moveLabeledPointBwFrames from to False False . fromRationalLP
+-- toFigFrame
+--   :: Fractional a =>
+--      Frame a -> Frame a -> LabeledPoint l Rational -> LabeledPoint l a
+-- toFigFrame from to = moveLabeledPointBwFrames from to False False . fromRationalLP
+
+
 
 fromRationalLP :: Fractional a => LabeledPoint l Rational -> LabeledPoint l a
 fromRationalLP (LabeledPoint (Point x y) l) = LabeledPoint (Point (fromRational x) (fromRational y)) l

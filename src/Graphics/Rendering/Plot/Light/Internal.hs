@@ -4,7 +4,9 @@
 module Graphics.Rendering.Plot.Light.Internal
   (
   -- * Frame
-    Frame(..), mkFrame, unitFrame, mkFrameOrigin, frameToFrame, frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, frameToAffine, fromToStretchRatios, 
+    Frame(..), mkFrame, unitFrame, mkFrameOrigin,
+    -- frameToFrame,
+    frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, frameToAffine, fromToStretchRatios, 
     -- * FigureData
     FigureData(..), figFWidth, figFHeight, figureDataDefault
     -- * Point
@@ -12,7 +14,8 @@ module Graphics.Rendering.Plot.Light.Internal
     -- * LabeledPoint
   , LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel, Axis(..), axes, meshGrid, subdivSegment,
     -- * SVG elements
-    svgHeader, svgHeader', toPlot,
+    svgHeader, svgHeader',
+    -- toPlot,
     -- ** Rectangle/square
     rect, rectCentered, rectCenteredMidpointBase, squareCentered,
     -- ** Circle
@@ -33,7 +36,11 @@ module Graphics.Rendering.Plot.Light.Internal
     -- ** R^2 -> R^2 Matrices
   , Mat2(..), DiagMat2(..), diagMat2
     -- ** Typeclasses
-  , AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), movePoint, moveLabeledPointV2, moveLabeledPointBwFrames, translateSvg, scaleSvg, toBottomLeftSvgOrigin, toSvgFrame, toSvgFrameLP, toFloat, wholeDecimal
+  , AdditiveGroup(..), VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..), movePoint, moveLabeledPointV2,
+    -- moveLabeledPointBwFrames,
+    translateSvg, scaleSvg, toBottomLeftSvgOrigin,
+    -- toSvgFrame, toSvgFrameLP,
+    toFloat, wholeDecimal
   -- * Colours
   , blendTwo, palette
     -- ** Col
@@ -344,9 +351,9 @@ test0 =
 
 
 -- | Rectangles based on the inner and outer frames of the drawable canvas
--- rectsFigData :: (Num a, Num a1) =>
---                 FigureData a1
---              -> (Shape a1 (Point a), Shape a1 (Point a1))
+rectsFigData
+  :: Fractional a =>
+     FigureData a -> (Shape a (Point a), Shape a (Point a))
 rectsFigData fd = (rOut, rIn)
   where
     col = shapeColNoFill C.black 1 1
@@ -764,41 +771,41 @@ axes fdat (Frame (Point xmi ymi) (Point xma yma)) sw col nx ny = do
 
 
 
--- | `toPlot` performs a number of related operations:
---
--- * Maps the dataset to the figure frame
--- 
--- * Renders the X, Y axes
---
--- * Renders the transformed dataset onto the newly created plot canvas
-toPlot :: (Functor t, Foldable t, Show a, RealFrac a) =>
-          FigureData a     
-       -> (l -> T.Text)  -- ^ X tick label
-       -> (l -> T.Text)  -- ^ Y tick label
-       -> a   -- ^ X label rotation angle
-       -> a -- ^ Y label rotation angle
-       -> a -- ^ Stroke width
-       -> C.Colour Double -- ^ Stroke colour
-       -> Maybe (t (LabeledPoint l a))  -- ^ X axis labels
-       -> Maybe (t (LabeledPoint l a))  -- ^ Y axis labels
-       -> (t (LabeledPoint l a) -> Svg)  -- ^ Data rendering function
-       -> t (LabeledPoint l a) -- ^ Data
-       -> Svg 
-toPlot fd flabelx flabely rotx roty sw col1 tickxe tickye plotf dat = do
-  axis oSvg X (width to) sw col1 0.05 Continuous fontsize rotx TAEnd flabelx (V2 (-10) 0) tickx
-  axis oSvg Y (negate $ height to) sw col1 0.05 Continuous fontsize roty TAEnd flabely (V2 (-10) 0) ticky
-  plotf dat'
-  where
-    fontsize = figLabelFontSize fd
-    from = frameFromPoints $ _lp <$> dat
-    to = frameFromFigData fd
-    datf = toSvgFrameLP from to False -- data mapping function    
-    dat' = datf <$> dat
-    tickDefault ti d = case ti of Just t -> datf <$> t
-                                  Nothing -> d
-    tickx = tickDefault tickxe dat'
-    ticky = tickDefault tickye dat'
-    oSvg = Point (xmin to) (ymax to)
+-- -- | `toPlot` performs a number of related operations:
+-- --
+-- -- * Maps the dataset to the figure frame
+-- -- 
+-- -- * Renders the X, Y axes
+-- --
+-- -- * Renders the transformed dataset onto the newly created plot canvas
+-- toPlot :: (Functor t, Foldable t, Show a, RealFrac a) =>
+--           FigureData a     
+--        -> (l -> T.Text)  -- ^ X tick label
+--        -> (l -> T.Text)  -- ^ Y tick label
+--        -> a   -- ^ X label rotation angle
+--        -> a -- ^ Y label rotation angle
+--        -> a -- ^ Stroke width
+--        -> C.Colour Double -- ^ Stroke colour
+--        -> Maybe (t (LabeledPoint l a))  -- ^ X axis labels
+--        -> Maybe (t (LabeledPoint l a))  -- ^ Y axis labels
+--        -> (t (LabeledPoint l a) -> Svg)  -- ^ Data rendering function
+--        -> t (LabeledPoint l a) -- ^ Data
+--        -> Svg 
+-- toPlot fd flabelx flabely rotx roty sw col1 tickxe tickye plotf dat = do
+--   axis oSvg X (width to) sw col1 0.05 Continuous fontsize rotx TAEnd flabelx (V2 (-10) 0) tickx
+--   axis oSvg Y (negate $ height to) sw col1 0.05 Continuous fontsize roty TAEnd flabely (V2 (-10) 0) ticky
+--   plotf dat'
+--   where
+--     fontsize = figLabelFontSize fd
+--     from = frameFromPoints $ _lp <$> dat
+--     to = frameFromFigData fd
+--     datf = toSvgFrameLP from to False -- data mapping function    
+--     dat' = datf <$> dat
+--     tickDefault ti d = case ti of Just t -> datf <$> t
+--                                   Nothing -> d
+--     tickx = tickDefault tickxe dat'
+--     ticky = tickDefault tickye dat'
+--     oSvg = Point (xmin to) (ymax to)
 
 
 frameFromFigData :: Num a => FigureData a -> Frame a
@@ -1002,22 +1009,24 @@ toBottomLeftSvgOrigin fdat svg = S.g ! SA.transform (S.translate (real 0) (real 
 
 
 
--- | Move point to the SVG frame of reference (for which the origing is a the top-left corner of the screen)
-toSvgFrame ::
-  Fractional a =>
-     Frame a  -- ^ Initial frame
-  -> Frame a  -- ^ Final frame
-  -> Bool     -- ^ Flip L-R in [0,1] x [0,1]
-  -> Point a  -- ^ Point in the initial frame
-  -> Point a
-toSvgFrame from to fliplr p = pointFromV2 v' where
-  v' = frameToFrame from to fliplr True (v2fromPoint p)
+-- -- | Move point to the SVG frame of reference (for which the origing is a the top-left corner of the screen)
+-- toSvgFrame ::
+--   Fractional a =>
+--      Frame a  -- ^ Initial frame
+--   -> Frame a  -- ^ Final frame
+--   -> Bool     -- ^ Flip L-R in [0,1] x [0,1]
+--   -> Point a  -- ^ Point in the initial frame
+--   -> Point a
+-- toSvgFrame from to fliplr p = pointFromV2 v' where
+--   v' = frameToFrame from to fliplr True (v2fromPoint p)
 
 
--- | Move LabeledPoint to the SVG frame of reference (uses `toSvgFrame` ) 
-toSvgFrameLP ::
-  Fractional a => Frame a -> Frame a -> Bool -> LabeledPoint l a -> LabeledPoint l a
-toSvgFrameLP from to fliplr (LabeledPoint p lab) = LabeledPoint (toSvgFrame from to fliplr p) lab
+-- -- | Move LabeledPoint to the SVG frame of reference (uses `toSvgFrame` ) 
+-- toSvgFrameLP ::
+--   Fractional a => Frame a -> Frame a -> Bool -> LabeledPoint l a -> LabeledPoint l a
+-- toSvgFrameLP from to fliplr (LabeledPoint p lab) = LabeledPoint (toSvgFrame from to fliplr p) lab
+
+
 
 
 -- withToSvgFrame figdata dat = datf

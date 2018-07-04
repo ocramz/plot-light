@@ -45,47 +45,50 @@ import qualified Data.Colour.Names as C
 -- tsAxis fd sw colAxis colData rot plabx plaby ps =
 --   toPlot fd T.pack T.pack rot 0 sw colAxis plabx plaby fplot ps where
 --     fplot lps = polyline  sw Continuous Round colData (_lp <$> lps)
+
+
+
   
-tsAxis
-  :: (Functor t, Foldable t, Show a, RealFrac a) =>
-     FigureData a
-     -> (l -> a)
-     -> (l -> a)
-     -> (l -> a)
-     -> (l -> a)
-     -> a
-     -> C.Colour Double
-     -> a
-     -> Maybe (t (LabeledPoint l a))
-     -> Maybe (t (LabeledPoint l a))
-     -> t (LabeledPoint l a)
-     -> Svg
-tsAxis fd fboxmin fboxmax fmin fmax sw colAxis rot plabx plaby ps =
-  toPlot fd baz baz rot 0 sw colAxis plabx plaby fplot ps where
-    from = frameFromPoints $ _lp <$> ps
-    to = frameFromFigData fd
-    fdat = frameToFrameValue from to
-    baz = const (T.pack "")
-    fplot lps =
-      forM_ lps (candlestick (>) fboxmin' fboxmax' fmin' fmax' 5 1 colUp colDown colAxis)
-    colUp = shapeColBoth C.green colAxis 1 sw
-    colDown = shapeColBoth C.red colAxis 1 sw
-    fboxmin' = fdat . fboxmin
-    fboxmax' = fdat . fboxmax
-    fmin' = fdat . fmin
-    fmax' = fdat . fmax
+-- tsAxis
+--   :: (Functor t, Foldable t, Show a, RealFrac a) =>
+--      FigureData a
+--      -> (l -> a)
+--      -> (l -> a)
+--      -> (l -> a)
+--      -> (l -> a)
+--      -> a
+--      -> C.Colour Double
+--      -> a
+--      -> Maybe (t (LabeledPoint l a))
+--      -> Maybe (t (LabeledPoint l a))
+--      -> t (LabeledPoint l a)
+--      -> Svg
+-- tsAxis fd fboxmin fboxmax fmin fmax sw colAxis rot plabx plaby ps =
+--   toPlot fd baz baz rot 0 sw colAxis plabx plaby fplot ps where
+--     from = frameFromPoints $ _lp <$> ps
+--     to = frameFromFigData fd
+--     fdat = frameToFrameValue from to
+--     baz = const (T.pack "")
+--     fplot lps =
+--       forM_ lps (candlestick (>) fboxmin' fboxmax' fmin' fmax' 5 1 colUp colDown colAxis)
+--     colUp = shapeColBoth C.green colAxis 1 sw
+--     colDown = shapeColBoth C.red colAxis 1 sw
+--     fboxmin' = fdat . fboxmin
+--     fboxmax' = fdat . fboxmax
+--     fmin' = fdat . fmin
+--     fmax' = fdat . fmax
 
 
 
-tsAxis' figdata fmin fmax col lps =
-  toPlot figdata l0 l0 (-45) 0 5 C.black Nothing Nothing fplot lps where
-  l0 = const (T.pack "")
-  from = frameFromPoints $ _lp <$> lps
-  to = frameFromFigData figdata
-  fdat = frameToFrameValue from to
-  fplot = filledBand col 0.4 fmax' fmin'
-  fmax' = fdat . fmax
-  fmin' = fdat . fmin
+-- tsAxis' figdata fmin fmax col lps =
+--   toPlot figdata l0 l0 (-45) 0 5 C.black Nothing Nothing fplot lps where
+--   l0 = const (T.pack "")
+--   from = frameFromPoints $ _lp <$> lps
+--   to = frameFromFigData figdata
+--   fdat = frameToFrameValue from to
+--   fplot = filledBand col 0.4 fmax' fmin'
+--   fmax' = fdat . fmax
+--   fmin' = fdat . fmin
 
 
 

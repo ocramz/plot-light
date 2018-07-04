@@ -27,9 +27,12 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** Vector construction
   v2fromEndpoints, v2fromPoint,
   -- ** Operations on points
-  movePoint, moveLabeledPoint, moveLabeledPointV2, moveLabeledPointBwFrames, (-.), pointRange, 
+  movePoint, moveLabeledPoint, moveLabeledPointV2,
+  -- moveLabeledPointBwFrames,
+  (-.), pointRange, 
   -- ** Operations on vectors
-  frameToFrame, frameToFrameP, frameToFrameValue, fromFrame, toFrame,
+  -- frameToFrame,
+  frameToFrameP, frameToFrameValue, fromFrame, toFrame,
   -- ** Typeclasses
   AdditiveGroup(..), negateAG, VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..),
   -- ** Utilities
@@ -565,20 +568,20 @@ idFrame = uncurry affineToFrame . frameToAffine
 -- 3. map `v01'` onto the target frame `F2`. 
 --
 -- NB: we do not check that `v` is actually contained within the `F1`, nor that `v01'` is still contained within [0,1] x [0, 1]. This has to be supplied correctly by the user.
-frameToFrame :: Fractional a =>
-                      Frame a  -- ^ Initial frame
-                   -> Frame a  -- ^ Final frame
-                   -> Bool        -- ^ Flip L-R in [0,1] x [0,1]
-                   -> Bool     -- ^ Flip U-D in [0,1] x [0,1]
-                   -> V2 a     -- ^ Initial vector
-                   -> V2 a
-frameToFrame from to fliplr flipud v = toFrame to v01'
-  where
-    v01 = fromFrame from v
-    v01' | fliplr && flipud = flipLR01 (flipUD01 v01)
-         | fliplr = flipLR01 v01
-         | flipud = flipUD01 v01
-         | otherwise = v01
+-- frameToFrame :: Fractional a =>
+--                       Frame a  -- ^ Initial frame
+--                    -> Frame a  -- ^ Final frame
+--                    -> Bool        -- ^ Flip L-R in [0,1] x [0,1]
+--                    -> Bool     -- ^ Flip U-D in [0,1] x [0,1]
+--                    -> V2 a     -- ^ Initial vector
+--                    -> V2 a
+-- frameToFrame from to fliplr flipud v = toFrame to v01'
+--   where
+--     v01 = fromFrame from v
+--     v01' | fliplr && flipud = flipLR01 (flipUD01 v01)
+--          | fliplr = flipLR01 v01
+--          | flipud = flipUD01 v01
+--          | otherwise = v01
 
 
 frameToFrameP :: Fractional a => Frame a -> Frame a -> Point a -> Point a
@@ -606,19 +609,19 @@ frameToFrameValue from to x = (x01 * rto) + ymin to where
 
 
 
-moveLabeledPointBwFrames ::
-  Fractional a =>
-     Frame a          -- ^ Initial frame
-  -> Frame a          -- ^ Final frame
-  -> Bool             -- ^ Flip L-R in [0,1] x [0,1]
-  -> Bool             -- ^ Flip U-D in [0,1] x [0,1]
-  -> LabeledPoint l a -- ^ Initial `LabeledPoint`
-  -> LabeledPoint l a
-moveLabeledPointBwFrames from to fliplr flipud lp = LabeledPoint p' (_lplabel lp)
-  where
-    vlp = v2fromPoint $ _lp lp -- vector associated with starting point
-    vlp' = frameToFrame from to fliplr flipud vlp -- vector associated w new point
-    p' = pointFromV2 vlp'
+-- moveLabeledPointBwFrames ::
+--   Fractional a =>
+--      Frame a          -- ^ Initial frame
+--   -> Frame a          -- ^ Final frame
+--   -> Bool             -- ^ Flip L-R in [0,1] x [0,1]
+--   -> Bool             -- ^ Flip U-D in [0,1] x [0,1]
+--   -> LabeledPoint l a -- ^ Initial `LabeledPoint`
+--   -> LabeledPoint l a
+-- moveLabeledPointBwFrames from to fliplr flipud lp = LabeledPoint p' (_lplabel lp)
+--   where
+--     vlp = v2fromPoint $ _lp lp -- vector associated with starting point
+--     vlp' = frameToFrame from to fliplr flipud vlp -- vector associated w new point
+--     p' = pointFromV2 vlp'
 
 
 

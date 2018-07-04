@@ -146,7 +146,8 @@ module Graphics.Rendering.Plot.Light (
   -- ** 1D plot
   plotFun, Plot1DOptions(..),
   -- ** Heatmap
-  heatmap, heatmap', plotFun2, colourBar,
+  -- -- -- heatmap, heatmap',
+  plotFun2, colourBar,
   -- ** Scatter
   scatter, scatterLP, scatterLPBar, ScatterPointData(..), GlyphShape_(..),
   -- ** Histogram
@@ -168,7 +169,9 @@ module Graphics.Rendering.Plot.Light (
   -- ** Composite plot elements
   filledBand, candlestick, 
   -- ** Plot utilities
-  axes, toPlot, FigureData(..),
+  axes,
+  -- -- -- toPlot,
+  FigureData(..),
   -- ** Element attributes
   LineStroke_(..), LegendPosition_(..),
   -- ** Operations on frames
@@ -180,7 +183,7 @@ module Graphics.Rendering.Plot.Light (
   -- ** TimeSeries utilities
   fromTick, toTick,
   -- ** SVG utilities
-  svgHeader, translateSvg, scaleSvg, toSvgFrame, toBottomLeftSvgOrigin, toSvgFrameLP,
+  svgHeader, translateSvg, scaleSvg, toBottomLeftSvgOrigin, 
   -- * Geometric types
   -- ** Frame
   Frame(..),
