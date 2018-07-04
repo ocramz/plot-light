@@ -29,7 +29,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** Operations on points
   movePoint, moveLabeledPoint, moveLabeledPointV2, moveLabeledPointBwFrames, (-.), pointRange,
   -- ** Operations on vectors
-  frameToFrame, frameToFrameValue, fromFrame, toFrame,
+  frameToFrame, frameToFrameP, frameToFrameValue, fromFrame, toFrame,
   -- ** Typeclasses
   AdditiveGroup(..), negateAG, VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..),
   -- ** Utilities
@@ -580,7 +580,12 @@ frameToFrame from to fliplr flipud v = toFrame to v01'
          | flipud = flipUD01 v01
          | otherwise = v01
 
-         
+
+frameToFrameP :: Fractional a => Frame a -> Frame a -> Point a -> Point a
+frameToFrameP fromf tof = pointFromV2 . toFrame tof . flipUD . fromFrame fromf . v2fromPoint
+  where
+    flipUD :: Num a => V2 a -> V2 a
+    flipUD (V2 vx vy) = V2 vx (1 - vy)         
 
 
 flipLR01, flipUD01 :: Num a => V2 a -> V2 a
