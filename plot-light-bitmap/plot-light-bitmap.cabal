@@ -5,10 +5,10 @@ version:             0.1.0.0
 homepage:            https://github.com/ocramz/plot-light-bitmap
 license:             BSD3
 license-file:        LICENSE
-author:              Author name here
-maintainer:          example@example.com
-copyright:           2018 Author name here
-category:            Acme
+author:              Marco Zocca
+maintainer:          zocca.marco gmail
+copyright:           2018 Marco Zocca
+category:            Graphics
 build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10

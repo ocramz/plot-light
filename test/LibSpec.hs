@@ -30,10 +30,7 @@ spec = do
     it "Frame : frameToFrame works" $ do
       let from = Frame (Point 5 1) (Point 8 3) :: Frame Double
           to = Frame (Point 1 2) (Point 4 4)
-          v1 = v2fromPoint $ Point 7 2
-          v2 = frameToFrame from to False False v1
-          p2 = movePoint v2 origin
-      -- p2 `shouldBe` Point 3 3
+          p2 = frameToFrameP from to (Point 7 2)
       norm2 (p2 -. Point 3 3) ~= 0 `shouldBe` True
       
 
@@ -44,7 +41,7 @@ ps = [Point 12312 0.2, Point 13420.2 0.3, Point 14567 0.14]
 fin = frameFromPoints ps
 fout = mkFrame (Point 0 0) (Point 1 1)
 
-vf = frameToFrame fin fout False False
+-- vf = frameToFrame fin fout False False
 
 v1 = V2 13555.2 0.25
 

@@ -379,10 +379,9 @@ rectsFigData fd = (rOut, rIn)
   where
     col = shapeColNoFill C.black 1 1
     frIn = frameFromFigData fd
-    -- pIn = _fpmin frIn
     pc = midPoint (_fpmin frIn) (_fpmax frIn)
-    rIn = RectCenteredSh (width frIn) (height frIn) col pc -- pIn
-    rOut = RectCenteredSh (figWidth fd) (figHeight fd) col pc -- (Point 0 0)
+    rIn = RectCenteredSh (width frIn) (height frIn) col pc 
+    rOut = RectCenteredSh (figWidth fd) (figHeight fd) col pc
 
 
 
