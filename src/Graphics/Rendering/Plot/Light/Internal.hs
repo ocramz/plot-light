@@ -68,7 +68,9 @@ import Data.Scientific (Scientific, toRealFloat)
 -- import Data.Foldable
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
+
 -- import qualified Data.Vector as V
+import qualified Data.Vector.Unboxed as VU
 
 import Text.Blaze.Internal (Attributable(..))
 import Text.Blaze.Svg
@@ -80,6 +82,10 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 import qualified Data.Colour as C
 import qualified Data.Colour.Names as C
 import qualified Data.Colour.SRGB as C
+
+import qualified Data.Histogram as H (Histogram(..), Bin(..), bins, asList)
+import qualified Data.Histogram.Bin as H (BinD(..), binD, BinI(..), binI, binSize, UniformBin(..))
+import qualified Data.Histogram.Fill as H (mkSimple, mkWeighted, fillBuilder, HBuilder(..))
 
 import GHC.Real
 import GHC.Generics hiding (from, to)
@@ -224,27 +230,6 @@ data SVG = SVG deriving (Show)
 
 
 
--- | Re-express the coordinates of a Point wrt the Y-complementary reference system
-flipPointRef :: Num a => FigureData a -> Point a -> Point a
-flipPointRef fdat p = setPointY (hfig - _py p) p
-  where
-    hfig = figHeight fdat
-
--- | Re-express the coordinates of a Frame wrt the Y-complementary reference system after recomputing the Frame extrema.
--- flipFrameRef :: Num a => FigureData a -> Frame a -> Frame a
--- flipFrameRef fdat = both (flipPointRef fdat) . switchUdFrame
---   where
---     both f (Frame p1 p2) = Frame (f p1) (f p2)    
-
-
--- | The coordinate vectors associated with the displacement between two points
---
--- invariant : p1 -. p2 == vx <> vy where (vx, vy) = xyDispl p1 p2
-xyDispl :: Num a => Point a -> Point a -> (V2 a, V2 a)
-xyDispl p1 p2 = (v1 .* e1, v2 .* e2) where
-  v = p1 -. p2
-  v1 = v <.> e1
-  v2 = v <.> e2
 
 
 
@@ -263,20 +248,26 @@ data Glyph_ =
 --   deriving (Eq, Show)
 
 
-data AxisOpts a =
-    AOLinear {aoliMin :: a, aoliMax :: a, aoliN :: Int}
-    | AOLog -- ...
+data AxisRange a = AxisRange {aoMin :: a, aoMax :: a}
   deriving (Eq, Show)
-
 
 data Plot2d a =
-  Plot2d (AxisOpts a) (AxisOpts a)
+  Plot2d (Frame a) (AxisRange a) (AxisRange a)
+  deriving (Eq, Show)
+
+
+
+data Plot =
+    LinePlot
+  | Histogram
   deriving (Eq, Show)
 
 
 
 
--- | plotting
+-- * PLOTTING
+
+-- | Line plot
 
 mkPolyLinePlot :: Num a =>
                   LineOptions p
@@ -288,17 +279,38 @@ mkPolyLinePlot lo slj dats = PolyLineSh lo slj ps where
   ns = fromIntegral <$> [0 .. n-1]
   ps = zipWith Point ns dats
 
+              
 
--- mkHistogram col dats
 
-data Row t a = Row {
-    rMax :: t a -> a
-  , rMin :: t a -> a
-  , rSum :: t a -> a
-  , rLength :: t a -> Int
-                   }
+-- | Histogram
 
-summaries (Row ma mi su le) dat = (ma dat, mi dat, su dat, le dat)               
+-- | Normalized histogram counts (i.e. uniform density approximation) 
+densityD :: (Fractional b, VU.Unbox b, Foldable v) =>
+            Int
+         -> v Double
+         -> [(Double, b)]
+densityD n = density . histo n
+
+density :: (Fractional b, VU.Unbox b, H.Bin bin) =>
+           H.Histogram bin b
+        -> [(H.BinValue bin, b)] -- ^ (Bin centers, Normalized bin counts)
+density hist = zip binCenters ((/ nelems) `map` binCounts)where
+  (binCenters, binCounts) = unzip $ H.asList hist
+  nelems = sum binCounts
+
+
+-- | Uniform, un-weighted bins
+histo :: (Foldable v, VU.Unbox a, Num a) =>
+         Int     -- ^ Number of bins
+      -> v Double -- ^ Data
+      -> H.Histogram H.BinD a
+histo n v = H.fillBuilder buildr v where
+  mi = minimum v
+  ma = maximum v + 1
+  bins = H.binD mi n ma
+  buildr = H.mkSimple bins
+
+  
 
 
 

@@ -1,3 +1,7 @@
+	0.5
+
+	Re-wrote user interface in terms of the shape DSL
+
 	0.4.4
 
 	Introduced an EDSL for manipulating and rendering geometric shapes.
