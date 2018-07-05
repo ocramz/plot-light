@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings, DeriveFunctor, DeriveGeneric #-}
 {-# language TypeFamilies, FlexibleContexts, ConstrainedClassMethods #-}
 {-# language MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances #-}
+{-# language TypeApplications #-}
 module Graphics.Rendering.Plot.Light.Internal
   (
   -- * Frame
@@ -59,7 +60,7 @@ import qualified Data.Foldable as F (toList)
 
 import Data.List
 import Data.Functor.Identity
--- import Control.Arrow (Arrow(..), (&&&), (***))
+-- import Control.Arrow (Arrow(..), (&&&), (***), first, second)
 import Control.Monad (forM, forM_)
 import Control.Monad.State
 -- import Data.Semigroup (Min(..), Max(..))
@@ -263,6 +264,70 @@ data Plot =
   deriving (Eq, Show)
 
 
+-- | Measurable typeclass, for things which have a spatial size
+
+class Measurable m where
+  type MeasTy m :: *
+  type MeasP m :: *
+  measure :: m -> MeasTy m
+  anchor :: m -> Point (MeasP m)
+  mkMeasure :: MeasTy m -> Point (MeasP m) -> m
+
+-- -- Modify a 'Measurable'
+-- modifyMeasure :: (Measurable mi, Measurable mo) => (MeasTy mi -> MeasTy mo) -> mi -> mo
+-- modifyMeasure f =  mkMeasure . f . measure
+
+rescale :: (Measurable m) => (MeasTy m -> MeasTy m) -> m -> m
+rescale f m = mkMeasure (f meas) p where
+  meas = measure m
+  p = anchor m
+
+
+data Rect a = Rect { rectW :: a, rectH :: a, rectAnchor :: Point a} deriving (Eq, Show)
+mkRect = Rect
+
+instance Measurable (Rect a) where
+  type MeasTy (Rect a) = (a, a)
+  type MeasP (Rect a) = a
+  measure r = (rectW r, rectH r)
+  anchor = rectAnchor
+  mkMeasure (w, h) p = mkRect w h p
+
+-- instance Num a => Measurable (Frame a) where
+--   type MeasTy (Frame a) = (a, a)
+--   measure fr = (width fr, height fr)
+    
+
+--
+
+class Anchored a where
+  type AnchorTy a :: *
+  getAnchor :: a -> Point (AnchorTy a)
+  mkAnchored :: Point (AnchorTy a) -> a 
+
+  
+
+-- | Framed typeclass, for things which can be enveloped by a Frame
+
+class Framed o where
+  type FrTy o :: *
+  getFrame :: o -> Frame (FrTy o)
+
+instance Framed (Point a) where
+  type FrTy (Point a) = a
+  getFrame p = Frame p p
+
+instance Framed (Frame a) where
+  type FrTy (Frame a) = a
+  getFrame = id
+
+instance (bv ~ H.BinValue bin, VU.Unbox bv, H.Bin bin, Ord bv, Num bv) => Framed (H.Histogram bin bv) where
+  type FrTy (H.Histogram bin bv) = bv 
+  getFrame = histGeometry
+
+
+
+
 
 
 -- * PLOTTING
@@ -286,6 +351,24 @@ mkPolyLinePlot lo slj dats = PolyLineSh lo slj ps where
 
 -- hist :: [(a, b)] -> Shape b (Point a)  -- or something similar
 
+
+-- | Returns the 'Frame' associated with a 'Histogram' along with the bins as 'LabeledPoint's (where the point coordinates lie on the X axis and the label contains the histogram count)
+-- histGeometry :: (bv ~ H.BinValue bin, VU.Unbox bv, H.Bin bin, Ord bv, Num bv) =>
+--                 H.Histogram bin bv
+--              -> (Frame bv, [LabeledPoint bv bv])
+histGeometry :: (bv ~ H.BinValue bin, VU.Unbox bv, H.Bin bin, Ord bv, Num bv) =>
+                H.Histogram bin bv
+             -> Frame bv
+histGeometry hist = frm where
+  hl = H.asList hist
+  -- hlps = map (\(x, bc) -> let p = Point x 0 in mkLabeledPoint p bc) hl
+  (binCenters, binCounts) = unzip hl
+  maxCount = maximum binCounts
+  x1 = head binCenters
+  x2 = last binCenters
+  p1 = Point x1 0
+  p2 = Point x2 maxCount
+  frm = mkFrame p1 p2
 
 
 -- | Normalized histogram counts (i.e. uniform density approximation) 

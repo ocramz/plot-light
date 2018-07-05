@@ -46,20 +46,7 @@ main = error "undefined"
 --   T.writeFile fnameOut $ T.pack $ renderSvg svg_t
 
 
--- | Returns the 'Frame' associated with a 'Histogram' along with the bins as 'LabeledPoint's (where the point coordinates lie on the X axis and the label contains the histogram count)
-histGeometry :: (bv ~ H.BinValue bin, VU.Unbox bv, H.Bin bin, Ord bv, Num bv) =>
-                H.Histogram bin bv
-             -> (Frame bv, [LabeledPoint bv bv])
-histGeometry hist = (frm, hlps) where
-  hl = H.asList hist
-  hlps = map (\(x, bc) -> let p = Point x 0 in mkLabeledPoint p bc) hl
-  (binCenters, binCounts) = unzip hl
-  maxCount = maximum binCounts
-  x1 = head binCenters
-  x2 = last binCenters
-  p1 = Point x1 0
-  p2 = Point x2 maxCount
-  frm = mkFrame p1 p2
+
 
 
 -- histogramD' :: Foldable v =>
@@ -101,6 +88,9 @@ histGeometry hist = (frm, hlps) where
 --   (binCenters, binCounts) = unzip $ H.asList his
 --   binW = H.binSize $ H.bins his  -- bin width
 --   hMult = 10 -- height multiplication coeff. (hack)
+
+
+
 
 
 

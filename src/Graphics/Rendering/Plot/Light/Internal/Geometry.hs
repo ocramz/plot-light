@@ -54,6 +54,11 @@ import Data.Semigroup (Semigroup(..))
 data Point a = Point { _px :: a,
                        _py :: a } deriving (Eq, Generic)
 
+-- 'Point' s are really 'V2's
+
+newtype P a = P (V2 a) deriving (Eq, Generic)
+
+
 instance Ord a => Ord (Point a) where
   (Point x1 y1) <= (Point x2 y2) = x1 <= x2 && y1 <= y2
 
