@@ -50,31 +50,36 @@ import Data.Scientific
 import Data.Semigroup (Semigroup(..))
 
 
+-- -- | A `Point` object defines a point in the plane
+-- data Point a = Point { _px :: a,
+--                        _py :: a } deriving (Eq, Generic)
+
+
+
 -- | A `Point` object defines a point in the plane
-data Point a = Point { _px :: a,
-                       _py :: a } deriving (Eq, Generic)
+--
+-- NB 'Point' s are really 'V2's
+newtype Point a = Point { getPoint :: V2 a } deriving (Eq, Generic)
 
--- 'Point' s are really 'V2's
-
-newtype P a = P (V2 a) deriving (Eq, Generic)
-
+_px (Point (V2 x _)) = x
+_py (Point (V2 _ y)) = y
 
 instance Ord a => Ord (Point a) where
-  (Point x1 y1) <= (Point x2 y2) = x1 <= x2 && y1 <= y2
+  (Point (V2 x1 y1)) <= (Point (V2 x2 y2)) = x1 <= x2 && y1 <= y2
 
 instance Show a => Show (Point a) where
-  show (Point x y) = "(P " ++ show x ++ ", " ++ show y ++ ")"
+  show p = "(P " ++ show (_px p) ++ ", " ++ show (_py p) ++ ")"
 
 mkPoint :: a -> a -> Point a
-mkPoint = Point
+mkPoint px py = Point (V2 px py)
 
 -- | A binary operation on the components of two 'Point's
 lift2Point :: (a -> b -> c) -> Point a -> Point b -> Point c
-lift2Point f (Point a b) (Point c d) = Point (f a c) (f b d)
+lift2Point f p1 p2 = mkPoint (f (_px p1) (_px p2)) (f (_py p1) (_py p2))
 
 -- | A unary operation on the components of a 'Point'
 lift1Point :: (a -> a -> b) -> Point a -> b
-lift1Point f (Point x y) = f x y
+lift1Point f p = f (_px p) (_py p)
 
 pointInf, pointSup :: (Ord a) => Point a -> Point a -> Point a
 pointInf = lift2Point min
@@ -90,22 +95,22 @@ centerOfMass ps = movePoint (foldMap v2fromPoint ps) origin
 
 -- | The origin of the axes, point (0, 0)
 origin :: Num a => Point a
-origin = Point 0 0
+origin = mkPoint 0 0
 
 -- | The (1, 1) point
 oneOne :: Num a => Point a
-oneOne = Point 1 1
+oneOne = mkPoint 1 1
 
 -- | Cartesian distance from the origin
 norm2fromOrigin :: Floating a => Point a -> a
-norm2fromOrigin p = norm2 $ p -. origin
+norm2fromOrigin p = norm2 $ getPoint p    -- p -. origin
 
 
 -- | Overwrite either coordinate of a Point, to e.g. project on an axis
 setPointCoord :: Axis -> a -> Point a -> Point a
-setPointCoord axis c (Point x y)
-  | axis == X = Point c y
-  | otherwise = Point x c
+setPointCoord axis c p 
+  | axis == X = mkPoint c (_py p)
+  | otherwise = mkPoint (_px p) c
 
 setPointX, setPointY :: a -> Point a -> Point a
 setPointX = setPointCoord X
@@ -147,7 +152,7 @@ instance (Ord a) => Semigroup (Frame a) where
   (Frame p1min p1max) <> (Frame p2min p2max) = Frame (pointInf p1min p2min) (pointSup p1max p2max)
   
 instance (Ord a, Num a) => Monoid (Frame a) where
-  mempty = Frame (Point 0 0) (Point 0 0)
+  mempty = Frame (mkPoint 0 0) (mkPoint 0 0)
   mappend = (<>)
 
 isPointInFrame :: Ord a => Frame a -> Point a -> Bool
@@ -158,7 +163,7 @@ mkFrame = Frame
 
 -- | Build a frame rooted at the origin (0, 0)
 mkFrameOrigin :: Num a => a -> a -> Frame a
-mkFrameOrigin w h = Frame origin (Point w h)
+mkFrameOrigin w h = Frame origin (mkPoint w h)
 
 -- | The unit square (0, 0) - (1, 1)
 unitFrame :: Num a => Frame a
@@ -181,7 +186,7 @@ fromToStretchRatios frameFrom frameTo = (m2x/m1x, m2y/m1y)
 -- p2 := sup(x,y) P
 frameFromPoints :: (Ord a, Foldable t, Functor t) =>
                          t (Point a) -> Frame a
-frameFromPoints ds = mkFrame (Point mx my) (Point mmx mmy)
+frameFromPoints ds = mkFrame (mkPoint mx my) (mkPoint mmx mmy)
   where
     xcoord = _px <$> ds
     ycoord = _py <$> ds
@@ -278,8 +283,8 @@ interpolateBilinear fr@(Frame p1 p2) f p
 interpolateBilinear' :: Fractional a => Point a -> Point a -> (Point a -> a) -> Point a -> a
 interpolateBilinear' q11@(Point x1 y1) q22@(Point x2 y2) f (Point x y) =
   let
-    q12 = Point x1 y2
-    q21 = Point x2 y1
+    q12 = mkPoint x1 y2
+    q21 = mkPoint x2 y1
     fq11 = f q11
     fq22 = f q22
     fq12 = f q12
@@ -395,10 +400,10 @@ normalize2 :: (InnerProduct v ~ Scalar v, Floating (Scalar v), Hermitian v) =>
 normalize2 v = (1/norm2 v) .* v
 
 
--- | Create a V2 `v` from two endpoints p1, p2. That is `v` can be seen as pointing from `p1` to `p2`
-v2fromEndpoints, (-.) :: Num a => Point a -> Point a -> V2 a
-v2fromEndpoints (Point px py) (Point qx qy) = V2 (qx-px) (qy-py)
-(-.) = v2fromEndpoints
+-- -- | Create a V2 `v` from two endpoints p1, p2. That is `v` can be seen as pointing from `p1` to `p2`
+-- v2fromEndpoints, (-.) :: Num a => Point a -> Point a -> V2 a
+-- v2fromEndpoints p q = V2 (qx-px) (qy-py)
+-- (-.) = v2fromEndpoints
 
 
 
