@@ -284,6 +284,10 @@ mkPolyLinePlot lo slj dats = PolyLineSh lo slj ps where
 
 -- | Histogram
 
+-- hist :: [(a, b)] -> Shape b (Point a)  -- or something similar
+
+
+
 -- | Normalized histogram counts (i.e. uniform density approximation) 
 densityD :: (Fractional b, VU.Unbox b, Foldable v) =>
             Int
