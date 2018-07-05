@@ -1,4 +1,5 @@
 {-# language FlexibleContexts #-}
+{-# language TypeFamilies #-}
 module Graphics.Rendering.Plot.Light.PlotTypes.Histogram where
 
 import Graphics.Rendering.Plot.Light.Internal
@@ -46,10 +47,9 @@ main = error "undefined"
 
 
 -- | Returns the 'Frame' associated with a 'Histogram' along with the bins as 'LabeledPoint's (where the point coordinates lie on the X axis and the label contains the histogram count)
-histGeometry :: (VU.Unbox (H.BinValue bin), H.Bin bin, Ord (H.BinValue bin), Num (H.BinValue bin)) =>
-                H.Histogram bin (H.BinValue bin)
-             -> (Frame (H.BinValue bin),
-                 [LabeledPoint (H.BinValue bin) (H.BinValue bin)])
+histGeometry :: (bv ~ H.BinValue bin, VU.Unbox bv, H.Bin bin, Ord bv, Num bv) =>
+                H.Histogram bin bv
+             -> (Frame bv, [LabeledPoint bv bv])
 histGeometry hist = (frm, hlps) where
   hl = H.asList hist
   hlps = map (\(x, bc) -> let p = Point x 0 in mkLabeledPoint p bc) hl
@@ -102,29 +102,5 @@ histGeometry hist = (frm, hlps) where
 --   binW = H.binSize $ H.bins his  -- bin width
 --   hMult = 10 -- height multiplication coeff. (hack)
 
--- | Normalized histogram counts (i.e. uniform density approximation) 
-densityD :: (Fractional b, VU.Unbox b, Foldable v) =>
-            Int
-         -> v Double
-         -> [(Double, b)]
-densityD n = density . histo n
 
-density :: (Fractional b, VU.Unbox b, H.Bin bin) =>
-           H.Histogram bin b
-        -> [(H.BinValue bin, b)] -- ^ (Bin centers, Normalized bin counts)
-density hist = zip binCenters ((/ nelems) `map` binCounts)where
-  (binCenters, binCounts) = unzip $ H.asList hist
-  nelems = sum binCounts
-
-
--- | Uniform, un-weighted bins
-histo :: (Foldable v, VU.Unbox a, Num a) =>
-         Int     -- ^ Number of bins
-      -> v Double -- ^ Data
-      -> H.Histogram H.BinD a
-histo n v = H.fillBuilder buildr v where
-  mi = minimum v
-  ma = maximum v + 1
-  bins = H.binD mi n ma
-  buildr = H.mkSimple bins 
 

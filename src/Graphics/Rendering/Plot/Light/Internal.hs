@@ -68,7 +68,9 @@ import Data.Scientific (Scientific, toRealFloat)
 -- import Data.Foldable
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
+
 -- import qualified Data.Vector as V
+import qualified Data.Vector.Unboxed as VU
 
 import Text.Blaze.Internal (Attributable(..))
 import Text.Blaze.Svg
@@ -80,6 +82,10 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 import qualified Data.Colour as C
 import qualified Data.Colour.Names as C
 import qualified Data.Colour.SRGB as C
+
+import qualified Data.Histogram as H (Histogram(..), Bin(..), bins, asList)
+import qualified Data.Histogram.Bin as H (BinD(..), binD, BinI(..), binI, binSize, UniformBin(..))
+import qualified Data.Histogram.Fill as H (mkSimple, mkWeighted, fillBuilder, HBuilder(..))
 
 import GHC.Real
 import GHC.Generics hiding (from, to)
@@ -224,78 +230,91 @@ data SVG = SVG deriving (Show)
 
 
 
--- | Re-express the coordinates of a Point wrt the Y-complementary reference system
-flipPointRef :: Num a => FigureData a -> Point a -> Point a
-flipPointRef fdat p = setPointY (hfig - _py p) p
-  where
-    hfig = figHeight fdat
-
--- | Re-express the coordinates of a Frame wrt the Y-complementary reference system after recomputing the Frame extrema.
--- flipFrameRef :: Num a => FigureData a -> Frame a -> Frame a
--- flipFrameRef fdat = both (flipPointRef fdat) . switchUdFrame
---   where
---     both f (Frame p1 p2) = Frame (f p1) (f p2)    
-
-
--- | The coordinate vectors associated with the displacement between two points
---
--- invariant : p1 -. p2 == vx <> vy where (vx, vy) = xyDispl p1 p2
-xyDispl :: Num a => Point a -> Point a -> (V2 a, V2 a)
-xyDispl p1 p2 = (v1 .* e1, v2 .* e2) where
-  v = p1 -. p2
-  v1 = v <.> e1
-  v2 = v <.> e2
 
 
 
 
 
 
--- -- | A DSL for geometrical shapes.
--- -- |
+-- | Some data structs for plotting options
 
--- data Sh p a =
---     RectC (ShapeCol p) a a
---   | Rect (ShapeCol p) a a
---   | SqrC (ShapeCol p) a 
---   | Line (LineOptions p) a a
---   | Circ (ShapeCol p) a a
---   | PolyLine (LineOptions p) StrokeLineJoin_ [a]
---   deriving (Eq, Show, Functor)
 
--- mkShFrame sh = case sh of
---   RectC _ p1 p2 -> mkFrame p1 p2
---   Rect _ p1 p2 -> mkFrame p1 p2
---   SqrC _ p -> mkFrame p p
+data Glyph_ =
+  GlyphPlus | GlyphCross | GlyphCircle | GlyphSquare deriving (Eq, Show)
 
--- mkRect :: (Num a, Ord a) => a -> a -> ShapeCol p -> Point a -> Maybe (Sh p (Point a))
--- mkRect w h col p
---   | w > 0 && h > 0 = Just $ Rect col p p2
---   | otherwise = Nothing where
---       p2 = movePoint (V2 w h) p
+-- data PlotOptions p a =
+--     LinePlot (LineOptions p) StrokeLineJoin_ a
+--   | ScatterPlot Glyph_ (ShapeCol p) a
+--   deriving (Eq, Show)
 
--- mkCirc :: (Num a, Ord a) => a -> ShapeCol p -> Point a -> Maybe (Sh p (Point a))
--- mkCirc r col p
---   | r > 0 = Just $ Circ col p p2
---   | otherwise = Nothing where
---       p2 = movePoint (V2 0 r) p
 
--- mkLine :: Eq a => LineOptions p -> Point a -> Point a -> Maybe (Sh p (Point a))
--- mkLine lo p1 p2 | p1 /= p2 = Just $ Line lo p1 p2
---                 | otherwise = Nothing
+data AxisRange a = AxisRange {aoMin :: a, aoMax :: a}
+  deriving (Eq, Show)
 
--- mkPolyLine :: LineOptions p -> StrokeLineJoin_ -> [Point t] -> Sh p (Point t)
--- mkPolyLine lo slj ps@(Point{} : _) = PolyLine lo slj ps
+data Plot2d a =
+  Plot2d (Frame a) (AxisRange a) (AxisRange a)
+  deriving (Eq, Show)
+
+
+
+data Plot =
+    LinePlot
+  | Histogram
+  deriving (Eq, Show)
 
 
 
 
+-- * PLOTTING
+
+-- | Line plot
+
+mkPolyLinePlot :: Num a =>
+                  LineOptions p
+               -> StrokeLineJoin_
+               -> [a]
+               -> Shape p (Point a)
+mkPolyLinePlot lo slj dats = PolyLineSh lo slj ps where
+  n = length dats
+  ns = fromIntegral <$> [0 .. n-1]
+  ps = zipWith Point ns dats
+
+              
+
+
+-- | Histogram
+
+-- hist :: [(a, b)] -> Shape b (Point a)  -- or something similar
 
 
 
+-- | Normalized histogram counts (i.e. uniform density approximation) 
+densityD :: (Fractional b, VU.Unbox b, Foldable v) =>
+            Int
+         -> v Double
+         -> [(Double, b)]
+densityD n = density . histo n
+
+density :: (Fractional b, VU.Unbox b, H.Bin bin) =>
+           H.Histogram bin b
+        -> [(H.BinValue bin, b)] -- ^ (Bin centers, Normalized bin counts)
+density hist = zip binCenters ((/ nelems) `map` binCounts)where
+  (binCenters, binCounts) = unzip $ H.asList hist
+  nelems = sum binCounts
 
 
+-- | Uniform, un-weighted bins
+histo :: (Foldable v, VU.Unbox a, Num a) =>
+         Int     -- ^ Number of bins
+      -> v Double -- ^ Data
+      -> H.Histogram H.BinD a
+histo n v = H.fillBuilder buildr v where
+  mi = minimum v
+  ma = maximum v + 1
+  bins = H.binD mi n ma
+  buildr = H.mkSimple bins
 
+  
 
 
 
@@ -319,11 +338,6 @@ data Shape p a =
 
 -- -- FilledPolyLine
 -- -- ...
-
--- -- example smart constructor
--- mkRC :: p -> p -> ShapeCol p -> Point t -> Shape p (Point t)
--- mkRC w h col p@Point{} = RectCenteredSh w h col p 
-
 
 
 
@@ -386,21 +400,22 @@ render0 to shs = renderShape `mapM_` shs' where
 
 
 -- | NB : We must only render a 'Shape' that's in the SVG reference system
+--
+-- The vertical correction for corner-anchored shapes is applied at this stage
 renderShape :: (Show a, RealFrac a) => Shape a (Point a) -> Svg
 renderShape sh =
   let
-    fv h p = movePoint (V2 0 (- h)) p  -- vertical correction for corner-anchored shapes
+    fv h p = movePoint (V2 0 (- h)) p  
   in
   case sh of
       RectCenteredSh w h col p -> rectCentered w h col p 
-      RectCenteredMidpointBaseSh w h col p -> rectCentered w h col (fv h p)      
+      RectCenteredMidpointBaseSh w h col p ->
+        rectCenteredMidpointBase w h col (fv h p)      
       RectSh w h col p -> rect w h col (fv h p) 
       SquareCenteredSh w col p -> squareCentered w col p
       CircleSh rad col p -> circle rad col p
       LineSh lopts p1 p2 -> line' p1 p2 lopts
       PolyLineSh lopts slj ps -> polyline' lopts slj ps
-
-
 
 
 

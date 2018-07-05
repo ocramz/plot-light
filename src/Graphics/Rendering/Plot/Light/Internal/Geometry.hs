@@ -27,7 +27,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** Vector construction
   v2fromEndpoints, v2fromPoint,
   -- ** Operations on points
-  movePoint, moveLabeledPoint, moveLabeledPointV2,
+  movePoint, moveLabeledPoint, moveLabeledPointV2, xyDispl,
   -- moveLabeledPointBwFrames,
   (-.), pointRange, 
   -- ** Operations on vectors
@@ -478,6 +478,16 @@ movePoint (V2 vx vy) (Point px py) = Point (px + vx) (py + vy)
 -- | Move a `LabeledPoint` along a vector
 moveLabeledPointV2 :: Num a => V2 a -> LabeledPoint l a -> LabeledPoint l a
 moveLabeledPointV2 = moveLabeledPoint . movePoint
+
+-- | The coordinate vectors associated with the displacement between two points
+--
+-- invariant : p1 -. p2 == vx <> vy where (vx, vy) = xyDispl p1 p2
+xyDispl :: Num a => Point a -> Point a -> (V2 a, V2 a)
+xyDispl p1 p2 = (v1 .* e1, v2 .* e2) where
+  v = p1 -. p2
+  v1 = v <.> e1
+  v2 = v <.> e2
+
 
 
 -- | `pointRange n p q` returns a list of equi-spaced `Point`s between `p` and `q`.
