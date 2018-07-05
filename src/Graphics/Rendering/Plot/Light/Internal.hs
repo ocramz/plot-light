@@ -298,7 +298,7 @@ densityD n = density . histo n
 density :: (Fractional b, VU.Unbox b, H.Bin bin) =>
            H.Histogram bin b
         -> [(H.BinValue bin, b)] -- ^ (Bin centers, Normalized bin counts)
-density hist = zip binCenters ((/ nelems) `map` binCounts)where
+density hist = zip binCenters ((/ nelems) `map` binCounts) where
   (binCenters, binCounts) = unzip $ H.asList hist
   nelems = sum binCounts
 
