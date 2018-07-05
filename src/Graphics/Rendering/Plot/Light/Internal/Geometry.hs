@@ -266,7 +266,7 @@ data AxisFrame a = AxisFrame {
 
 
 
-
+_pxy p = (_px p, _py p)
 
 
 
@@ -281,8 +281,11 @@ interpolateBilinear fr@(Frame p1 p2) f p
 
 -- | Unsafe
 interpolateBilinear' :: Fractional a => Point a -> Point a -> (Point a -> a) -> Point a -> a
-interpolateBilinear' q11@(Point x1 y1) q22@(Point x2 y2) f (Point x y) =
+interpolateBilinear' q11 q22 f p =
   let
+    (x1, y1) = _pxy q11
+    (x2, y2) = _pxy q22
+    (x, y) = _pxy p
     q12 = mkPoint x1 y2
     q21 = mkPoint x2 y1
     fq11 = f q11
@@ -473,30 +476,31 @@ instance Num a => LinearMap (DiagMat2 a) (V2 a) where
 instance Fractional a => MatrixGroup (DiagMat2 a) (V2 a) where
   DMat2 d1 d2 <\> V2 vx vy = V2 (vx / d1) (vy / d2)
 
--- | Build a `V2` v from a `Point` p (i.e. assuming v points from the origin (0,0) to p)
-v2fromPoint :: Num a => Point a -> V2 a
-v2fromPoint p = origin -. p
+-- -- | Build a `V2` v from a `Point` p (i.e. assuming v points from the origin (0,0) to p)
+-- v2fromPoint :: Num a => Point a -> V2 a
+-- v2fromPoint p = origin -. p
 
 -- | Build a `Point` p from a `V2` v (i.e. assuming v points from the origin (0,0) to p)
 pointFromV2 :: V2 a -> Point a
-pointFromV2 (V2 x y) = Point x y
+pointFromV2 = Point
 
 -- | Move a point along a vector
 movePoint :: Num a => V2 a -> Point a -> Point a
-movePoint (V2 vx vy) (Point px py) = Point (px + vx) (py + vy)
+movePoint (V2 vx vy) p = mkPoint (px + vx) (py + vy) where
+  (px, py) = _pxy p
 
 -- | Move a `LabeledPoint` along a vector
 moveLabeledPointV2 :: Num a => V2 a -> LabeledPoint l a -> LabeledPoint l a
 moveLabeledPointV2 = moveLabeledPoint . movePoint
 
--- | The coordinate vectors associated with the displacement between two points
---
--- invariant : p1 -. p2 == vx <> vy where (vx, vy) = xyDispl p1 p2
-xyDispl :: Num a => Point a -> Point a -> (V2 a, V2 a)
-xyDispl p1 p2 = (v1 .* e1, v2 .* e2) where
-  v = p1 -. p2
-  v1 = v <.> e1
-  v2 = v <.> e2
+-- -- | The coordinate vectors associated with the displacement between two points
+-- --
+-- -- invariant : p1 -. p2 == vx <> vy where (vx, vy) = xyDispl p1 p2
+-- xyDispl :: Num a => Point a -> Point a -> (V2 a, V2 a)
+-- xyDispl p1 p2 = (v1 .* e1, v2 .* e2) where
+--   v = p1 -. p2
+--   v1 = v <.> e1
+--   v2 = v <.> e2
 
 
 
