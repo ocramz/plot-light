@@ -912,7 +912,7 @@ labeledTicks ax len sw col fontsize lrot tanchor flab vlab ps =
 
 frameFromFigData :: Num a => FigureData a -> Frame a
 frameFromFigData fd = mkFrame oTo p2To where
-    fontsize = figLabelFontSize fd
+    -- fontsize = figLabelFontSize fd
     wfig = figWidth fd
     hfig = figHeight fd
     (left, right) = (figLeftMFrac fd * wfig, figRightMFrac fd * wfig)
@@ -942,17 +942,17 @@ figFHeight = height . frameFromFigData
 --
 -- The user can supply an additional `V2` displacement which will be applied /after/ rotation and anchoring and refers to the rotated text box frame.
 --
--- > > putStrLn $ renderSvg $ text (-45) C.green TAEnd "blah" (V2 (- 10) 0) (Point 250 0)
+-- > > putStrLn $ renderSvg $ text (-45) C.green TAEnd "blah" (mkV2 (- 10) 0) (mkV2 250 0)
 -- > <text x="-10.0" y="0.0" transform="translate(250.0 0.0)rotate(-45.0)" fill="#008000" text-anchor="end">blah</text>
--- text :: (Show a, Real a) =>
---         a               -- ^ Rotation angle of the textbox
---      -> Int             -- ^ Font size
---      -> C.Colour Double -- ^ Font colour
---      -> TextAnchor_     -- ^ How to anchor the text to the point
---      -> T.Text          -- ^ Text 
---      -> V2 a            -- ^ Displacement w.r.t. rotated textbox
---      -> Point a         -- ^ Initial position of the text box (i.e. before rotation and displacement)
---      -> Svg
+text :: (Show a, Real a) =>
+        a               -- ^ Rotation angle of the textbox
+     -> Int             -- ^ Font size
+     -> C.Colour Double -- ^ Font colour
+     -> TextAnchor_     -- ^ How to anchor the text to the point
+     -> T.Text          -- ^ Text 
+     -> V2 a            -- ^ Displacement w.r.t. rotated textbox
+     -> V2 a         -- ^ Initial position of the text box (i.e. before rotation and displacement)
+     -> Svg
 text rot fontsize col ta te (V2 vx vy) p = S.text_ (S.toMarkup te) ! SA.x (vd vx) ! SA.y (vd vy) ! SA.transform (S.translate (real x) (real y) <> S.rotate (real rot)) ! SA.fontSize (vi fontsize) ! SA.fill (colourAttr col) ! textAnchor ta where
   (x, y) = _vxy p
 
@@ -971,12 +971,12 @@ textAnchor TAEnd = SA.textAnchor (vs "end")
 --
 -- > > putStrLn $ renderSvg $ circle 15 (shapeColBoth C.red C.blue 1 5) (Point 10 20)
 -- > <circle cx="10.0" cy="20.0" r="15.0" fill-opacity="1.0" fill="#ff0000" stroke-opacity="1.0" stroke="#0000ff" stroke-width="5.0" />
--- circle
---   :: (Real a1, Real a) =>
---         a                       -- ^ Radius
---      -> ShapeCol a 
---      -> Point a1                   -- ^ Center     
---   -> Svg
+circle
+  :: (Real a1, Real a) =>
+        a                       -- ^ Radius
+     -> ShapeCol a 
+     -> V2 a1                   -- ^ Center     
+  -> Svg
 circle r col p =
   S.circle ! SA.cx (vd x) ! SA.cy (vd y) ! SA.r (vd r) !# col where (x, y) = _vxy p
 
@@ -986,15 +986,15 @@ circle r col p =
 
 -- | Polyline (piecewise straight line)
 -- 
--- > > putStrLn $ renderSvg (polyline [Point 100 50, Point 120 20, Point 230 50] 4 (Dashed [3, 5]) Round C.blueviolet)
+-- > > putStrLn $ renderSvg (polyline [mkV2 100 50, mkV2 120 20, mkV2 230 50] 4 (Dashed [3, 5]) Round C.blueviolet)
 -- > <polyline points="100.0,50.0 120.0,20.0 230.0,50.0" fill="none" stroke="#8a2be2" stroke-width="4.0" stroke-linejoin="round" stroke-dasharray="3.0, 5.0" />
--- polyline :: (Foldable t, Show a1, Show a, RealFrac a, RealFrac a1) =>
---             a1              -- ^ Stroke width
---          -> LineStroke_ a   -- ^ Stroke type 
---          -> StrokeLineJoin_ -- ^ Stroke join type 
---          -> C.Colour Double -- ^ Stroke colour
---          -> t (Point a)     -- ^ Data         
---          -> Svg
+polyline :: (Foldable t, Show a1, Show a, RealFrac a, RealFrac a1) =>
+            a1              -- ^ Stroke width
+         -> LineStroke_ a   -- ^ Stroke type 
+         -> StrokeLineJoin_ -- ^ Stroke join type 
+         -> C.Colour Double -- ^ Stroke colour
+         -> t (V2 a)     -- ^ Data         
+         -> Svg
 polyline sw strTy slj col lis =
   let
     svg0 = S.polyline ! SA.points (S.toValue $ unwords $ map show $ F.toList lis) ! SA.fill none ! SA.stroke (colourAttr col ) ! SA.strokeWidth (vd sw) ! strokeLineJoin slj
@@ -1003,7 +1003,7 @@ polyline sw strTy slj col lis =
 
 
 -- | Same as 'polyline' but using 'LineOptions'
--- polyline' :: (Foldable t, Show a, RealFrac a) => LineOptions a -> StrokeLineJoin_ -> t (Point a) -> Svg
+polyline' :: (Foldable t, Show a, RealFrac a) => LineOptions a -> StrokeLineJoin_ -> t (V2 a) -> Svg
 polyline' (LineOptions sw strTy col) slj lis = polyline sw strTy slj col lis
 
 
@@ -1011,13 +1011,13 @@ polyline' (LineOptions sw strTy col) slj lis = polyline sw strTy slj col lis
 
 -- | A filled polyline
 --
--- > > putStrLn $ renderSvg $ filledPolyline C.coral 0.3 [(Point 0 1), (Point 10 40), Point 34 50, Point 30 5]
+-- > > putStrLn $ renderSvg $ filledPolyline C.coral 0.3 [(mkV2 0 1), (mkV2 10 40), mkV2 34 50, Point 30 5]
 -- > <polyline points="0,1 10,40 34,50 30,5" fill="#ff7f50" fill-opacity="0.3" />
--- filledPolyline :: (Foldable t, Show a, Real o) =>
---                   C.Colour Double   -- ^ Fill colour
---                -> o                 -- ^ Fill opacity
---                -> t (Point a)       -- ^ Contour point coordinates
---                -> Svg
+filledPolyline :: (Foldable t, Show a, Real o) =>
+                  C.Colour Double   -- ^ Fill colour
+               -> o                 -- ^ Fill opacity
+               -> t (V2 a)       -- ^ Contour point coordinates
+               -> Svg
 filledPolyline col opac lis = S.polyline ! SA.points (S.toValue $ unwords $ map show $ F.toList lis) ! SA.fill (colourAttr col) ! SA.fillOpacity (vd opac)
 
 
@@ -1091,7 +1091,7 @@ strokeLineJoin slj = SA.strokeLinejoin (S.toValue str) where
 
 
 -- | Move a Svg entity to a new position
--- translateSvg :: Show a => Point a -> Svg -> Svg
+translateSvg :: Show a => V2 a -> Svg -> Svg
 translateSvg p svg = S.g ! SA.transform (S.translate x y) $ svg where
   (x, y) = _vxy p
 
