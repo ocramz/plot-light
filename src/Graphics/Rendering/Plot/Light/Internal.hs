@@ -131,7 +131,7 @@ figureDataDefault :: Floating a => FigureData a
 figureDataDefault = FigureData 400 300 0.1 0.9 0.1 0.9 10
 
 
--- bottomLeftOrigin :: Num a => FigureData a -> Point a
+bottomLeftOrigin :: Num a => FigureData a -> V2 a
 bottomLeftOrigin fdat = mkV2 x y where
   x = figWidth fdat * figLeftMFrac fdat
   y = figHeight fdat * figBottomMFrac fdat
@@ -229,7 +229,7 @@ none = S.toValue ("none" :: String)
 
 
 -- | ===================
--- | Shape DSL 11
+-- | Shape DSL 
 
 
 -- | Screen reference system (origin is bottom-left screen corner)
@@ -239,9 +239,14 @@ data SVG = SVG deriving (Show)
 
 
 
+-- | A V2 labeled by the reference frame
+data V r a = V r (V2 a) deriving (Eq, Show)
 
+mkVScreen :: V2 a -> V Screen a
+mkVScreen = V Screen
 
-
+mkVSvg :: V2 a -> V SVG a
+mkVSvg = V SVG
 
 
 
@@ -348,11 +353,11 @@ data Plot =
 
 -- | Line plot
 
--- mkPolyLinePlot :: Num a =>
---                   LineOptions p
---                -> StrokeLineJoin_
---                -> [a]
---                -> Shape p (Point a)
+mkPolyLinePlot :: Num a =>
+                  LineOptions p
+               -> StrokeLineJoin_
+               -> [a]
+               -> Shape p (V2 a)
 mkPolyLinePlot lo slj dats = PolyLineSh lo slj ps where
   n = length dats
   ns = fromIntegral <$> [0 .. n-1]
@@ -469,9 +474,9 @@ test0 =
 
 
 -- | Rectangles based on the inner and outer frames of the drawable canvas
--- rectsFigData
---   :: Fractional a =>
---      FigureData a -> (Shape a (Point a), Shape a (Point a))
+rectsFigData
+  :: Floating a =>
+     FigureData a -> (Shape a (V2 a), Shape a (V2 a))
 rectsFigData fd = (rOut, rIn)
   where
     col = shapeColNoFill C.black 1 1
@@ -482,10 +487,10 @@ rectsFigData fd = (rOut, rIn)
 
 
 
--- render0 :: (Functor t, Foldable t, Show a, RealFrac a) =>
---            Frame a
---         -> t (Shape a (Point a))
---         -> Svg
+render0 :: (Functor t, Foldable t, Show a, RealFrac a) =>
+           Frame a
+        -> t (Shape a (V2 a))
+        -> Svg
 render0 to shs = renderShape `mapM_` shs' where
   (Wrt SVG _ shs') = wrapped to shs 
 
@@ -499,7 +504,7 @@ render0 to shs = renderShape `mapM_` shs' where
 -- | NB : We must only render a 'Shape' that's in the SVG reference system
 --
 -- The vertical correction for corner-anchored shapes is applied at this stage
--- renderShape :: (Show a, RealFrac a) => Shape a (Point a) -> Svg
+renderShape :: (Show a, RealFrac a) => Shape a (V2 a) -> Svg
 renderShape sh =
   let
     fv h p = V2 0 (- h) ^+^ p  
@@ -521,10 +526,10 @@ renderShape sh =
 -- 2) recomputes the point coordinates to fall within the destination frame in the SVG reference
 -- 3) outputs the transformed shapes within a 'Wrt SVG' wrapper
 --  
--- wrapped :: (Functor t, Foldable t, Fractional a, Ord a) =>
---            Frame a
---         -> t (Shape a (Point a))
---         -> Wrt SVG a (t (Shape a (Point a)))
+wrapped :: (Functor t, Foldable t, Fractional a, Ord a) =>
+           Frame a
+        -> t (Shape a (V2 a))
+        -> Wrt SVG a (t (Shape a (V2 a)))
 wrapped to shs = wrtSvg from $ convertShapeRef from to <$> shs where
   from = wrappingFrame shs
   
@@ -532,14 +537,16 @@ wrapped to shs = wrtSvg from $ convertShapeRef from to <$> shs where
 -- | Compute the 'Frame' that envelopes a 'Foldable' container (e.g. a list or vector) of 'Shape's.
 --
 -- The result can be used as the "from" Frame used to compute the Screen-SVG coordinate transform
--- wrappingFrame :: (Foldable t, Num a, Ord a) =>
---                  t (Shape a (Point a))
---               -> Frame a
+--
+-- FIXME
+wrappingFrame :: (Foldable t, Num a, Ord a) =>
+                 t (Shape a (V2 a))
+              -> Frame a
 wrappingFrame shs = foldr fc mempty shs where
   fc acc b = mkShapeFrame acc `mappend` b
 
-
--- mkShapeFrame :: Ord a => Shape t (Point a) -> Frame a
+-- FIXME
+mkShapeFrame :: Ord a => Shape t (V2 a) -> Frame a
 mkShapeFrame sh = case sh of
     RectCenteredSh _ _ _ p -> mkFrame p p
     RectSh _ _ _ p -> mkFrame p p
@@ -589,11 +596,11 @@ wrtSvg = Wrt SVG
 -- compose the affine transformations required to move the 'Shape' from starting to destination frame.
 --
 -- NB : this should be the /only/ function dedicated to transforming point coordinates
--- convertShapeRef :: (Functor f, Fractional a) =>
---                    Frame a
---                 -> Frame a
---                 -> f (Point a)
---                 -> f (Point a)
+convertShapeRef :: (Functor f, Fractional a) =>
+                   Frame a
+                -> Frame a
+                -> f (V2 a)
+                -> f (V2 a)
 convertShapeRef from to sh = frameToFrameP from to <$> sh
 
 
@@ -636,12 +643,12 @@ convertShapeRef from to sh = frameToFrameP from to <$> sh
 --
 -- > > putStrLn $ renderSvg $ rect 50 60 (shapeColNoBorder C.blue 0.5) (Point 100 30)
 -- > <rect x="100.0" y="30.0" width="50.0" height="60.0" fill-opacity="0.5" fill="#0000ff" stroke="none" />
--- rect :: Real a =>
---         a          -- ^ Width
---      -> a          -- ^ Height
---      -> ShapeCol a -- ^ Colour and alpha information
---      -> Point a    -- ^ Corner point coordinates
---      -> Svg
+rect :: Real a =>
+        a          -- ^ Width
+     -> a          -- ^ Height
+     -> ShapeCol a -- ^ Colour and alpha information
+     -> V2 a    -- ^ Corner point coordinates
+     -> Svg
 rect wid hei col p = S.rect ! SA.x (vd x0) ! SA.y (vd y0) ! SA.width (vd wid) ! SA.height (vd hei) !# col where
   (x0, y0) = _vxy p
 
@@ -650,12 +657,12 @@ rect wid hei col p = S.rect ! SA.x (vd x0) ! SA.y (vd y0) ! SA.width (vd wid) ! 
 --
 -- > > putStrLn $ renderSvg $ rectCentered 15 30 (shapeColBoth C.blue C.red 1 5) (Point 20 30)
 -- > <rect x="12.5" y="15.0" width="15.0" height="30.0" fill-opacity="1.0" fill="#0000ff" stroke-opacity="1.0" stroke="#ff0000" stroke-width="5.0" />
--- rectCentered :: (Show a, RealFrac a) =>
---      a                       -- ^ Width
---   -> a                       -- ^ Height
---   -> ShapeCol a              -- ^ Colour and alpha information
---   -> Point a                 -- ^ Center coordinates     
---   -> Svg
+rectCentered :: (Show a, RealFrac a) =>
+     a                       -- ^ Width
+  -> a                       -- ^ Height
+  -> ShapeCol a              -- ^ Colour and alpha information
+  -> V2 a                 -- ^ Center coordinates     
+  -> Svg
 rectCentered  wid hei col p =
   rect wid hei col p' where
     (x0, y0) = _vxy p  
@@ -664,12 +671,12 @@ rectCentered  wid hei col p =
     y0c = y0 - (hei / 2)   
 
 -- | A rectangle, defined by the coordinates of the midpoint of its base
--- rectCenteredMidpointBase :: (Show a, RealFrac a) =>
---      a                       -- ^ Width
---   -> a                       -- ^ Height
---   -> ShapeCol a              -- ^ Colour and alpha information
---   -> Point a                 -- ^ Base midpoint coordinates     
---   -> Svg
+rectCenteredMidpointBase :: (Show a, RealFrac a) =>
+     a                       -- ^ Width
+  -> a                       -- ^ Height
+  -> ShapeCol a              -- ^ Colour and alpha information
+  -> V2 a                 -- ^ Base midpoint coordinates     
+  -> Svg
 rectCenteredMidpointBase wid hei col p =
   rect wid hei col p' where
     (x0, y0) = _vxy p  
@@ -681,11 +688,11 @@ rectCenteredMidpointBase wid hei col p =
 --
 -- > > putStrLn $ renderSvg $ squareCentered 30 (shapeColBoth C.blue C.red 1 5) (Point 20 30)
 -- > <rect x="5.0" y="15.0" width="30.0" height="30.0" fill-opacity="1.0" fill="#0000ff" stroke-opacity="1.0" stroke="#ff0000" stroke-width="5.0" />
--- squareCentered :: (Show a, RealFrac a) =>
---                   a                          -- ^ Side length
---                -> ShapeCol a              -- ^ Colour and alpha information
---                -> Point a                 -- ^ Center coordinates
---                -> Svg
+squareCentered :: (Show a, RealFrac a) =>
+                  a                          -- ^ Side length
+               -> ShapeCol a              -- ^ Colour and alpha information
+               -> V2 a                 -- ^ Center coordinates
+               -> Svg
 squareCentered w = rectCentered w w
 
 lineColourDefault :: C.Colour Double
@@ -723,18 +730,18 @@ lineOptionCycle lw =
 
 -- | Line segment between two `Point`s
 -- 
--- > > putStrLn $ renderSvg $ line (Point 0 0) (Point 1 1) 0.1 Continuous C.blueviolet
+-- > > putStrLn $ renderSvg $ line (mkV2 0 0) (mkV2 1 1) 0.1 Continuous C.blueviolet
 -- > <line x1="0.0" y1="0.0" x2="1.0" y2="1.0" stroke="#8a2be2" stroke-width="0.1" />
 --
--- > > putStrLn $ renderSvg (line (Point 0 0) (Point 1 1) 0.1 (Dashed [0.2, 0.3]) C.blueviolet)
+-- > > putStrLn $ renderSvg (line (mkV2 0 0) (mkV2 1 1) 0.1 (Dashed [0.2, 0.3]) C.blueviolet)
 -- > <line x1="0.0" y1="0.0" x2="1.0" y2="1.0" stroke="#8a2be2" stroke-width="0.1" stroke-dasharray="0.2, 0.3" />
--- line :: (Show a, RealFrac a) =>
---      Point a         -- ^ First point
---   -> Point a         -- ^ Second point
---   -> a               -- ^ Stroke width
---   -> LineStroke_ a   -- ^ Stroke type
---   -> C.Colour Double -- ^ Stroke colour
---   -> Svg
+line :: (Show a, RealFrac a) =>
+     V2 a         -- ^ First point
+  -> V2 a         -- ^ Second point
+  -> a               -- ^ Stroke width
+  -> LineStroke_ a   -- ^ Stroke type
+  -> C.Colour Double -- ^ Stroke colour
+  -> Svg
 line p q sw lstr col =
   let
     (x1, y1) = _vxy p
@@ -744,7 +751,7 @@ line p q sw lstr col =
                   Dashed d -> svg0 ! strokeDashArray d
 
 -- | Same as 'line' but using 'LineOptions'
--- line' :: (Show a, RealFrac a) => Point a -> Point a -> LineOptions a -> Svg
+line' :: (Show a, RealFrac a) => V2 a -> V2 a -> LineOptions a -> Svg
 line' p1 p2 (LineOptions sw lstr col) = line p1 p2 sw lstr col
 
 
@@ -758,7 +765,7 @@ data LineStroke_ a = Continuous | Dashed [a] deriving (Eq, Show, Generic)
 
 
 
--- tick :: (Show a, RealFrac a) => Axis -> a -> a -> C.Colour Double -> Point a -> Svg
+tick :: (Show a, RealFrac a) => Axis -> a -> a -> C.Colour Double -> V2 a -> Svg
 tick ax len sw col p = line (mkV2 x1 y1) (mkV2 x2 y2) sw Continuous col where
   (x, y) = _vxy p
   lh = len / 2
@@ -813,13 +820,13 @@ labeledTick ax len sw col fontsize lrot tanchor flab vlab (LabeledPoint p label)
 
 
 -- | An array of axis-aligned identical segments (to be used as axis tickmarks), with centers given by the array of `Point`s
--- ticks :: (Foldable t, Show a, RealFrac a) =>
---          Axis                -- ^ Axis 
---       -> a                -- ^ Length         
---       -> a                -- ^ Stroke width
---       -> C.Colour Double  -- ^ Stroke colour
---       -> t (Point a)      -- ^ Center coordinates
---       -> Svg
+ticks :: (Foldable t, Show a, RealFrac a) =>
+         Axis                -- ^ Axis 
+      -> a                -- ^ Length         
+      -> a                -- ^ Stroke width
+      -> C.Colour Double  -- ^ Stroke colour
+      -> t (V2 a)      -- ^ Center coordinates
+      -> Svg
 ticks ax len sw col ps = forM_ ps (tick ax len sw col)
 
 
