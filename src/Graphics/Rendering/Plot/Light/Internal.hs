@@ -585,8 +585,6 @@ wrtSvg = Wrt SVG
 
 
 
-
-
 -- | Given :
 --
 -- * a starting frame (in the screen reference)
@@ -605,12 +603,6 @@ convertShapeRef from to sh = frameToFrameP from to <$> sh
 
 
   
-
-
-
-
-
-
 -- (<$$$>) :: (Functor f, Functor g, Functor h) => (x -> y) -> h (g (f x)) -> h (g (f y))
 -- (<$$$>) = fmap . fmap . fmap
 
@@ -619,15 +611,7 @@ convertShapeRef from to sh = frameToFrameP from to <$> sh
     
 
 
-
-
-
-
-
-
-
-  
-  
+    
 
 
 
