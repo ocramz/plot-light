@@ -56,7 +56,7 @@ import Data.Semigroup (Semigroup(..))
 
 
 -- | V2 is a vector in R^2
-data V2 a = V2 {_vx :: a, _vy :: a} deriving (Eq)
+data V2 a = V2 {_vx :: a, _vy :: a} deriving (Eq, Ord)
 
 _vxy :: V2 a -> (a, a)
 _vxy p = (_vx p, _vy p)
@@ -262,6 +262,9 @@ data Frame a = Frame {
    _fpmax :: V2 a
    } deriving (Eq, Show, Generic)
 
+mkFrame :: V2 a -> V2 a -> Frame a
+mkFrame = Frame
+
 -- | The semigroup operation (`mappend`) applied on two `Frames` results in a new `Frame` that bounds both.
 
 instance (Ord a) => Semigroup (Frame a) where
@@ -271,11 +274,9 @@ instance (Ord a, Num a) => Monoid (Frame a) where
   mempty = Frame (mkV2 0 0) (mkV2 0 0)
   mappend = (<>)
 
--- isPointInFrame :: Ord a => Frame a -> Point a -> Bool
+isPointInFrame :: Ord a => Frame a -> V2 a -> Bool
 isPointInFrame (Frame p1 p2) p = p >= p1 && p <= p2
 
--- mkFrame :: Point a -> Point a -> Frame a
-mkFrame = Frame
 
 -- | Build a frame rooted at the origin (0, 0)
 mkFrameOrigin :: Num a => a -> a -> Frame a

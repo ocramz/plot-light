@@ -420,6 +420,42 @@ histo n v = H.fillBuilder buildr v where
 
 
 
+-- data Sh p a =
+--     ShR (ShapeCol p) (Frame a)
+--   | ShC (ShapeCol p) (Frame a)
+
+-- mkR :: (Ord a, Num a) => ShapeCol p -> a -> a -> V2 a -> Maybe (Sh p a)
+-- mkR col w h v
+--   | w >= 0 && h >= 0 = Just $ ShR col (mkFrame v (v ^+^ mkV2 w h))
+--   | otherwise = Nothing
+
+-- mkC :: (Ord a, Num a) => ShapeCol p -> a -> V2 a -> Maybe (Sh p a)
+-- mkC col r v
+--   | r >= 0 = Just $ ShC col $ mkFrame v (v ^+^ (r .* e1))
+--   | otherwise = Nothing 
+
+
+
+data C1 p a = C1 (V2 a) (ShapeCol p) (V2 a)
+
+
+data Rect p a = Rect (V2 a) (ShapeCol p) (V2 a)
+
+-- rescaleR :: LinearMap m (V2 a) => m -> Rect p a -> Rect p a
+rescaleR :: Num a => DiagMat2 a -> Rect p a -> Rect p a
+rescaleR m (Rect r col v) = Rect (m #> r) col v
+
+
+
+class Rescale x where
+  type RTy x :: *
+  rescale :: DiagMat2 (RTy x) -> x -> x
+
+instance Num a => Rescale (Rect p a) where
+  type RTy (Rect p a) = a
+  rescale = rescaleR
+
+
 
 -- | =============
 
@@ -457,6 +493,9 @@ r2 = RectSh 50 10 (shapeColNoBorder C.orange 0.7) (mkV2 5 10)
 -- shs :: [Shape Double (Point Double)]
 shs = [r0, r1, r2]
 -- shs = [c0,c1,c2]
+
+
+
 
 
 
