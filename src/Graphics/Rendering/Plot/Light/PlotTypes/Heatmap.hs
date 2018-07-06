@@ -37,8 +37,8 @@ heatmapDefaults :: Num a => Heatmap a
 heatmapDefaults = Heatmap mesh pal 0 1
   where
     pal = palette [C.red, C.white, C.blue] 20
-    pmin = Point 0 0
-    pmax = Point 1 1
+    pmin = mkV2 0 0
+    pmax = mkV2 1 1
     mesh = MeshGrid2d (Frame pmin pmax) 20 20
 
   
@@ -89,7 +89,8 @@ heatmapDefaults = Heatmap mesh pal 0 1
 
 
 fromRationalLP :: Fractional a => LabeledPoint l Rational -> LabeledPoint l a
-fromRationalLP (LabeledPoint (Point x y) l) = LabeledPoint (Point (fromRational x) (fromRational y)) l
+fromRationalLP (LabeledPoint p l) = LabeledPoint (mkV2 (fromRational x) (fromRational y)) l where
+  (x, y) = _vxy p
 
 
 
@@ -120,16 +121,16 @@ toCoord ll = concat $ reverse $ go 0 ll [] where
 toUnitFramedLP :: (Fractional t) =>
       t -> t -> (t, t, l) -> LabeledPoint l t
 toUnitFramedLP w h (i, j, x) = LabeledPoint p x
-  where p = Point (i/h) (j/w)
+  where p = mkV2 (i/h) (j/w)
 
 
 
 -- | Plot a scalar function `f` of points in the plane (i.e. \(f : \mathbf{R}^2 \rightarrow \mathbf{R}\))
-plotFun2
-  :: Functor f =>
-     (t -> t -> l) -> f (Point t) -> f (LabeledPoint l t)
+-- plotFun2
+--   :: Functor f =>
+--      (t -> t -> l) -> f (Point t) -> f (LabeledPoint l t)
 plotFun2 f = fmap f' where
-  f' p@(Point x y) = LabeledPoint p (f x y)
+  f' p = LabeledPoint p (f x y) where (x, y) = _vxy p
 
 
 

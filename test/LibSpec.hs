@@ -28,18 +28,18 @@ spec = do
     prop "Mat2 : multiplicative group [Double]: m <\\> (m #> v) ~= v" $
       \(PropDiagMatVec (m :: DiagMat2r Double) v ) -> prop_multMatGroup m v `shouldBe` True
     it "Frame : frameToFrame works" $ do
-      let from = Frame (Point 5 1) (Point 8 3) :: Frame Double
-          to = Frame (Point 1 2) (Point 4 4)
-          p2 = frameToFrameP from to (Point 7 2)
-      norm2 (p2 -. Point 3 3) ~= 0 `shouldBe` True
+      let from = Frame (mkV2 5 1) (mkV2 8 3) :: Frame Double
+          to = Frame (mkV2 1 2) (mkV2 4 4)
+          p2 = frameToFrameP from to (mkV2 7 2)
+      norm2 (p2 ^-^ mkV2 3 3) ~= 0 `shouldBe` True
       
 
 
 
-ps = [Point 12312 0.2, Point 13420.2 0.3, Point 14567 0.14]
+ps = [mkV2 12312 0.2, mkV2 13420.2 0.3, mkV2 14567 0.14]
 
 fin = frameFromPoints ps
-fout = mkFrame (Point 0 0) (Point 1 1)
+fout = mkFrame (mkV2 0 0) (mkV2 1 1)
 
 -- vf = frameToFrame fin fout False False
 

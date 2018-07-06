@@ -152,16 +152,16 @@ quarterHourTick = 1/4 * hourTick
 -- * Helpers
 
 -- | Create a `LabeledPoint` from a time series point (`TsPoint`). The `_tick` (time axis) field will be used for the x coordinate, whereas both fields of TsPoint may be used to create the label field.
---
--- NB : The coordinates of the resulting LabelPoint still live in the original data space; they must be rescaled to fit in the figure viewport
-tspToLP :: Fractional a => 
-     (t -> a)
-  -> (Tick -> t -> l)
-  -> TsPoint t
-  -> LabeledPoint l a
-tspToLP fy g = LabeledPoint <$> pf <*> lf where
-  pf = Point <$> tickToFractional <*> fy . _val
-  lf = g <$> _tick <*> _val
+-- --
+-- -- NB : The coordinates of the resulting LabelPoint still live in the original data space; they must be rescaled to fit in the figure viewport
+-- tspToLP :: Fractional a => 
+--      (t -> a)
+--   -> (Tick -> t -> l)
+--   -> TsPoint t
+--   -> LabeledPoint l a
+-- tspToLP fy g = LabeledPoint <$> pf <*> lf where
+--   pf = Point <$> tickToFractional <*> fy . _val
+--   lf = g <$> _tick <*> _val
   
   
 
@@ -207,19 +207,19 @@ c1 = FxRow 1.0876 1.0880 1.0872 1.0874
 
 fdat1 = FigureData 400 300 0.1 0.9 0.1 0.85 10
 
-dat1 :: [ LabeledPoint String Double ]
-dat1 = [LabeledPoint (Point 0 0) "blah",
-        LabeledPoint (Point 0 1) "asdf",
-        LabeledPoint (Point 1 1) "yo",
-        LabeledPoint (Point 1 2) "blap",
-        LabeledPoint (Point 2 2) "chow"]
+-- dat1 :: [ LabeledPoint String Double ]
+-- dat1 = [LabeledPoint (Point 0 0) "blah",
+--         LabeledPoint (Point 0 1) "asdf",
+--         LabeledPoint (Point 1 1) "yo",
+--         LabeledPoint (Point 1 2) "blap",
+--         LabeledPoint (Point 2 2) "chow"]
 
-ptx = labelPoint (show . _px) <$> pointRange 2 (Point 0 0) (Point 2 0)
-pty = labelPoint (show . _py) <$> pointRange 2 (Point 0 0) (Point 0 2)
+-- ptx = labelPoint (show . _px) <$> pointRange 2 (Point 0 0) (Point 2 0)
+-- pty = labelPoint (show . _py) <$> pointRange 2 (Point 0 0) (Point 0 2)
 
-to, from :: Frame Double
-from = frameFromPoints $ _lp <$> dat1
-to = mkFrameOrigin 400 300
+-- to, from :: Frame Double
+-- from = frameFromPoints $ _lp <$> dat1
+-- to = mkFrameOrigin 400 300
 
 
 

@@ -16,13 +16,13 @@ import qualified Data.Colour.Names as C
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 
--- | Scatter plot
---
--- Every point in the plot has the same parameters, as declared in the `ScatterPointData` record
-scatter :: (Foldable t, Show a, RealFrac a) =>
-           ScatterPointData a
-        -> t (Point a)
-        -> Svg
+-- -- | Scatter plot
+-- --
+-- -- Every point in the plot has the same parameters, as declared in the `ScatterPointData` record
+-- scatter :: (Foldable t, Show a, RealFrac a) =>
+--            ScatterPointData a
+--         -> t (Point a)
+--         -> Svg
 scatter (ScatterPointData glshape w sw fcol alpha) ps = 
   forM_ ps $ glyph w sw glshape fcol alpha
 
@@ -108,15 +108,15 @@ modifyScatterPoint f g h i (ScatterPointData glsh sz w col alpha) lp =
 -- | Glyph shape for scatter plots
 data GlyphShape_ = Square | Circle | Cross | Plus deriving (Eq, Show, Enum)
 
--- | Scatterplot glyph shapes
-glyph :: (Show a, RealFrac a) =>
-         a               -- ^ Width
-      -> a               -- ^ Stroke width
-      -> GlyphShape_     -- ^ Glyph shape
-      -> C.Colour Double -- ^ Glyph colour
-      -> a               -- ^ Opacity
-      -> Point a         -- ^ Position
-      -> Svg
+-- -- | Scatterplot glyph shapes
+-- glyph :: (Show a, RealFrac a) =>
+--          a               -- ^ Width
+--       -> a               -- ^ Stroke width
+--       -> GlyphShape_     -- ^ Glyph shape
+--       -> C.Colour Double -- ^ Glyph colour
+--       -> a               -- ^ Opacity
+--       -> Point a         -- ^ Position
+--       -> Svg
 glyph w sw sh col alpha p =
   let cf = shapeColNoBorder col alpha
   in 

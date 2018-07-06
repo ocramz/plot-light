@@ -144,7 +144,8 @@
 module Graphics.Rendering.Plot.Light (
   -- * Plot types
   -- ** 1D plot
-  plotFun, Plot1DOptions(..),
+  -- plotFun,
+  Plot1DOptions(..),
   -- ** Heatmap
   -- -- -- heatmap, heatmap',
   plotFun2, colourBar,
@@ -167,9 +168,9 @@ module Graphics.Rendering.Plot.Light (
   -- *** Pixel
   pixel, pixel', 
   -- ** Composite plot elements
-  filledBand, candlestick, 
+  -- filledBand, candlestick, 
   -- ** Plot utilities
-  axes,
+  -- axes,
   -- -- -- toPlot,
   FigureData(..),
   -- ** Element attributes
@@ -188,7 +189,8 @@ module Graphics.Rendering.Plot.Light (
   -- ** Frame
   Frame(..),
   -- ** Point, LabeledPoint
-  Point(..), LabeledPoint(..), labelPoint, mapLabel,
+  -- Point(..),
+  LabeledPoint(..), labelPoint, mapLabel,
   -- ** Axis
   Axis(..),
   -- * Helpers

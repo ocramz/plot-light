@@ -6,8 +6,10 @@ This module provides functionality for working with affine transformations (i.e.
 module Graphics.Rendering.Plot.Light.Internal.Geometry
   (
   -- * Geometry
-  -- ** Point
-  Point(..), mkPoint, setPointX, setPointY, midPoint, centerOfMass, 
+  -- -- ** Point
+  -- Point(..), mkPoint, setPointX, setPointY,
+  midPoint,
+  -- centerOfMass, 
   -- ** LabeledPoint
   LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel,
   -- ** Frame
@@ -17,7 +19,8 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- *** AxisData, AxisFrame
   AxisData(..), AxisFrame(..), -- axisX, axisY, mkAxisPoints,
   -- ** Vectors
-  V2(..), pointFromV2,
+  V2(..), mkV2, _vxy, 
+  -- pointFromV2,
   -- ** Matrices
   Mat2(..), DiagMat2(..), diagMat2,
   -- ** Primitive elements
@@ -25,11 +28,12 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** Vector norm operations 
   norm2, normalize2,
   -- ** Vector construction
-  v2fromEndpoints, v2fromPoint,
+  -- v2fromEndpoints, v2fromPoint,
   -- ** Operations on points
-  movePoint, moveLabeledPoint, moveLabeledPointV2, xyDispl,
+  -- movePoint, moveLabeledPoint, moveLabeledPointV2, xyDispl,
   -- moveLabeledPointBwFrames,
-  (-.), pointRange, 
+  -- (-.),
+  pointRange, 
   -- ** Operations on vectors
   -- frameToFrame,
   frameToFrameP, frameToFrameValue, fromFrame, toFrame,
@@ -50,293 +54,18 @@ import Data.Scientific
 import Data.Semigroup (Semigroup(..))
 
 
--- -- | A `Point` object defines a point in the plane
--- data Point a = Point { _px :: a,
---                        _py :: a } deriving (Eq, Generic)
-
-
-
--- | A `Point` object defines a point in the plane
---
--- NB 'Point' s are really 'V2's
-newtype Point a = Point { getPoint :: V2 a } deriving (Eq, Generic)
-
-_px (Point (V2 x _)) = x
-_py (Point (V2 _ y)) = y
-
-instance Ord a => Ord (Point a) where
-  (Point (V2 x1 y1)) <= (Point (V2 x2 y2)) = x1 <= x2 && y1 <= y2
-
-instance Show a => Show (Point a) where
-  show p = "(P " ++ show (_px p) ++ ", " ++ show (_py p) ++ ")"
-
-mkPoint :: a -> a -> Point a
-mkPoint px py = Point (V2 px py)
-
--- | A binary operation on the components of two 'Point's
-lift2Point :: (a -> b -> c) -> Point a -> Point b -> Point c
-lift2Point f p1 p2 = mkPoint (f (_px p1) (_px p2)) (f (_py p1) (_py p2))
-
--- | A unary operation on the components of a 'Point'
-lift1Point :: (a -> a -> b) -> Point a -> b
-lift1Point f p = f (_px p) (_py p)
-
-pointInf, pointSup :: (Ord a) => Point a -> Point a -> Point a
-pointInf = lift2Point min
-pointSup = lift2Point max
-
-midPoint :: Fractional a => Point a -> Point a -> Point a
-midPoint = lift2Point (\a b -> 1/2 * (a + b))
-
-centerOfMass :: (Foldable t, Num a) => t (Point a) -> Point a
-centerOfMass ps = movePoint (foldMap v2fromPoint ps) origin
-  where
-    n = fromIntegral $ length ps
-
--- | The origin of the axes, point (0, 0)
-origin :: Num a => Point a
-origin = mkPoint 0 0
-
--- | The (1, 1) point
-oneOne :: Num a => Point a
-oneOne = mkPoint 1 1
-
--- | Cartesian distance from the origin
-norm2fromOrigin :: Floating a => Point a -> a
-norm2fromOrigin p = norm2 $ getPoint p    -- p -. origin
-
-
--- | Overwrite either coordinate of a Point, to e.g. project on an axis
-setPointCoord :: Axis -> a -> Point a -> Point a
-setPointCoord axis c p 
-  | axis == X = mkPoint c (_py p)
-  | otherwise = mkPoint (_px p) c
-
-setPointX, setPointY :: a -> Point a -> Point a
-setPointX = setPointCoord X
-setPointY = setPointCoord Y
-
--- | A `LabeledPoint` carries a "label" (i.e. any additional information such as a text tag, or any other data structure), in addition to position information. Data points on a plot are `LabeledPoint`s.
-data LabeledPoint l a =
-  LabeledPoint {
-  -- | The coordinates of the `LabeledPoint` (i.e. where in the figure it will be rendered)
-   _lp :: Point a,
-   -- | Data associated with the `LabeledPoint`
-   _lplabel :: l
-   } deriving (Eq, Show)
-
-
-mkLabeledPoint :: Point a -> l -> LabeledPoint l a
-mkLabeledPoint = LabeledPoint
-
--- | Given a labelling function and a `Point` `p`, returned a `LabeledPoint` containing `p` and the computed label
-labelPoint :: (Point a -> l) -> Point a -> LabeledPoint l a
-labelPoint lf p = LabeledPoint p (lf p)
-
-moveLabeledPoint :: (Point a -> Point b) -> LabeledPoint l a -> LabeledPoint l b
-moveLabeledPoint f (LabeledPoint p l) = LabeledPoint (f p) l
-
--- | Apply a function to the label
-mapLabel :: (l1 -> l2) -> LabeledPoint l1 a -> LabeledPoint l2 a
-mapLabel f (LabeledPoint p l) = LabeledPoint p (f l)
-
--- | A frame, i.e. a bounding box for objects
-data Frame a = Frame {
-   _fpmin :: Point a,
-   _fpmax :: Point a
-   } deriving (Eq, Show, Generic)
-
--- | The semigroup operation (`mappend`) applied on two `Frames` results in a new `Frame` that bounds both.
-
-instance (Ord a) => Semigroup (Frame a) where
-  (Frame p1min p1max) <> (Frame p2min p2max) = Frame (pointInf p1min p2min) (pointSup p1max p2max)
-  
-instance (Ord a, Num a) => Monoid (Frame a) where
-  mempty = Frame (mkPoint 0 0) (mkPoint 0 0)
-  mappend = (<>)
-
-isPointInFrame :: Ord a => Frame a -> Point a -> Bool
-isPointInFrame (Frame p1 p2) p = p >= p1 && p <= p2
-
-mkFrame :: Point a -> Point a -> Frame a
-mkFrame = Frame
-
--- | Build a frame rooted at the origin (0, 0)
-mkFrameOrigin :: Num a => a -> a -> Frame a
-mkFrameOrigin w h = Frame origin (mkPoint w h)
-
--- | The unit square (0, 0) - (1, 1)
-unitFrame :: Num a => Frame a
-unitFrame = mkFrame origin oneOne
-
-
-
--- | Horizontal and vertical stretch factors associated with an affine transformation between two 'Frame's
-fromToStretchRatios :: Fractional b => Frame b -> Frame b -> (b, b)  
-fromToStretchRatios frameFrom frameTo = (m2x/m1x, m2y/m1y)
-  where
-    (DMat2 m1x m1y, _) = frameToAffine frameFrom
-    (DMat2 m2x m2y, _) = frameToAffine frameTo
-
-
--- | Create a `Frame` from a container of `Point`s `P`, i.e. construct two points `p1` and `p2` such that :
---
--- p1 := inf(x,y) P
---
--- p2 := sup(x,y) P
-frameFromPoints :: (Ord a, Foldable t, Functor t) =>
-                         t (Point a) -> Frame a
-frameFromPoints ds = mkFrame (mkPoint mx my) (mkPoint mmx mmy)
-  where
-    xcoord = _px <$> ds
-    ycoord = _py <$> ds
-    mmx = maximum xcoord 
-    mmy = maximum ycoord 
-    mx = minimum xcoord 
-    my = minimum ycoord
-
-
- 
-
--- | Frame corner coordinates
-xmin, xmax, ymin, ymax :: Frame a -> a
-xmin = _px . _fpmin
-xmax = _px . _fpmax
-ymin = _py . _fpmin
-ymax = _py . _fpmax
-
--- | The `width` is the extent in the `x` direction and `height` is the extent in the `y` direction
-width, height :: Num a => Frame a -> a
-width f = abs $ xmax f - xmin f
-height f = abs $ ymax f - ymin f
-
-
-
-
--- * Axis
-
--- super hacky, let's get rid of this
-
-data Axis = X | Y deriving (Eq, Show)
-
-otherAxis :: Axis -> Axis
-otherAxis X = Y
-otherAxis _ = X
-
-
-
--- data Linear
--- data Logarithmic
-
-
-data AxisData a = AxisData {
-    axisNIntervals :: Int   -- ^ Number of axis intervals
-  , axisV :: V2 a           -- ^ Axis direction vector (Normalized)
-  -- , axisOrigin :: Point a   -- ^ Axis origin
-                           } deriving (Eq, Show)
-
--- axisLength :: Floating a => AxisData a -> a
--- axisLength (AxisData n v _) = fromIntegral n * norm2 v
-
--- -- | Create an X-aligned 'AxisData'
--- axisX :: Num a =>
---          Int
---       -> a  -- ^ Interval length 
---       -> Point a
---       -> AxisData a
--- axisX n ldx = AxisData n (ldx .* e1)
-
--- -- | Create an Y-aligned 'AxisData'
--- axisY :: Num a =>
---          Int
---       -> a  -- ^ Interval length
---       -> Point a -> AxisData a
--- axisY n ldy = AxisData n (ldy .* e2)
-
--- -- | Create the list of axis tick points from the 'AxisData'
--- mkAxisPoints :: (Num a, Enum a) => AxisData a -> [Point a]
--- mkAxisPoints (AxisData n v p0) =
---   map (\i -> movePoint (i .* v) p0) $ take n [0, 1 ..]
-
-data AxisFrame a = AxisFrame {
-    afFrame :: Frame a    -- ^ Position in the figure
-  , afAxis1 :: AxisData a  -- ^ First axis
-  , afAxis2 :: AxisData a  -- ^ Second axis
-                             } deriving (Eq, Show)
-
-
-
-_pxy p = (_px p, _py p)
-
-
-
--- | Interpolation
-
--- | Safe
-interpolateBilinear  :: (Ord p, Fractional p, Show p) =>
-     Frame p -> (Point p -> p) -> Point p -> p
-interpolateBilinear fr@(Frame p1 p2) f p
-  | isPointInFrame fr p = interpolateBilinear' p1 p2 f p
-  | otherwise = error $ unwords ["Point", show p, "is outside frame", show fr]
-
--- | Unsafe
-interpolateBilinear' :: Fractional a => Point a -> Point a -> (Point a -> a) -> Point a -> a
-interpolateBilinear' q11 q22 f p =
-  let
-    (x1, y1) = _pxy q11
-    (x2, y2) = _pxy q22
-    (x, y) = _pxy p
-    q12 = mkPoint x1 y2
-    q21 = mkPoint x2 y1
-    fq11 = f q11
-    fq22 = f q22
-    fq12 = f q12
-    fq21 = f q21
-    den1 = (x1 - x2) * (y1 - y2)
-    den2 = (x1 - x2) * (y2 - y1)
-    c111 = fq11/den1
-    c112 = fq11/den2
-    c121 = fq12/den1
-    c122 = fq12/den2
-    c211 = fq21/den1
-    c212 = fq21/den2
-    c221 = fq22/den1
-    c222 = fq22/den2
-    a0 = c111 * x2 * y2 + c122 * x2 * y1 + c212 * x1 * y2 + c221 * x1 * y1
-    a1 = c112 * y2      + c121 * y1      + c211 * y2      + c222 * y1
-    a2 = c112 * x2      + c121 * x2      + c211 * x1      + c222 * x1
-    a3 = c111           + c122           + c212           + c221
-  in a0 + a1 * x + a2 * y + a3 * x * y
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
 
 -- | V2 is a vector in R^2
-data V2 a = V2 a a deriving (Eq)
+data V2 a = V2 {_vx :: a, _vy :: a} deriving (Eq)
+
+_vxy :: V2 a -> (a, a)
+_vxy p = (_vx p, _vy p)
+
 instance Show a => Show (V2 a) where
   show (V2 vx vy) = "(V2 "++ show vx ++", "++ show vy++")"
 
--- -- | V2i is a vector in R^2 having unit norm. NB: not closed under various operations e.g. vector sum, scalar multiplication etc.
--- newtype V2i a = V2i (V2 a) deriving (Eq, Show)
-
--- -- | V2i can only be constructed with this method
--- mkV2i :: Floating a => V2 a -> V2i a
--- mkV2i v = V2i $ normalize2 v
+mkV2 :: a -> a -> V2 a
+mkV2 = V2
 
 
 instance Num a => Semigroup (V2 a) where
@@ -346,6 +75,11 @@ instance Num a => Semigroup (V2 a) where
 instance Num a => Monoid (V2 a) where
   mempty = V2 0 0
   mappend = (<>)
+
+origin, oneOne :: Num a => V2 a
+origin = mempty  
+
+oneOne = mkV2 1 1
 
 -- | Additive group :
 -- 
@@ -476,22 +210,259 @@ instance Num a => LinearMap (DiagMat2 a) (V2 a) where
 instance Fractional a => MatrixGroup (DiagMat2 a) (V2 a) where
   DMat2 d1 d2 <\> V2 vx vy = V2 (vx / d1) (vy / d2)
 
+
+
+
+
+
+
+
+-- | A `LabeledPoint` carries a "label" (i.e. any additional information such as a text tag, or any other data structure), in addition to position information. Data points on a plot are `LabeledPoint`s.
+data LabeledPoint l a =
+  LabeledPoint {
+  -- | The coordinates of the `LabeledPoint` (i.e. where in the figure it will be rendered)
+   _lp :: V2 a,
+   -- | Data associated with the `LabeledPoint`
+   _lplabel :: l
+   } deriving (Eq, Show)
+
+
+mkLabeledPoint :: V2 a -> l -> LabeledPoint l a
+mkLabeledPoint = LabeledPoint
+
+-- | Given a labelling function and a `Point` `p`, returned a `LabeledPoint` containing `p` and the computed label
+labelPoint :: (V2 a -> l) -> V2 a -> LabeledPoint l a
+labelPoint lf p = LabeledPoint p (lf p)
+
+-- moveLabeledPoint :: (Point a -> Point b) -> LabeledPoint l a -> LabeledPoint l b
+moveLabeledPoint f (LabeledPoint p l) = LabeledPoint (f p) l
+
+-- | Apply a function to the label
+mapLabel :: (l1 -> l2) -> LabeledPoint l1 a -> LabeledPoint l2 a
+mapLabel f (LabeledPoint p l) = LabeledPoint p (f l)
+
+
+
+
+
+liftV2 :: (a -> a -> b) -> V2 a -> V2 a -> V2 b
+liftV2 f (V2 xa ya) (V2 xb yb) = mkV2 (f xa xb) (f ya yb)
+
+vInf, vSup :: Ord a => V2 a -> V2 a -> V2 a
+vInf = liftV2 min
+vSup = liftV2 max
+
+midPoint :: Floating a => V2 a -> V2 a -> V2 a
+midPoint = liftV2 (\a b -> 1/2 * (a + b))
+
+
+-- | A frame, i.e. a bounding box for objects
+data Frame a = Frame {
+   _fpmin :: V2 a,
+   _fpmax :: V2 a
+   } deriving (Eq, Show, Generic)
+
+-- | The semigroup operation (`mappend`) applied on two `Frames` results in a new `Frame` that bounds both.
+
+instance (Ord a) => Semigroup (Frame a) where
+  (Frame p1min p1max) <> (Frame p2min p2max) = Frame (vInf p1min p2min) (vSup p1max p2max)
+  
+instance (Ord a, Num a) => Monoid (Frame a) where
+  mempty = Frame (mkV2 0 0) (mkV2 0 0)
+  mappend = (<>)
+
+-- isPointInFrame :: Ord a => Frame a -> Point a -> Bool
+isPointInFrame (Frame p1 p2) p = p >= p1 && p <= p2
+
+-- mkFrame :: Point a -> Point a -> Frame a
+mkFrame = Frame
+
+-- | Build a frame rooted at the origin (0, 0)
+mkFrameOrigin :: Num a => a -> a -> Frame a
+mkFrameOrigin w h = Frame origin (mkV2 w h)
+
+-- | The unit square (0, 0) - (1, 1)
+unitFrame :: Num a => Frame a
+unitFrame = mkFrame origin oneOne
+
+
+
+-- | Horizontal and vertical stretch factors associated with an affine transformation between two 'Frame's
+fromToStretchRatios :: Fractional b => Frame b -> Frame b -> (b, b)  
+fromToStretchRatios frameFrom frameTo = (m2x/m1x, m2y/m1y)
+  where
+    (DMat2 m1x m1y, _) = frameToAffine frameFrom
+    (DMat2 m2x m2y, _) = frameToAffine frameTo
+
+
+-- | Create a `Frame` from a container of `Point`s `P`, i.e. construct two points `p1` and `p2` such that :
+--
+-- p1 := inf(x,y) P
+--
+-- p2 := sup(x,y) P
+-- frameFromPoints :: (Ord a, Foldable t, Functor t) =>
+--                          t (Point a) -> Frame a
+frameFromPoints ds = mkFrame (mkV2 mx my) (mkV2 mmx mmy)
+  where
+    xcoord = _vx <$> ds
+    ycoord = _vy <$> ds
+    mmx = maximum xcoord 
+    mmy = maximum ycoord 
+    mx = minimum xcoord 
+    my = minimum ycoord
+
+
+ 
+
+-- | Frame corner coordinates
+xmin, xmax, ymin, ymax :: Frame a -> a
+xmin = _vx . _fpmin
+xmax = _vx . _fpmax
+ymin = _vy . _fpmin
+ymax = _vy . _fpmax
+
+-- | The `width` is the extent in the `x` direction and `height` is the extent in the `y` direction
+width, height :: Num a => Frame a -> a
+width f = abs $ xmax f - xmin f
+height f = abs $ ymax f - ymin f
+
+
+
+
+-- * Axis
+
+-- super hacky, let's get rid of this
+
+data Axis = X | Y deriving (Eq, Show)
+
+otherAxis :: Axis -> Axis
+otherAxis X = Y
+otherAxis _ = X
+
+
+
+-- data Linear
+-- data Logarithmic
+
+
+data AxisData a = AxisData {
+    axisNIntervals :: Int   -- ^ Number of axis intervals
+  , axisV :: V2 a           -- ^ Axis direction vector (Normalized)
+  -- , axisOrigin :: Point a   -- ^ Axis origin
+                           } deriving (Eq, Show)
+
+-- axisLength :: Floating a => AxisData a -> a
+-- axisLength (AxisData n v _) = fromIntegral n * norm2 v
+
+-- -- | Create an X-aligned 'AxisData'
+-- axisX :: Num a =>
+--          Int
+--       -> a  -- ^ Interval length 
+--       -> Point a
+--       -> AxisData a
+-- axisX n ldx = AxisData n (ldx .* e1)
+
+-- -- | Create an Y-aligned 'AxisData'
+-- axisY :: Num a =>
+--          Int
+--       -> a  -- ^ Interval length
+--       -> Point a -> AxisData a
+-- axisY n ldy = AxisData n (ldy .* e2)
+
+-- -- | Create the list of axis tick points from the 'AxisData'
+-- mkAxisPoints :: (Num a, Enum a) => AxisData a -> [Point a]
+-- mkAxisPoints (AxisData n v p0) =
+--   map (\i -> movePoint (i .* v) p0) $ take n [0, 1 ..]
+
+data AxisFrame a = AxisFrame {
+    afFrame :: Frame a    -- ^ Position in the figure
+  , afAxis1 :: AxisData a  -- ^ First axis
+  , afAxis2 :: AxisData a  -- ^ Second axis
+                             } deriving (Eq, Show)
+
+
+
+
+
+
+
+-- | Interpolation
+
+-- | Safe
+-- interpolateBilinear  :: (Ord p, Fractional p, Show p) =>
+--      Frame p -> (Point p -> p) -> Point p -> p
+interpolateBilinear fr@(Frame p1 p2) f p
+  | isPointInFrame fr p = interpolateBilinear' p1 p2 f p
+  | otherwise = error $ unwords ["Point", show p, "is outside frame", show fr]
+
+-- | Unsafe
+-- interpolateBilinear' :: Fractional a => Point a -> Point a -> (Point a -> a) -> Point a -> a
+interpolateBilinear' q11 q22 f p =
+  let
+    (x1, y1) = _vxy q11
+    (x2, y2) = _vxy q22
+    (x, y) = _vxy p
+    q12 = mkV2 x1 y2
+    q21 = mkV2 x2 y1
+    fq11 = f q11
+    fq22 = f q22
+    fq12 = f q12
+    fq21 = f q21
+    den1 = (x1 - x2) * (y1 - y2)
+    den2 = (x1 - x2) * (y2 - y1)
+    c111 = fq11/den1
+    c112 = fq11/den2
+    c121 = fq12/den1
+    c122 = fq12/den2
+    c211 = fq21/den1
+    c212 = fq21/den2
+    c221 = fq22/den1
+    c222 = fq22/den2
+    a0 = c111 * x2 * y2 + c122 * x2 * y1 + c212 * x1 * y2 + c221 * x1 * y1
+    a1 = c112 * y2      + c121 * y1      + c211 * y2      + c222 * y1
+    a2 = c112 * x2      + c121 * x2      + c211 * x1      + c222 * x1
+    a3 = c111           + c122           + c212           + c221
+  in a0 + a1 * x + a2 * y + a3 * x * y
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
 -- -- | Build a `V2` v from a `Point` p (i.e. assuming v points from the origin (0,0) to p)
 -- v2fromPoint :: Num a => Point a -> V2 a
 -- v2fromPoint p = origin -. p
 
--- | Build a `Point` p from a `V2` v (i.e. assuming v points from the origin (0,0) to p)
-pointFromV2 :: V2 a -> Point a
-pointFromV2 = Point
+
 
 -- | Move a point along a vector
-movePoint :: Num a => V2 a -> Point a -> Point a
-movePoint (V2 vx vy) p = mkPoint (px + vx) (py + vy) where
-  (px, py) = _pxy p
+-- -- movePoint :: Num a => V2 a -> Point a -> Point a
+-- movePoint (V2 vx vy) p = mkPoint (px + vx) (py + vy) where
+--   (px, py) = _pxy p
 
--- | Move a `LabeledPoint` along a vector
-moveLabeledPointV2 :: Num a => V2 a -> LabeledPoint l a -> LabeledPoint l a
-moveLabeledPointV2 = moveLabeledPoint . movePoint
+-- movePoint = (^+^)
+
+-- -- | Move a `LabeledPoint` along a vector
+-- moveLabeledPointV2 :: Num a => V2 a -> LabeledPoint l a -> LabeledPoint l a
+-- moveLabeledPointV2 = moveLabeledPoint . movePoint
 
 -- -- | The coordinate vectors associated with the displacement between two points
 -- --
@@ -505,11 +476,11 @@ moveLabeledPointV2 = moveLabeledPoint . movePoint
 
 
 -- | `pointRange n p q` returns a list of equi-spaced `Point`s between `p` and `q`.
-pointRange :: (Fractional a, Integral n) =>
-     n -> Point a -> Point a -> [Point a]
-pointRange n p q = [ movePoint (fromIntegral x .* vnth) p | x <- [0 .. n]]
+-- pointRange :: (Fractional a, Integral n) =>
+--      n -> Point a -> Point a -> [Point a]
+pointRange n p q = [ (fromIntegral x .* vnth) ^+^ p | x <- [0 .. n]]
   where
-    v = p -. q
+    v = p ^-^ q
     vnth = (1/fromIntegral n) .* v
 
 
@@ -521,18 +492,21 @@ pointRange n p q = [ movePoint (fromIntegral x .* vnth) p | x <- [0 .. n]]
 -- | A list of `nx` by `ny` points in the plane arranged on the vertices of a rectangular mesh.
 --
 -- | NB: Only the minimum x, y coordinate point is included in the output mesh. This is intentional, since the output from this can be used as an input to functions that use a corner rather than the center point as refernce (e.g. `rect`)
-meshGrid
-  :: (Enum a, RealFrac a) =>
-     Frame a  
-  -> Int      -- ^ Number of points along x axis
-  -> Int      -- ^ " y axis
-  -> [Point a]
-meshGrid (Frame (Point xmi ymi) (Point xma yma)) nx ny =
-  Point <$> take nx (subdivSegment xmi xma nx) <*> take ny (subdivSegment ymi yma ny)
+-- meshGrid
+--   :: (Enum a, RealFrac a) =>
+--      Frame a  
+--   -> Int      -- ^ Number of points along x axis
+--   -> Int      -- ^ " y axis
+--   -> [Point a]
+meshGrid (Frame p1 p2) nx ny = let
+  (xmi, ymi) = _vxy p1
+  (xma, yma) = _vxy p2
+  in
+    mkV2 <$> take nx (subdivSegment xmi xma nx) <*> take ny (subdivSegment ymi yma ny)
 
 data MeshGrid a = MeshGrid (Frame a) Int Int deriving (Eq, Show, Generic)
 
-meshGrid' :: (Enum a, RealFrac a) => MeshGrid a -> [Point a]
+-- meshGrid' :: (Enum a, RealFrac a) => MeshGrid a -> [Point a]
 meshGrid' (MeshGrid frm nx ny) = meshGrid frm nx ny
   
 
@@ -547,13 +521,13 @@ subdivSegment x1 x2 n = f <$> [0, 1 ..] where
 -- | Apply an affine transformation such that the resulting vector points to the unit square
 fromFrame :: Fractional a => Frame a -> V2 a -> V2 a
 fromFrame from v = mfrom <\> (v ^-^ vfrom) where
-  vfrom = v2fromPoint (_fpmin from) -- min.point vector of `from`
+  vfrom = _fpmin from -- min.point vector of `from`
   mfrom = diagMat2 (width from) (height from) -- rescaling matrix of `from`
 
 -- | Apply an affine transformation to a vector that points within the unit square
 toFrame :: Num a => Frame a -> V2 a -> V2 a
 toFrame to v01 = (mto #> v01) ^+^ vto where
-  vto = v2fromPoint (_fpmin to)     -- min.point vector of `to`
+  vto = _fpmin to     -- min.point vector of `to`
   mto = diagMat2 (width to) (height to)       -- rescaling matrix of `to`
 
 
@@ -562,16 +536,16 @@ toFrame to v01 = (mto #> v01) ^+^ vto where
 frameToAffine :: Num a => Frame a -> (DiagMat2 a, V2 a)
 frameToAffine frm = (m, v) where
   m = diagMat2 (width frm) (height frm)
-  v = v2fromPoint (_fpmin frm)
+  v = _fpmin frm
 
 
 affineToFrame :: (Num a, LinearMap m (V2 a)) => m -> V2 a -> Frame a
 affineToFrame m v = mkFrame pmin pmax
   where
-    p11 = Point 1 1
-    v01 = origin -. p11
-    pmin = movePoint v origin
-    pmax = movePoint (v ^+^ (m #> v01)) origin
+    p11 = mkV2 1 1
+    v01 = origin ^-^ p11
+    pmin = v
+    pmax = v ^+^ (m #> v01)
     
 
 -- | Identity of affine Frame transformations
@@ -608,8 +582,8 @@ idFrame = uncurry affineToFrame . frameToAffine
 --          | otherwise = v01
 
 
-frameToFrameP :: Fractional a => Frame a -> Frame a -> Point a -> Point a
-frameToFrameP fromf tof = pointFromV2 . toFrame tof . flipUD . fromFrame fromf . v2fromPoint
+-- frameToFrameP :: Fractional a => Frame a -> Frame a -> Point a -> Point a
+frameToFrameP fromf tof = toFrame tof . flipUD . fromFrame fromf 
   where
     flipUD :: Num a => V2 a -> V2 a
     flipUD (V2 vx vy) = V2 vx (1 - vy)         
