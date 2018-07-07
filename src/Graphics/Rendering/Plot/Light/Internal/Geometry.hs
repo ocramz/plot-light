@@ -153,6 +153,8 @@ class Hermitian v => LinearMap m v where
   -- | Matrix action, i.e. linear transformation of a vector
   (#>) :: m -> v -> v
 
+
+
 -- | Multiplicative matrix semigroup ("multiplying" two matrices together)
 class MultiplicativeSemigroup m where
   -- | Matrix product
@@ -163,6 +165,25 @@ instance Num a => MultiplicativeSemigroup (Mat2 a) where
 
 instance Num a => LinearMap (Mat2 a) (V2 a) where
   (Mat2 a00 a01 a10 a11) #> (V2 vx vy) = V2 (a00 * vx + a01 * vy) (a10 * vx + a11 * vy)
+
+
+-- -- | Things which have a determinant -- not sure it's a good idea
+-- class Det m where
+--   type DetTy m :: *
+--   det :: m -> DetTy m
+
+-- instance Num a => Det (Mat2 a) where
+--   type DetTy (Mat2 a) = a
+--   det (Mat2 a00 a01 a10 a11) = a00 * a11 - a10 * a01
+
+-- instance Num a => Det (DiagMat2 a) where
+--   type DetTy (DiagMat2 a) = a
+--   det (DMat2 a00 a11) = a00 * a11
+
+-- rescaleIso :: (DetTy m ~ Scalar v, VectorSpace v, Det m) => m -> v -> v
+-- rescaleIso m v = det m .* v
+
+
 
 
 
@@ -256,6 +277,32 @@ midPoint :: Floating a => V2 a -> V2 a -> V2 a
 midPoint = liftV2 (\a b -> 1/2 * (a + b))
 
 
+
+-- | A Fr is really just a pair of things
+
+data Fr a = Fr a a deriving (Eq, Show, Generic)
+
+mkFr = Fr
+
+instance Ord a => Semigroup (Fr a) where
+  (Fr p1min p1max) <> (Fr p2min p2max) = Fr (min p1min p2min) (max p1max p2max)
+
+instance Monoid a => Monoid (Fr a) where
+  mempty = Fr mempty mempty
+
+unitFr :: Num a => Fr (V2 a)
+unitFr = mkFr origin oneOne
+  
+
+
+
+
+
+
+
+
+
+
 -- | A frame, i.e. a bounding box for objects
 data Frame a = Frame {
    _fpmin :: V2 a,
@@ -296,13 +343,12 @@ fromToStretchRatios frameFrom frameTo = (m2x/m1x, m2y/m1y)
     (DMat2 m2x m2y, _) = frameToAffine frameTo
 
 
--- | Create a `Frame` from a container of `Point`s `P`, i.e. construct two points `p1` and `p2` such that :
+-- | Create a `Frame` from a container of `V2`s `P`, i.e. construct two points `p1` and `p2` such that :
 --
 -- p1 := inf(x,y) P
 --
 -- p2 := sup(x,y) P
--- frameFromPoints :: (Ord a, Foldable t, Functor t) =>
---                          t (Point a) -> Frame a
+frameFromPoints :: (Ord a, Foldable t, Functor t) => t (V2 a) -> Frame a
 frameFromPoints ds = mkFrame (mkV2 mx my) (mkV2 mmx mmy)
   where
     xcoord = _vx <$> ds

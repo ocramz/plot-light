@@ -435,25 +435,42 @@ histo n v = H.fillBuilder buildr v where
 --   | otherwise = Nothing 
 
 
-
-data C1 p a = C1 (V2 a) (ShapeCol p) (V2 a)
-
-
-data Rect p a = Rect (V2 a) (ShapeCol p) (V2 a)
-
--- rescaleR :: LinearMap m (V2 a) => m -> Rect p a -> Rect p a
-rescaleR :: Num a => DiagMat2 a -> Rect p a -> Rect p a
-rescaleR m (Rect r col v) = Rect (m #> r) col v
+-- | ==
 
 
+-- data Circ p a = Circ (V2 a) (ShapeCol p) (V2 a)
 
-class Rescale x where
-  type RTy x :: *
-  rescale :: DiagMat2 (RTy x) -> x -> x
+-- data Rect p a = Rect (V2 a) (ShapeCol p) (V2 a)
 
-instance Num a => Rescale (Rect p a) where
-  type RTy (Rect p a) = a
-  rescale = rescaleR
+-- rescaleR :: Num a => DiagMat2 a -> Rect p a -> Rect p a
+-- rescaleR m (Rect r col v) = Rect (m #> r) col v
+
+-- class Rescale x where
+--   type RTy x :: *
+--   rescale :: DiagMat2 (RTy x) -> x -> x
+
+-- instance Num a => Rescale (Rect p a) where
+--   type RTy (Rect p a) = a
+--   rescale = rescaleR
+
+
+-- | ==
+
+
+
+-- rectangle, square, polygon  -- Frame (V2)
+-- circle, point, glyph        -- V2
+-- polyline, filled polyline   -- [V2]
+
+
+data Sh p a =
+    Cir (ShapeCol p) (Frame a)
+  | Rec (ShapeCol p) (Frame a)
+  | PolyL (LineOptions p) StrokeLineJoin_ [a]
+
+
+
+
 
 
 

@@ -23,14 +23,6 @@ library
                      , plot-light
                      , JuicyPixels
 
--- executable plot-light-bitmap
---   default-language:    Haskell2010
---   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
---   hs-source-dirs:      app
---   main-is:             Main.hs
---   build-depends:       base
---                      , plot-light-bitmap
-
 test-suite spec
   default-language:    Haskell2010
   ghc-options:         -Wall
