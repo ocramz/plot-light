@@ -33,13 +33,13 @@ data Heatmap a = Heatmap {
   , hmValMax :: a
                          } deriving (Eq, Show)
 
-heatmapDefaults :: Num a => Heatmap a
-heatmapDefaults = Heatmap mesh pal 0 1
-  where
-    pal = palette [C.red, C.white, C.blue] 20
-    pmin = mkV2 0 0
-    pmax = mkV2 1 1
-    mesh = MeshGrid2d (Frame pmin pmax) 20 20
+-- -- heatmapDefaults :: Num a => Heatmap a
+-- heatmapDefaults = Heatmap mesh pal 0 1
+--   where
+--     pal = palette [C.red, C.white, C.blue] 20
+--     pmin = mkV2 0 0
+--     pmax = mkV2 1 1
+--     mesh = MeshGrid2d (Frame pmin pmax) 20 20
 
   
 

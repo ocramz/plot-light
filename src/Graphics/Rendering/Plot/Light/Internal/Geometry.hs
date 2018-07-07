@@ -13,7 +13,8 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** LabeledPoint
   LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel,
   -- ** Frame
-  Frame(..), mkFrame, unitFrame, frameFromPoints,  mkFrameOrigin, height, width, xmin, xmax, ymin, ymax, isPointInFrame, frameToAffine, fromToStretchRatios,
+  Frame(..), mkFrame, unitFrame, frameFromPoints,  mkFrameOrigin, height, width, xmin, xmax, ymin, ymax, isPointInFrame, frameToAffine,
+  -- fromToStretchRatios,
   -- ** Axis
   Axis(..), otherAxis,
   -- *** AxisData, AxisFrame
@@ -280,67 +281,72 @@ midPoint = liftV2 (\a b -> 1/2 * (a + b))
 
 -- | A Fr is really just a pair of things
 
-data Fr a = Fr a a deriving (Eq, Show, Generic)
+data Frame a = Frame {_fpmin :: a, _fpmax :: a} deriving (Eq, Show, Generic)
 
-mkFr = Fr
-
-instance Ord a => Semigroup (Fr a) where
-  (Fr p1min p1max) <> (Fr p2min p2max) = Fr (min p1min p2min) (max p1max p2max)
-
-instance Monoid a => Monoid (Fr a) where
-  mempty = Fr mempty mempty
-
-unitFr :: Num a => Fr (V2 a)
-unitFr = mkFr origin oneOne
-  
-
-
-
-
-
-
-
-
-
-
--- | A frame, i.e. a bounding box for objects
-data Frame a = Frame {
-   _fpmin :: V2 a,
-   _fpmax :: V2 a
-   } deriving (Eq, Show, Generic)
-
-mkFrame :: V2 a -> V2 a -> Frame a
 mkFrame = Frame
 
--- | The semigroup operation (`mappend`) applied on two `Frames` results in a new `Frame` that bounds both.
+instance Ord a => Semigroup (Frame a) where
+  (Frame p1min p1max) <> (Frame p2min p2max) = Frame (min p1min p2min) (max p1max p2max)
 
-instance (Ord a) => Semigroup (Frame a) where
-  (Frame p1min p1max) <> (Frame p2min p2max) = Frame (vInf p1min p2min) (vSup p1max p2max)
+frameDirac :: a -> Frame a
+frameDirac p = mkFrame p p
+
+instance Monoid a => Monoid (Frame a) where
+  mempty = Frame mempty mempty
+
+unitFrame :: Num a => Frame (V2 a)
+unitFrame = mkFrame origin oneOne
   
-instance (Ord a, Num a) => Monoid (Frame a) where
-  mempty = Frame (mkV2 0 0) (mkV2 0 0)
-  mappend = (<>)
 
-isPointInFrame :: Ord a => Frame a -> V2 a -> Bool
+frameFromPoints :: Ord a => [a] -> Frame a
+frameFromPoints ps = foldr ins (frameDirac $ head ps) ps where
+  ins p fr = frameDirac p <> fr
+
+
+
+
+
+
+
+
+-- -- | A frame, i.e. a bounding box for objects
+-- data Frame a = Frame {
+--    _fpmin :: V2 a,
+--    _fpmax :: V2 a
+--    } deriving (Eq, Show, Generic)
+
+-- mkFrame :: V2 a -> V2 a -> Frame a
+-- mkFrame = Frame
+
+-- -- | The semigroup operation (`mappend`) applied on two `Frames` results in a new `Frame` that bounds both.
+
+-- instance (Ord a) => Semigroup (Frame a) where
+--   (Frame p1min p1max) <> (Frame p2min p2max) = Frame (vInf p1min p2min) (vSup p1max p2max)
+  
+-- instance (Ord a, Num a) => Monoid (Frame a) where
+--   mempty = Frame (mkV2 0 0) (mkV2 0 0)
+--   mappend = (<>)
+
+-- isPointInFrame :: Ord a => Frame a -> V2 a -> Bool
 isPointInFrame (Frame p1 p2) p = p >= p1 && p <= p2
 
 
 -- | Build a frame rooted at the origin (0, 0)
-mkFrameOrigin :: Num a => a -> a -> Frame a
-mkFrameOrigin w h = Frame origin (mkV2 w h)
+-- mkFrameOrigin :: Num a => a -> a -> Frame a
+mkFrameOrigin w h = mkFrame origin (mkV2 w h)
 
--- | The unit square (0, 0) - (1, 1)
-unitFrame :: Num a => Frame a
-unitFrame = mkFrame origin oneOne
+-- -- | The unit square (0, 0) - (1, 1)
+-- unitFrame :: Num a => Frame a
+-- unitFrame = mkFrame origin oneOne
 
 
 
--- | Horizontal and vertical stretch factors associated with an affine transformation between two 'Frame's
-fromToStretchRatios :: Fractional b => Frame b -> Frame b -> (b, b)  
-fromToStretchRatios frameFrom frameTo = (m2x/m1x, m2y/m1y)
-  where
-    (DMat2 m1x m1y, _) = frameToAffine frameFrom
-    (DMat2 m2x m2y, _) = frameToAffine frameTo
+-- -- | Horizontal and vertical stretch factors associated with an affine transformation between two 'Frame's
+-- fromToStretchRatios :: Fractional b => Frame b -> Frame b -> (b, b)  
+-- fromToStretchRatios frameFrom frameTo = (m2x/m1x, m2y/m1y)
+--   where
+--     (DMat2 m1x m1y, _) = frameToAffine frameFrom
+--     (DMat2 m2x m2y, _) = frameToAffine frameTo
 
 
 -- | Create a `Frame` from a container of `V2`s `P`, i.e. construct two points `p1` and `p2` such that :
@@ -348,28 +354,33 @@ fromToStretchRatios frameFrom frameTo = (m2x/m1x, m2y/m1y)
 -- p1 := inf(x,y) P
 --
 -- p2 := sup(x,y) P
-frameFromPoints :: (Ord a, Foldable t, Functor t) => t (V2 a) -> Frame a
-frameFromPoints ds = mkFrame (mkV2 mx my) (mkV2 mmx mmy)
-  where
-    xcoord = _vx <$> ds
-    ycoord = _vy <$> ds
-    mmx = maximum xcoord 
-    mmy = maximum ycoord 
-    mx = minimum xcoord 
-    my = minimum ycoord
+
+-- frameFromPoints :: (Ord a, Foldable t, Functor t) => t (V2 a) -> Frame a
+-- frameFromPoints ds = mkFrame (mkV2 mx my) (mkV2 mmx mmy)
+--   where
+--     xcoord = _vx <$> ds
+--     ycoord = _vy <$> ds
+--     mmx = maximum xcoord 
+--     mmy = maximum ycoord 
+--     mx = minimum xcoord 
+--     my = minimum ycoord
+
+
+
+
 
 
  
 
 -- | Frame corner coordinates
-xmin, xmax, ymin, ymax :: Frame a -> a
+-- xmin, xmax, ymin, ymax :: Frame a -> a
 xmin = _vx . _fpmin
 xmax = _vx . _fpmax
 ymin = _vy . _fpmin
 ymax = _vy . _fpmax
 
 -- | The `width` is the extent in the `x` direction and `height` is the extent in the `y` direction
-width, height :: Num a => Frame a -> a
+-- width, height :: Num a => Frame a -> a
 width f = abs $ xmax f - xmin f
 height f = abs $ ymax f - ymin f
 
@@ -566,13 +577,13 @@ subdivSegment x1 x2 n = f <$> [0, 1 ..] where
 
 
 -- | Apply an affine transformation such that the resulting vector points to the unit square
-fromFrame :: Fractional a => Frame a -> V2 a -> V2 a
+-- fromFrame :: Fractional a => Frame a -> V2 a -> V2 a
 fromFrame from v = mfrom <\> (v ^-^ vfrom) where
   vfrom = _fpmin from -- min.point vector of `from`
   mfrom = diagMat2 (width from) (height from) -- rescaling matrix of `from`
 
 -- | Apply an affine transformation to a vector that points within the unit square
-toFrame :: Num a => Frame a -> V2 a -> V2 a
+-- toFrame :: Num a => Frame a -> V2 a -> V2 a
 toFrame to v01 = (mto #> v01) ^+^ vto where
   vto = _fpmin to     -- min.point vector of `to`
   mto = diagMat2 (width to) (height to)       -- rescaling matrix of `to`
@@ -580,13 +591,13 @@ toFrame to v01 = (mto #> v01) ^+^ vto where
 
 
 
-frameToAffine :: Num a => Frame a -> (DiagMat2 a, V2 a)
+-- frameToAffine :: Num a => Frame a -> (DiagMat2 a, V2 a)
 frameToAffine frm = (m, v) where
   m = diagMat2 (width frm) (height frm)
   v = _fpmin frm
 
 
-affineToFrame :: (Num a, LinearMap m (V2 a)) => m -> V2 a -> Frame a
+-- affineToFrame :: (Num a, LinearMap m (V2 a)) => m -> V2 a -> Frame a
 affineToFrame m v = mkFrame pmin pmax
   where
     p11 = mkV2 1 1
@@ -596,7 +607,7 @@ affineToFrame m v = mkFrame pmin pmax
     
 
 -- | Identity of affine Frame transformations
-idFrame :: Num a => Frame a -> Frame a
+-- idFrame :: Num a => Frame a -> Frame a
 idFrame = uncurry affineToFrame . frameToAffine
 
 
@@ -641,12 +652,12 @@ flipLR01 (V2 a b) = V2 (1 - a) b
 flipUD01 (V2 a b) = V2 a (1 - b)
 
 
--- | Map function values across frames
-frameToFrameValue :: Fractional t =>
-      Frame t  -- ^ Initial frame
-   -> Frame t  -- ^ Final frame
-   -> t        -- ^ Initial value
-   -> t
+-- -- | Map function values across frames
+-- frameToFrameValue :: Fractional t =>
+--       Frame t  -- ^ Initial frame
+--    -> Frame t  -- ^ Final frame
+--    -> t        -- ^ Initial value
+--    -> t
 frameToFrameValue from to x = (x01 * rto) + ymin to where
   x01 = (x - ymin from)/rfrom
   rfrom = height from

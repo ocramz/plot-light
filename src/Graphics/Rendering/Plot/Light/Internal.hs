@@ -7,7 +7,8 @@ module Graphics.Rendering.Plot.Light.Internal
   -- * Frame
     Frame(..), mkFrame, unitFrame, mkFrameOrigin,
     -- frameToFrame,
-    frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, frameToAffine, fromToStretchRatios, 
+    frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, frameToAffine,
+    -- fromToStretchRatios, 
     -- * FigureData
     FigureData(..), figFWidth, figFHeight, figureDataDefault, withSvg
   --   -- * Point
@@ -375,9 +376,9 @@ mkPolyLinePlot lo slj dats = PolyLineSh lo slj ps where
 -- histGeometry :: (bv ~ H.BinValue bin, VU.Unbox bv, H.Bin bin, Ord bv, Num bv) =>
 --                 H.Histogram bin bv
 --              -> (Frame bv, [LabeledPoint bv bv])
-histGeometry :: (bv ~ H.BinValue bin, VU.Unbox bv, H.Bin bin, Ord bv, Num bv) =>
-                H.Histogram bin bv
-             -> Frame bv
+-- histGeometry :: (bv ~ H.BinValue bin, VU.Unbox bv, H.Bin bin, Ord bv, Num bv) =>
+--                 H.Histogram bin bv
+--              -> Frame bv
 histGeometry hist = frm where
   hl = H.asList hist
   -- hlps = map (\(x, bc) -> let p = Point x 0 in mkLabeledPoint p bc) hl
@@ -516,37 +517,37 @@ shs = [r0, r1, r2]
 
 
 
-test0 =
-  do
-  let
-    figdata = figureDataDefault
-    to = frameFromFigData figdata
-    (rout, rin) = rectsFigData figdata 
-    svg_t = svgHeader' figdata $ do
-      render0 to shs
-      renderShape rout
-      renderShape rin
-  T.writeFile "examples/ex_dsl2.svg" $ T.pack $ renderSvg svg_t
+-- test0 =
+--   do
+--   let
+--     figdata = figureDataDefault
+--     to = frameFromFigData figdata
+--     (rout, rin) = rectsFigData figdata 
+--     svg_t = svgHeader' figdata $ do
+--       render0 to shs
+--       renderShape rout
+--       renderShape rin
+--   T.writeFile "examples/ex_dsl2.svg" $ T.pack $ renderSvg svg_t
 
 
--- | Rectangles based on the inner and outer frames of the drawable canvas
-rectsFigData
-  :: Floating a =>
-     FigureData a -> (Shape a (V2 a), Shape a (V2 a))
-rectsFigData fd = (rOut, rIn)
-  where
-    col = shapeColNoFill C.black 1 1
-    frIn = frameFromFigData fd
-    pc = midPoint (_fpmin frIn) (_fpmax frIn)
-    rIn = RectCenteredSh (width frIn) (height frIn) col pc 
-    rOut = RectCenteredSh (figWidth fd) (figHeight fd) col pc
+-- -- | Rectangles based on the inner and outer frames of the drawable canvas
+-- -- rectsFigData
+-- --   :: Floating a =>
+-- --      FigureData a -> (Shape a (V2 a), Shape a (V2 a))
+-- rectsFigData fd = (rOut, rIn)
+--   where
+--     col = shapeColNoFill C.black 1 1
+--     frIn = frameFromFigData fd
+--     pc = midPoint (_fpmin frIn) (_fpmax frIn)
+--     rIn = RectCenteredSh (width frIn) (height frIn) col pc 
+--     rOut = RectCenteredSh (figWidth fd) (figHeight fd) col pc
 
 
 
-render0 :: (Functor t, Foldable t, Show a, RealFrac a) =>
-           Frame a
-        -> t (Shape a (V2 a))
-        -> Svg
+-- render0 :: (Functor t, Foldable t, Show a, RealFrac a) =>
+--            Frame a
+--         -> t (Shape a (V2 a))
+--         -> Svg
 render0 to shs = renderShape `mapM_` shs' where
   (Wrt SVG _ shs') = wrapped to shs 
 
@@ -582,10 +583,10 @@ renderShape sh =
 -- 2) recomputes the point coordinates to fall within the destination frame in the SVG reference
 -- 3) outputs the transformed shapes within a 'Wrt SVG' wrapper
 --  
-wrapped :: (Functor t, Foldable t, Fractional a, Ord a) =>
-           Frame a
-        -> t (Shape a (V2 a))
-        -> Wrt SVG a (t (Shape a (V2 a)))
+-- wrapped :: (Functor t, Foldable t, Fractional a, Ord a) =>
+--            Frame a
+--         -> t (Shape a (V2 a))
+--         -> Wrt SVG a (t (Shape a (V2 a)))
 wrapped to shs = wrtSvg from $ convertShapeRef from to <$> shs where
   from = wrappingFrame shs
   
@@ -595,14 +596,14 @@ wrapped to shs = wrtSvg from $ convertShapeRef from to <$> shs where
 -- The result can be used as the "from" Frame used to compute the Screen-SVG coordinate transform
 --
 -- FIXME
-wrappingFrame :: (Foldable t, Num a, Ord a) =>
-                 t (Shape a (V2 a))
-              -> Frame a
+-- wrappingFrame :: (Foldable t, Num a, Ord a) =>
+--                  t (Shape a (V2 a))
+--               -> Frame a
 wrappingFrame shs = foldr fc mempty shs where
   fc acc b = mkShapeFrame acc `mappend` b
 
 -- FIXME
-mkShapeFrame :: Ord a => Shape t (V2 a) -> Frame a
+-- mkShapeFrame :: Ord a => Shape t (V2 a) -> Frame a
 mkShapeFrame sh = case sh of
     RectCenteredSh _ _ _ p -> mkFrame p p
     RectSh _ _ _ p -> mkFrame p p
@@ -650,11 +651,11 @@ wrtSvg = Wrt SVG
 -- compose the affine transformations required to move the 'Shape' from starting to destination frame.
 --
 -- NB : this should be the /only/ function dedicated to transforming point coordinates
-convertShapeRef :: (Functor f, Fractional a) =>
-                   Frame a
-                -> Frame a
-                -> f (V2 a)
-                -> f (V2 a)
+-- convertShapeRef :: (Functor f, Fractional a) =>
+--                    Frame a
+--                 -> Frame a
+--                 -> f (V2 a)
+--                 -> f (V2 a)
 convertShapeRef from to sh = frameToFrameP from to <$> sh
 
 
@@ -950,7 +951,7 @@ labeledTicks ax len sw col fontsize lrot tanchor flab vlab ps =
 
 
 
-frameFromFigData :: Num a => FigureData a -> Frame a
+-- frameFromFigData :: Num a => FigureData a -> Frame a
 frameFromFigData fd = mkFrame oTo p2To where
     -- fontsize = figLabelFontSize fd
     wfig = figWidth fd
@@ -960,7 +961,7 @@ frameFromFigData fd = mkFrame oTo p2To where
     oTo = mkV2 left top
     p2To = mkV2 right bot
 
-figFWidth, figFHeight :: Num a => FigureData a -> a
+-- figFWidth, figFHeight :: Num a => FigureData a -> a
 figFWidth = width . frameFromFigData
 figFHeight = height . frameFromFigData
 
