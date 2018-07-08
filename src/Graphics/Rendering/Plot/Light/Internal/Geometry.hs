@@ -279,12 +279,14 @@ midPoint = liftV2 (\a b -> 1/2 * (a + b))
 
 
 
--- | A Fr is really just a pair of things
+-- | A Frame is really just a pair of things
 
 data Frame a = Frame {_fpmin :: a, _fpmax :: a} deriving (Eq, Show, Generic)
 
+mkFrame :: a -> a -> Frame a
 mkFrame = Frame
 
+-- | The semigroup operation (`mappend`) applied on two `Frames` results in a new `Frame` that bounds both.
 instance Ord a => Semigroup (Frame a) where
   (Frame p1min p1max) <> (Frame p2min p2max) = Frame (min p1min p2min) (max p1max p2max)
 
@@ -304,35 +306,12 @@ frameFromPoints ps = foldr ins (frameDirac $ head ps) ps where
 
 
 
-
-
-
-
-
--- -- | A frame, i.e. a bounding box for objects
--- data Frame a = Frame {
---    _fpmin :: V2 a,
---    _fpmax :: V2 a
---    } deriving (Eq, Show, Generic)
-
--- mkFrame :: V2 a -> V2 a -> Frame a
--- mkFrame = Frame
-
--- -- | The semigroup operation (`mappend`) applied on two `Frames` results in a new `Frame` that bounds both.
-
--- instance (Ord a) => Semigroup (Frame a) where
---   (Frame p1min p1max) <> (Frame p2min p2max) = Frame (vInf p1min p2min) (vSup p1max p2max)
-  
--- instance (Ord a, Num a) => Monoid (Frame a) where
---   mempty = Frame (mkV2 0 0) (mkV2 0 0)
---   mappend = (<>)
-
--- isPointInFrame :: Ord a => Frame a -> V2 a -> Bool
+isPointInFrame :: Ord a => Frame a -> a -> Bool
 isPointInFrame (Frame p1 p2) p = p >= p1 && p <= p2
 
 
 -- | Build a frame rooted at the origin (0, 0)
--- mkFrameOrigin :: Num a => a -> a -> Frame a
+mkFrameOrigin :: Num a => a -> a -> Frame (V2 a)
 mkFrameOrigin w h = mkFrame origin (mkV2 w h)
 
 -- -- | The unit square (0, 0) - (1, 1)
@@ -340,13 +319,6 @@ mkFrameOrigin w h = mkFrame origin (mkV2 w h)
 -- unitFrame = mkFrame origin oneOne
 
 
-
--- -- | Horizontal and vertical stretch factors associated with an affine transformation between two 'Frame's
--- fromToStretchRatios :: Fractional b => Frame b -> Frame b -> (b, b)  
--- fromToStretchRatios frameFrom frameTo = (m2x/m1x, m2y/m1y)
---   where
---     (DMat2 m1x m1y, _) = frameToAffine frameFrom
---     (DMat2 m2x m2y, _) = frameToAffine frameTo
 
 
 -- | Create a `Frame` from a container of `V2`s `P`, i.e. construct two points `p1` and `p2` such that :
@@ -364,6 +336,13 @@ mkFrameOrigin w h = mkFrame origin (mkV2 w h)
 --     mmy = maximum ycoord 
 --     mx = minimum xcoord 
 --     my = minimum ycoord
+
+
+
+-- | A NonEmpty collection , filled with V2's, could be used to express generic collection of points
+data NE a = NE { neHead :: !a, fneTail :: ![a] } deriving (Eq, Show, Generic)
+
+
 
 
 
