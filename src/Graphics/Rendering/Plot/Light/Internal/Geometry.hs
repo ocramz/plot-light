@@ -460,43 +460,13 @@ interpolateBilinear' q11 q22 f p =
 
 
 
-
-
-
-  
-
-
-
-
-
-
-
-
--- -- | Build a `V2` v from a `Point` p (i.e. assuming v points from the origin (0,0) to p)
--- v2fromPoint :: Num a => Point a -> V2 a
--- v2fromPoint p = origin -. p
-
-
-
--- | Move a point along a vector
--- -- movePoint :: Num a => V2 a -> Point a -> Point a
--- movePoint (V2 vx vy) p = mkPoint (px + vx) (py + vy) where
---   (px, py) = _pxy p
-
--- movePoint = (^+^)
-
 -- -- | Move a `LabeledPoint` along a vector
 -- moveLabeledPointV2 :: Num a => V2 a -> LabeledPoint l a -> LabeledPoint l a
 -- moveLabeledPointV2 = moveLabeledPoint . movePoint
 
--- -- | The coordinate vectors associated with the displacement between two points
--- --
--- -- invariant : p1 -. p2 == vx <> vy where (vx, vy) = xyDispl p1 p2
--- xyDispl :: Num a => Point a -> Point a -> (V2 a, V2 a)
--- xyDispl p1 p2 = (v1 .* e1, v2 .* e2) where
---   v = p1 -. p2
---   v1 = v <.> e1
---   v2 = v <.> e2
+-- moveLabeledPointV2 v = fmap (^+^ v)
+
+
 
 
 
@@ -531,7 +501,8 @@ meshGrid (Frame p1 p2) nx ny = let
 
 data MeshGrid a = MeshGrid (Frame a) Int Int deriving (Eq, Show, Generic)
 
--- meshGrid' :: (Enum a, RealFrac a) => MeshGrid a -> [Point a]
+
+meshGrid' :: (Real a1, RealFrac a, Enum a) => MeshGrid (V2 a1) -> [V2 a]
 meshGrid' (MeshGrid frm nx ny) = meshGrid frm nx ny
   
 

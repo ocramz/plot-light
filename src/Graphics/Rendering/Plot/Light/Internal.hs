@@ -618,11 +618,11 @@ wrtSvg = Wrt SVG
 -- compose the affine transformations required to move the 'Shape' from starting to destination frame.
 --
 -- NB : this should be the /only/ function dedicated to transforming point coordinates
--- convertShapeRef :: (Functor f, Fractional a) =>
---                    Frame a
---                 -> Frame a
---                 -> f (V2 a)
---                 -> f (V2 a)
+convertShapeRef :: (Functor f, Fractional a) =>
+                   Frame (V2 a)
+                -> Frame (V2 a)
+                -> f (V2 a)
+                -> f (V2 a)
 convertShapeRef from to sh = frameToFrame from to <$> sh
 
 
