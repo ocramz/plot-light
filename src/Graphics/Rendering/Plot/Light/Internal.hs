@@ -471,7 +471,7 @@ histo n v = H.fillBuilder buildr v where
 data Shp p d a =
     Ci (ShapeCol p) d a
   | Re (ShapeCol p) d (Align a)
-  | PyL [a]
+  -- | PyL [a]
   -- | Gly GlyphShape_ a 
   deriving (Eq, Show, Functor)
 
@@ -485,6 +485,12 @@ instance Bifunctor (Shp p) where
   bimap f g sh = case sh of
     Ci col wd w -> Ci col (f wd) (g w)
     Re col wd w -> Re col (f wd) (g <$> w)
+    
+linear :: (Bifunctor p, LinearMap m b) => m -> p b c -> p b c
+linear m = first (\w -> m #> w)
+
+linearInv :: (Bifunctor p, MatrixGroup m b) => m -> p b c -> p b c
+linearInv m = first (\w -> m <\> w)
 
 -- affine :: (Bifunctor p, LinearMap m b) => m -> b -> p b c -> p b c
 -- affine m v = first (\w -> m #> (w ^+^ v))
@@ -494,9 +500,29 @@ instance Bifunctor (Shp p) where
 
 
 
--- | example smart constructor
-mkCi :: Num a => a -> ShapeCol p -> a -> a -> Shp p (V2 a) (V2 a)
-mkCi r col x y = Ci col (fromCartesian r 0) (fromCartesian x y)
+-- | example smart constructors
+
+mkCi :: Num a => a -> ShapeCol p -> v -> Shp p (V2 a) v
+mkCi r col v = Ci col (fromCartesian r 0) v
+
+mkReBLC :: Num a => a -> a -> ShapeCol p -> v -> Shp p (V2 a) v
+mkReBLC w h col v = Re col vd (BLCorner v) where
+  vd = fromCartesian w h 
+
+-- | Compute center of shape
+shpCenter sh = case sh of
+  Ci _ _ v -> v
+  Re _ vd al -> case al of
+    Centered v -> v
+    BLCorner v -> v ^+^ ((1/2) .* vd)
+
+-- mkFrameShp :: AdditiveGroup v => Shp a v v -> Frame v
+-- mkFrameShp sh = case sh of
+--   Ci _ vd v -> mkFrame (v ^+^ vd) (v ^-^ vd)
+--   Re _ vd al -> case al of
+--     Centered v -> mkFrame (v ^+^ vd) (v ^-^ vd)
+--     BLCorner v -> mkFrame v (v ^+^ vd)
+--     -- BSideC v -> let (w, h) = _vxy vd
 
 renderShp :: (Show a, RealFloat a) => Shp a (V2 a) (V2 a) -> Svg
 renderShp sh = case sh of
