@@ -150,7 +150,8 @@ module Graphics.Rendering.Plot.Light (
   -- -- -- heatmap, heatmap',
   plotFun2, colourBar,
   -- ** Scatter
-  scatter, scatterLP, scatterLPBar, ScatterPointData(..), GlyphShape_(..),
+  -- scatter, scatterLP, scatterLPBar,
+  ScatterPointData(..), GlyphShape_(..),
   -- ** Histogram
   -- densityD, histogramD,
   -- * Plot elements
@@ -176,7 +177,8 @@ module Graphics.Rendering.Plot.Light (
   -- ** Element attributes
   LineStroke_(..), LegendPosition_(..),
   -- ** Operations on frames
-  frameFromPoints, frameFromFigData, mkFrame, mkFrameOrigin, width, height, figFWidth, figFHeight,  
+  frameFromPoints, frameFromFigData, mkFrame, mkFrameOrigin, width, height,
+  -- figFWidth, figFHeight,  
   -- ** Colour utilities
   blendTwo, palette, pickColour,
   -- *** ShapeCol-related

@@ -21,7 +21,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   V2(..), mkV2, fromCartesian, _vxy, 
   -- pointFromV2,
   -- ** Matrices
-  Mat2(..), DiagMat2(..), diagMat2,
+  Mat2(..), DiagMat2(..), diagMat2, rotMtx,
   -- ** Primitive elements
   origin, oneOne, e1, e2,
   -- ** Vector norm operations 

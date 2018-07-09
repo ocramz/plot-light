@@ -11,7 +11,9 @@ module Graphics.Rendering.Plot.Light.Internal
     frameToFrameValue, frameFromPoints, frameFromFigData, xmin,xmax,ymin,ymax, width, height, frameToAffine,
     -- fromToStretchRatios, 
     -- * FigureData
-    FigureData(..), figFWidth, figFHeight, figureDataDefault, withSvg
+    FigureData(..),
+    -- figFWidth, figFHeight,
+    figureDataDefault, withSvg
   --   -- * Point
   -- , Point(..), mkPoint,
   -- , origin
@@ -37,9 +39,11 @@ module Graphics.Rendering.Plot.Light.Internal
     text, TextAnchor_(..), 
     -- ** Specialized plot elements
     pixel, pixel', plusGlyph, crossGlyph,
-    -- candlestick, 
+    -- candlestick,
+    GlyphShape_,     
     -- ** Plot legend
-    pickColour, colourBar, legendBar, LegendPosition_(..), 
+    pickColour, colourBar, legendBar, LegendPosition_(..),
+
     -- * Geometry
     -- ** R^2 Vectors
     V2(..), mkV2, _vxy, origin, oneOne, e1, e2, norm2, normalize2,
@@ -129,6 +133,20 @@ data FigureData a = FigureData {
   -- | Tick label font size
   , figLabelFontSize :: Int
                        } deriving (Eq, Show, Functor, Generic)
+
+frameFromFigData :: Num a => FigureData a -> Frame (V2 a)
+frameFromFigData fd = mkFrame oTo p2To where
+    -- fontsize = figLabelFontSize fd
+    wfig = figWidth fd
+    hfig = figHeight fd
+    (left, right) = (figLeftMFrac fd * wfig, figRightMFrac fd * wfig)
+    (top, bot) = (figTopMFrac fd * hfig, figBottomMFrac fd * hfig)
+    oTo = mkV2 left top
+    p2To = mkV2 right bot
+
+-- figFWidth, figFHeight :: Num a => FigureData a -> a
+-- figFWidth = width . frameFromFigData
+-- figFHeight = height . frameFromFigData
 
 figureDataDefault :: Floating a => FigureData a
 figureDataDefault = FigureData 400 300 0.1 0.9 0.1 0.9 10
@@ -253,13 +271,32 @@ mkVSvg = V SVG
 
 
 
-
-
 -- | Some data structs for plotting options
 
-
-data Glyph_ =
+-- | Glyph shape for scatter plots
+data GlyphShape_ =
   GlyphPlus | GlyphCross | GlyphCircle | GlyphSquare deriving (Eq, Show)
+
+
+-- -- -- | Scatterplot glyph shapes
+-- -- glyph :: (Show a, RealFrac a) =>
+-- --          a               -- ^ Width
+-- --       -> a               -- ^ Stroke width
+-- --       -> GlyphShape_     -- ^ Glyph shape
+-- --       -> C.Colour Double -- ^ Glyph colour
+-- --       -> a               -- ^ Opacity
+-- --       -> Point a         -- ^ Position
+-- --       -> Svg
+-- glyph w sw sh col alpha p =
+--   let cf = shapeColNoBorder col alpha
+--   in 
+--     case sh of
+--       GlyphSquare -> squareCentered w cf p
+--       GlyphCircle -> circle w cf p
+--       GlyphCross -> crossGlyph w sw col p
+--       GlyphPlus -> plusGlyph w sw col p
+
+      
 
 -- data PlotOptions p a =
 --     LinePlot (LineOptions p) StrokeLineJoin_ a
@@ -296,15 +333,15 @@ data Plot =
 
 -- | Line plot
 
-mkPolyLinePlot :: Num a =>
-                  LineOptions p
-               -> StrokeLineJoin_
-               -> [a]
-               -> Shape p (V2 a)
-mkPolyLinePlot lo slj dats = PolyLineSh lo slj ps where
-  n = length dats
-  ns = fromIntegral <$> [0 .. n-1]
-  ps = zipWith mkV2 ns dats
+-- mkPolyLinePlot :: Num a =>
+--                   LineOptions p
+--                -> StrokeLineJoin_
+--                -> [a]
+--                -> Shape p (V2 a)
+-- mkPolyLinePlot lo slj dats = PolyLineSh lo slj ps where
+--   n = length dats
+--   ns = fromIntegral <$> [0 .. n-1]
+--   ps = zipWith mkV2 ns dats
 
               
 
@@ -407,9 +444,14 @@ data Sh p a =
     Cir (ShapeCol p) a a
   | Rec (ShapeCol p) a a
   | Sqr (ShapeCol p) a a
-  | Line (ShapeCol p) a a
+  | Line (LineOptions p) a a
   | PolyL (LineOptions p) StrokeLineJoin_ (NE a)
   deriving (Eq, Show, Functor)
+
+
+renderShape sh = case sh of
+  Cir col p1 p2 -> circle (norm2 $ p2 ^-^ p1) col p1
+  -- Rec col p1 p2 -> 
 
 -- | Construct a Frame from a Sh
 mkShFrame :: Ord a => Sh t a -> Frame a
@@ -449,72 +491,74 @@ mkSqr r col vc = Sqr col vc v2 where
 -- | NB : the 'Point' parameter always refers to the center of the shape.
 --
 -- NB2 : the 'a' type parameter appears where the Point parameter used to be
-data Shape p a =
-    RectCenteredSh p p (ShapeCol p) a
-  | RectCenteredMidpointBaseSh p p (ShapeCol p) a  
-  | RectSh p p (ShapeCol p) a
-  | SquareCenteredSh p (ShapeCol p) a
-  | LineSh (LineOptions p) a a
-  | CircleSh p (ShapeCol p) a
-  | PolyLineSh (LineOptions p) StrokeLineJoin_ [a]
-  deriving (Eq, Show, Functor)
+-- data Shape p a =
+--     RectCenteredSh p p (ShapeCol p) a
+--   | RectCenteredMidpointBaseSh p p (ShapeCol p) a  
+--   | RectSh p p (ShapeCol p) a
+--   | SquareCenteredSh p (ShapeCol p) a
+--   | LineSh (LineOptions p) a a
+--   | CircleSh p (ShapeCol p) a
+--   | PolyLineSh (LineOptions p) StrokeLineJoin_ [a]
+--   deriving (Eq, Show, Functor)
 
--- -- FilledPolyLine
--- -- ...
-
-
-
-
-
-c0 = CircleSh 10 (shapeColNoBorder C.red 0.9) (mkV2 10 20)
-c1 = CircleSh 5 (shapeColNoBorder C.orange 0.9) (mkV2 5 15)
-c2 = CircleSh 15 (shapeColNoBorder C.blue 0.3) (mkV2 12 17)
-c3 = CircleSh 20 (shapeColNoBorder C.yellow 1) (mkV2 0 0)
-
-r0 = RectSh 10 10 (shapeColNoBorder C.red 1) (mkV2 10 20)
-r1 = RectSh 10 10 (shapeColNoBorder C.blue 0.5) (mkV2 0 0)
-r2 = RectSh 50 10 (shapeColNoBorder C.orange 0.7) (mkV2 5 10)
-
--- shs :: [Shape Double (Point Double)]
-shs = [r0, r1, r2]
--- shs = [c0,c1,c2]
+-- -- -- FilledPolyLine
+-- -- -- ...
 
 
 
 
 
 
-test0 =
-  do
-  let
-    figdata = figureDataDefault
-    to = frameFromFigData figdata
-    (rout, rin) = rectsFigData figdata 
-    svg_t = svgHeader' figdata $ do
-      render0 to shs
-      renderShape rout
-      renderShape rin
-  T.writeFile "examples/ex_dsl3.svg" $ T.pack $ renderSvg svg_t
 
+-- c0 = CircleSh 10 (shapeColNoBorder C.red 0.9) (mkV2 10 20)
+-- c1 = CircleSh 5 (shapeColNoBorder C.orange 0.9) (mkV2 5 15)
+-- c2 = CircleSh 15 (shapeColNoBorder C.blue 0.3) (mkV2 12 17)
+-- c3 = CircleSh 20 (shapeColNoBorder C.yellow 1) (mkV2 0 0)
 
--- | Rectangles based on the inner and outer frames of the drawable canvas
-rectsFigData
-  :: Floating a =>
-     FigureData a -> (Shape a (V2 a), Shape a (V2 a))
-rectsFigData fd = (rOut, rIn)
-  where
-    col = shapeColNoFill C.black 1 1
-    frIn = frameFromFigData fd
-    pc = midPoint (_fpmin frIn) (_fpmax frIn)
-    rIn = RectCenteredSh (width frIn) (height frIn) col pc 
-    rOut = RectCenteredSh (figWidth fd) (figHeight fd) col pc
+-- r0 = RectSh 10 10 (shapeColNoBorder C.red 1) (mkV2 10 20)
+-- r1 = RectSh 10 10 (shapeColNoBorder C.blue 0.5) (mkV2 0 0)
+-- r2 = RectSh 50 10 (shapeColNoBorder C.orange 0.7) (mkV2 5 10)
+
+-- -- shs :: [Shape Double (Point Double)]
+-- shs = [r0, r1, r2]
+-- -- shs = [c0,c1,c2]
 
 
 
-render0 :: (Functor t, Foldable t, Show a, RealFrac a) =>
-           Frame (V2 a)
-        -> t (Shape a (V2 a))
-        -> Svg
+
+
+
+-- test0 =
+--   do
+--   let
+--     figdata = figureDataDefault
+--     to = frameFromFigData figdata
+--     (rout, rin) = rectsFigData figdata 
+--     svg_t = svgHeader' figdata $ do
+--       render0 to shs
+--       renderShape rout
+--       renderShape rin
+--   T.writeFile "examples/ex_dsl3.svg" $ T.pack $ renderSvg svg_t
+
+
+-- -- | Rectangles based on the inner and outer frames of the drawable canvas
+-- -- rectsFigData
+-- --   :: Floating a =>
+-- --      FigureData a -> (Shape a (V2 a), Shape a (V2 a))
+-- rectsFigData fd = (rOut, rIn)
+--   where
+--     col = shapeColNoFill C.black 1 1
+--     frIn = frameFromFigData fd
+--     pc = midPoint (_fpmin frIn) (_fpmax frIn)
+--     rIn = RectCenteredSh (width frIn) (height frIn) col pc 
+--     rOut = RectCenteredSh (figWidth fd) (figHeight fd) col pc
+
+
+
+-- render0 :: (Functor t, Foldable t, Show a, RealFrac a) =>
+--            Frame (V2 a)
+--         -> t (Shape a (V2 a))
+--         -> Svg
 render0 to shs = renderShape `mapM_` shs' where
   (Wrt SVG _ shs') = wrapped to shs 
 
@@ -525,23 +569,23 @@ render0 to shs = renderShape `mapM_` shs' where
 
 
 
--- | NB : We must only render a 'Shape' that's in the SVG reference system
---
--- The vertical correction for corner-anchored shapes is applied at this stage
-renderShape :: (Show a, RealFrac a) => Shape a (V2 a) -> Svg
-renderShape sh =
-  let
-    fv h p = V2 0 (- h) ^+^ p  
-  in
-  case sh of
-      RectCenteredSh w h col p -> rectCentered w h col p 
-      RectCenteredMidpointBaseSh w h col p ->
-        rectCenteredMidpointBase w h col (fv h p)      
-      RectSh w h col p -> rect w h col (fv h p) 
-      SquareCenteredSh w col p -> squareCentered w col p
-      CircleSh rad col p -> circle rad col p
-      LineSh lopts p1 p2 -> line' p1 p2 lopts
-      PolyLineSh lopts slj ps -> polyline' lopts slj ps
+-- -- | NB : We must only render a 'Shape' that's in the SVG reference system
+-- --
+-- -- The vertical correction for corner-anchored shapes is applied at this stage
+-- renderShape :: (Show a, RealFrac a) => Shape a (V2 a) -> Svg
+-- renderShape sh =
+--   let
+--     fv h p = V2 0 (- h) ^+^ p  
+--   in
+--   case sh of
+--       RectCenteredSh w h col p -> rectCentered w h col p 
+--       RectCenteredMidpointBaseSh w h col p ->
+--         rectCenteredMidpointBase w h col (fv h p)      
+--       RectSh w h col p -> rect w h col (fv h p) 
+--       SquareCenteredSh w col p -> squareCentered w col p
+--       CircleSh rad col p -> circle rad col p
+--       LineSh lopts p1 p2 -> line' p1 p2 lopts
+--       PolyLineSh lopts slj ps -> polyline' lopts slj ps
 
 
 
@@ -567,17 +611,17 @@ wrapped to shs = wrtSvg from $ convertShapeRef from to <$> shs where
 --                  t (Shape a (V2 a))
 --               -> Frame a
 wrappingFrame shs = foldr fc mempty shs where
-  fc acc b = mkShapeFrame acc `mappend` b
+  fc acc b = mkShFrame acc `mappend` b
 
--- FIXME
--- mkShapeFrame :: Ord a => Shape t (V2 a) -> Frame a
-mkShapeFrame sh = case sh of
-    RectCenteredSh _ _ _ p -> mkFrame p p
-    RectSh _ _ _ p -> mkFrame p p
-    SquareCenteredSh _ _ p -> mkFrame p p
-    LineSh _ p1 p2 -> mkFrame p1 p2
-    CircleSh _ _ p -> mkFrame p p
-    PolyLineSh _ _ ps -> frameFromPoints ps
+-- -- FIXME
+-- -- mkShapeFrame :: Ord a => Shape t (V2 a) -> Frame a
+-- mkShapeFrame sh = case sh of
+--     RectCenteredSh _ _ _ p -> mkFrame p p
+--     RectSh _ _ _ p -> mkFrame p p
+--     SquareCenteredSh _ _ p -> mkFrame p p
+--     LineSh _ p1 p2 -> mkFrame p1 p2
+--     CircleSh _ _ p -> mkFrame p p
+--     PolyLineSh _ _ ps -> frameFromPoints ps
   
 
 
@@ -729,10 +773,7 @@ lineOptionCycle lw =
     cols = [C.blue, C.green, C.red, C.black, C.purple]
     nc = length cols
   in
-  LineOptions <$>
-  repeat lw <*>
-  strTys <*>
-  cols
+  LineOptions <$> repeat lw <*> strTys <*> cols
 
 
 
@@ -782,7 +823,7 @@ tick ax len sw col p = line (mkV2 x1 y1) (mkV2 x2 y2) sw Continuous col where
     | otherwise = (x-lh, y, x+lh, y)
 
 
-
+plusGlyph, crossGlyph :: (Show a, RealFrac a) => a -> a -> C.Colour Double -> V2 a -> Svg
 plusGlyph w sw k p = do
   line pl pr sw Continuous k
   line pt pb sw Continuous k
@@ -804,7 +845,11 @@ crossGlyph w sw k p = do
     pb = mkV2 (x-wh) (x-wh)
     pc = mkV2 (x+wh) (x-wh)
     pd = mkV2 (x-wh) (x+wh)
-    
+
+
+nsew :: Floating a => a -> V2 a -> [V2 a]
+nsew alpha v =
+  [ rotMtx a #> v | a <- [alpha, alpha + pi/2 , alpha + pi, alpha + 3/2 * pi]]
 
 
     
@@ -918,19 +963,7 @@ labeledTicks ax len sw col fontsize lrot tanchor flab vlab ps =
 
 
 
--- frameFromFigData :: Num a => FigureData a -> Frame a
-frameFromFigData fd = mkFrame oTo p2To where
-    -- fontsize = figLabelFontSize fd
-    wfig = figWidth fd
-    hfig = figHeight fd
-    (left, right) = (figLeftMFrac fd * wfig, figRightMFrac fd * wfig)
-    (top, bot) = (figTopMFrac fd * hfig, figBottomMFrac fd * hfig)
-    oTo = mkV2 left top
-    p2To = mkV2 right bot
 
--- figFWidth, figFHeight :: Num a => FigureData a -> a
-figFWidth = width . frameFromFigData
-figFHeight = height . frameFromFigData
 
 
 
@@ -979,14 +1012,14 @@ textAnchor TAEnd = SA.textAnchor (vs "end")
 --
 -- > > putStrLn $ renderSvg $ circle 15 (shapeColBoth C.red C.blue 1 5) (Point 10 20)
 -- > <circle cx="10.0" cy="20.0" r="15.0" fill-opacity="1.0" fill="#ff0000" stroke-opacity="1.0" stroke="#0000ff" stroke-width="5.0" />
-circle
-  :: (Real a1, Real a) =>
+circle :: (Real a1, Real a, Real p) =>
         a                       -- ^ Radius
-     -> ShapeCol a 
+     -> ShapeCol p 
      -> V2 a1                   -- ^ Center     
   -> Svg
 circle r col p =
-  S.circle ! SA.cx (vd x) ! SA.cy (vd y) ! SA.r (vd r) !# col where (x, y) = _vxy p
+  S.circle ! SA.cx (vd x) ! SA.cy (vd y) ! SA.r (vd r) !# col where
+  (x, y) = _vxy p
 
 
 
