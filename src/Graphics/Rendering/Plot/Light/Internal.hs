@@ -468,6 +468,9 @@ histo n v = H.fillBuilder buildr v where
 -- | -- 
 
 -- | For some shapes we can specify the anchor point alignment. When the alignment is unspecified, the anchor point is taken to be the shape center by default.
+--
+-- The second type parameter `d` specifies a displacement vector, i.e. a radius vector for a circle or the "opposite corner" vector for a rectangle (which is why only /linear/ transformations should be applied).
+-- The third type parameter `a` is assigned to an absolute position vector, so /affine/ functions are applied.
 data Shp p d a =
     Ci (ShapeCol p) d a
   | Re (ShapeCol p) d (Align a)
@@ -485,19 +488,25 @@ instance Bifunctor (Shp p) where
   bimap f g sh = case sh of
     Ci col wd w -> Ci col (f wd) (g w)
     Re col wd w -> Re col (f wd) (g <$> w)
+
+fromFrameBimap :: (MatrixGroup (DiagMat2 a) b, Fractional a, Bifunctor p) =>
+     Frame (V2 a) -> p b (V2 a) -> p b (V2 a)
+fromFrameBimap from = bimap f g
+  where
+    (mfrom, vfrom) = frameToAffine from
+    f v = mfrom <\> v
+    g v = mfrom <\> (v ^-^ vfrom)
+
+toFrameBimap :: (Num a, LinearMap (DiagMat2 a) b, Bifunctor p) =>
+     Frame (V2 a) -> p b (V2 a) -> p b (V2 a)
+toFrameBimap to = bimap f g
+  where
+    (mto, vto) = frameToAffine to
+    f v = mto #> v
+    g v = mto #> (v ^+^ vto)    
+
+frameToFrameB from to = toFrameBimap to . fromFrameBimap from
     
-linear :: (Bifunctor p, LinearMap m b) => m -> p b c -> p b c
-linear m = first (\w -> m #> w)
-
-linearInv :: (Bifunctor p, MatrixGroup m b) => m -> p b c -> p b c
-linearInv m = first (\w -> m <\> w)
-
--- affine :: (Bifunctor p, LinearMap m b) => m -> b -> p b c -> p b c
--- affine m v = first (\w -> m #> (w ^+^ v))
-
--- affineInv :: (Bifunctor p, MatrixGroup m b) => m -> b -> p b c -> p b c
--- affineInv m v = first (\w -> m <\> (w ^-^ v))
-
 
 
 -- | example smart constructors
@@ -509,7 +518,10 @@ mkReBLC :: Num a => a -> a -> ShapeCol p -> v -> Shp p (V2 a) v
 mkReBLC w h col v = Re col vd (BLCorner v) where
   vd = fromCartesian w h 
 
+
+
 -- | Compute center of shape
+shpCenter :: (VectorSpace v, Fractional (Scalar v)) => Shp t v v -> v
 shpCenter sh = case sh of
   Ci _ _ v -> v
   Re _ vd al -> case al of
