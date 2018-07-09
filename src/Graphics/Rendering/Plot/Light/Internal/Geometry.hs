@@ -13,6 +13,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** Frame
   Frame(..), mkFrame, unitFrame, frameFromPoints, mkFrameOrigin,
   height, width, xmin, xmax, ymin, ymax, isPointInFrame, frameToAffine,
+  frameDirac,
   -- ** Axis
   Axis(..), otherAxis,
   -- *** AxisData, AxisFrame

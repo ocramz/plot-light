@@ -69,7 +69,7 @@ module Graphics.Rendering.Plot.Light.Internal
   where
 
 -- import Control.Arrow ((***), (&&&))
--- import Data.Semigroup (Semigroup(..))
+import Data.Semigroup -- (Semigroup(..))
 import Data.Monoid
 
 import qualified Data.Foldable as F (toList)
@@ -525,15 +525,21 @@ renderShape sh = case sh of
     (w, h) = _vxy (p2 ^-^ p1)
   RecC col p1 p2 -> rect w (abs h) col p1' where
     (w, h) = _vxy (p2 ^-^ p1)
-    p1' = p1 ^-^ fromCartesian 0 h
+    p1' = p1 -- ^-^ fromCartesian 0 h
 
 -- | Construct a Frame from a Sh
-mkShFrame :: Ord a => Sh t a -> Frame a
+-- mkShFrame :: Ord a => Sh t a -> Frame a
+mkShFrame :: (Fractional a, Ord a) => Sh t (V2 a) -> Frame (V2 a)
 mkShFrame sh = case sh of
-    Rec _ p1 p2 -> mkFrame p1 p2
-    Cir _ p1 p2 -> mkFrame p1 p2
-    Sqr _ p1 p2 -> mkFrame p1 p2
+    Rec _ p1 p2 -> frameMidp p1 p2 -- mkFrame p1 p2
+    RecC _ p1 p2 -> frameMidp p1 p2 -- mkFrame p1 p2
+    Cir _ p1 p2 -> frameMidp p1 p2 -- mkFrame p1 p2
+    Sqr _ p1 p2 -> frameMidp p1 p2 -- mkFrame p1 p2
     PolyL _ _ ne -> frameFromPoints $ toList ne
+
+
+frameMidp :: Fractional a => V2 a -> V2 a -> Frame (V2 a)
+frameMidp p1 p2 = frameDirac $ midPoint p1 p2
 
 
 render0 :: (Functor t, Foldable t, Show a, RealFloat a) =>
@@ -560,7 +566,7 @@ wrapped to shs = convertShapeRef from to <$> shs where
 -- | Compute the 'Frame' that envelopes a 'Foldable' container (e.g. a list or vector) of 'Shape's.
 --
 -- The result can be used as the "from" Frame used to compute the Screen-SVG coordinate transform
-wrappingFrame :: (Foldable t, Ord a, Monoid a) => t (Sh p a) -> Frame a
+-- wrappingFrame :: (Foldable t, Ord a, Monoid a) => t (Sh p a) -> Frame a
 wrappingFrame shs = foldr fc mempty shs where
   fc acc b = mkShFrame acc `mappend` b
 
@@ -698,8 +704,8 @@ lineOptionCycle :: Fractional a => a -> [LineOptions a]
 lineOptionCycle lw =
   let
     strTys =
-      replicate 5 Continuous <>
-      replicate 5 (Dashed [0.2, 0.5]) <>
+      replicate 5 Continuous `mappend`
+      replicate 5 (Dashed [0.2, 0.5]) `mappend`
       replicate 5 (Dashed [0.5, 0.2])       
     cols = [C.blue, C.green, C.red, C.black, C.purple]
     nc = length cols
@@ -925,7 +931,7 @@ text :: (Show a, Real a) =>
      -> V2 a            -- ^ Displacement w.r.t. rotated textbox
      -> V2 a         -- ^ Initial position of the text box (i.e. before rotation and displacement)
      -> Svg
-text rot fontsize col ta te (V2 vx vy) p = S.text_ (S.toMarkup te) ! SA.x (vd vx) ! SA.y (vd vy) ! SA.transform (S.translate (real x) (real y) <> S.rotate (real rot)) ! SA.fontSize (vi fontsize) ! SA.fill (colourAttr col) ! textAnchor ta where
+text rot fontsize col ta te (V2 vx vy) p = S.text_ (S.toMarkup te) ! SA.x (vd vx) ! SA.y (vd vy) ! SA.transform (S.translate (real x) (real y) `mappend` S.rotate (real rot)) ! SA.fontSize (vi fontsize) ! SA.fill (colourAttr col) ! textAnchor ta where
   (x, y) = _vxy p
 
 -- | Specify at which end should the text be anchored to its current point
@@ -1077,7 +1083,7 @@ toBottomLeftSvgOrigin :: Real a =>
                          FigureData a   
                       -> Svg
                       -> Svg
-toBottomLeftSvgOrigin fdat svg = S.g ! SA.transform (S.translate (real 0) (real h) <> S.scale (real 1) (real (- 1))) $ svg
+toBottomLeftSvgOrigin fdat svg = S.g ! SA.transform (S.translate (real 0) (real h) `mappend` S.scale (real 1) (real (- 1))) $ svg
   where
     h = _vy $ bottomLeftOrigin fdat
 
