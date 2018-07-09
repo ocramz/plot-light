@@ -843,18 +843,18 @@ crossGlyph w sw k p = do
     
 
 
-labeledTick :: (Show a, RealFrac a) =>
-               Axis
-            -> a                 -- ^ Length
-            -> a                 -- ^ Stroke width
-            -> C.Colour Double
-            -> Int               -- ^ Font size
-            -> a                 -- ^ Label angle
-            -> TextAnchor_     
-            -> (t -> T.Text)     -- ^ Label rendering function
-            -> V2 a              -- ^ Label shift 
-            -> LabeledPoint t a
-            -> Svg
+-- labeledTick :: (Show a, RealFrac a) =>
+--                Axis
+--             -> a                 -- ^ Length
+--             -> a                 -- ^ Stroke width
+--             -> C.Colour Double
+--             -> Int               -- ^ Font size
+--             -> a                 -- ^ Label angle
+--             -> TextAnchor_     
+--             -> (t -> T.Text)     -- ^ Label rendering function
+--             -> V2 a              -- ^ Label shift 
+--             -> LabeledPoint t a
+--             -> Svg
 labeledTick ax len sw col fontsize lrot tanchor flab vlab (LabeledPoint p label) = do
   tick ax len sw col p
   text lrot fontsize col tanchor (flab label) vlab p
@@ -871,18 +871,18 @@ ticks :: (Foldable t, Show a, RealFrac a) =>
 ticks ax len sw col ps = forM_ ps (tick ax len sw col)
 
 
-labeledTicks :: (Foldable t, Show a, RealFrac a) =>
-                Axis
-             -> a
-             -> a
-             -> C.Colour Double
-             -> Int
-             -> a
-             -> TextAnchor_
-             -> (t2 -> T.Text)
-             -> V2 a
-             -> t (LabeledPoint t2 a)
-             -> Svg
+-- labeledTicks :: (Foldable t, Show a, RealFrac a) =>
+--                 Axis
+--              -> a
+--              -> a
+--              -> C.Colour Double
+--              -> Int
+--              -> a
+--              -> TextAnchor_
+--              -> (t2 -> T.Text)
+--              -> V2 a
+--              -> t (LabeledPoint t2 a)
+--              -> Svg
 labeledTicks ax len sw col fontsize lrot tanchor flab vlab ps =
   forM_ ps (labeledTick ax len sw col fontsize lrot tanchor flab vlab)
 
@@ -1185,28 +1185,28 @@ toBottomLeftSvgOrigin fdat svg = S.g ! SA.transform (S.translate (real 0) (real 
 
 
 
--- | A 'pixel' is a filled square shape used for populating 'heatmap' plots , coloured from a palette
-pixel :: (Show a, RealFrac a) =>
-         [C.Colour Double]         -- ^ Palette
-      -> a                         -- ^ Width
-      -> a                         -- ^ Height
-      -> Scientific                -- ^ Function minimum
-      -> Scientific               -- ^ Function maximum
-      -> LabeledPoint Scientific a
-      -> Svg
+-- -- | A 'pixel' is a filled square shape used for populating 'heatmap' plots , coloured from a palette
+-- pixel :: (Show a, RealFrac a) =>
+--          [C.Colour Double]         -- ^ Palette
+--       -> a                         -- ^ Width
+--       -> a                         -- ^ Height
+--       -> Scientific                -- ^ Function minimum
+--       -> Scientific               -- ^ Function maximum
+--       -> LabeledPoint Scientific a
+--       -> Svg
 pixel pal w h vmin vmax (LabeledPoint p l) = rectCentered w h col p where
   col = pickColour pal (toFloat vmin) (toFloat vmax) (toFloat l)
 
--- | A 'pixel'' is a filled square shape used for populating 'heatmap' plots , coloured from a palette
-pixel'
-  :: (Show a, RealFrac a, RealFrac t) =>
-     [C.Colour Double]  -- ^ Palette
-  -> a                  -- ^ Width 
-  -> a -- ^ Height
-  -> t -- ^ Function minimum 
-  -> t -- ^ Function maximum
-  -> LabeledPoint t a
-  -> Svg
+-- -- | A 'pixel'' is a filled square shape used for populating 'heatmap' plots , coloured from a palette
+-- pixel'
+--   :: (Show a, RealFrac a, RealFrac t) =>
+--      [C.Colour Double]  -- ^ Palette
+--   -> a                  -- ^ Width 
+--   -> a -- ^ Height
+--   -> t -- ^ Function minimum 
+--   -> t -- ^ Function maximum
+--   -> LabeledPoint t a
+--   -> Svg
 pixel' pal w h vmin vmax (LabeledPoint p l) = rectCentered w h col p where
   col = pickColour pal vmin vmax l
   
@@ -1250,16 +1250,16 @@ colourBar fdat pal w vmin vmax n legpos legh =
   legendBar (fromRational <$> fdat) w vmin vmax n legpos legh (colBarPx pal)
 
 
-legendBar :: (Monad m, Enum t, Fractional t, Fractional a) =>
-             FigureData a
-          -> a
-          -> t
-          -> t
-          -> Int
-          -> LegendPosition_
-          -> a
-          -> (FigureData a -> a -> a -> t -> t -> LabeledPoint t a -> m b)
-          -> m ()
+-- legendBar :: (Monad m, Enum t, Fractional t, Fractional a) =>
+--              FigureData a
+--           -> a
+--           -> t
+--           -> t
+--           -> Int
+--           -> LegendPosition_
+--           -> a
+--           -> (FigureData a -> a -> a -> t -> t -> LabeledPoint t a -> m b)
+--           -> m ()
 legendBar fdat w vmin vmax n legpos legh fun = do
   -- rect wrect hrect 1 (Just C.black) (Just C.white) prect
   forM_ lps (fun fdat w h vmin vmax) where
@@ -1277,16 +1277,16 @@ legendBar fdat w vmin vmax n legpos legh fun = do
     dv = (vmax - vmin)/fromIntegral n
 
 
-colBarPx
-  :: (Show a, RealFrac a, RealFrac t) =>
-     [C.Colour Double]       
-     -> FigureData a1
-     -> a
-     -> a
-     -> t
-     -> t
-     -> LabeledPoint t a
-     -> Svg
+-- colBarPx
+--   :: (Show a, RealFrac a, RealFrac t) =>
+--      [C.Colour Double]       
+--      -> FigureData a1
+--      -> a
+--      -> a
+--      -> t
+--      -> t
+--      -> LabeledPoint t a
+--      -> Svg
 colBarPx pal fdat w h vmin vmax (LabeledPoint p val) = do
   text 0 (figLabelFontSize fdat) C.black TAStart (T.pack $ show (rr val :: Fixed E3)) (V2 (1.1*w) (0.5*h)) p
   rectCentered w h (pickColour pal vmin vmax val) p

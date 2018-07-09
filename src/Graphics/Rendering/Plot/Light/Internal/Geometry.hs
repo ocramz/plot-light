@@ -6,15 +6,12 @@ This module provides functionality for working with affine transformations (i.e.
 module Graphics.Rendering.Plot.Light.Internal.Geometry
   (
   -- * Geometry
-  -- -- ** Point
-  -- Point(..), mkPoint, setPointX, setPointY,
-  midPoint,
-  -- centerOfMass, 
+  midPoint, centerOfMass, 
   -- ** LabeledPoint
   LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel,
   -- ** Frame
-  Frame(..), mkFrame, unitFrame, frameFromPoints,  mkFrameOrigin, height, width, xmin, xmax, ymin, ymax, isPointInFrame, frameToAffine,
-  -- fromToStretchRatios,
+  Frame(..), mkFrame, unitFrame, frameFromPoints, mkFrameOrigin,
+  height, width, xmin, xmax, ymin, ymax, isPointInFrame, frameToAffine,
   -- ** Axis
   Axis(..), otherAxis,
   -- *** AxisData, AxisFrame
@@ -29,7 +26,6 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** Vector norm operations 
   norm2, normalize2,
   -- ** Vector construction
-  -- v2fromEndpoints, v2fromPoint,
   -- ** Operations on points
   -- movePoint, moveLabeledPoint, moveLabeledPointV2, xyDispl,
   -- moveLabeledPointBwFrames,
@@ -39,7 +35,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- frameToFrame,
   frameToFrameP, frameToFrameValue, fromFrame, toFrame,
   -- ** Typeclasses
-  AdditiveGroup(..), negateAG, VectorSpace(..), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..),
+  AdditiveGroup(..), negateAG, VectorSpace(..), (./), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..),
   -- ** Utilities
   meshGrid, subdivSegment, interpolateBilinear
   )
@@ -79,7 +75,6 @@ instance Num a => Monoid (V2 a) where
 
 origin, oneOne :: Num a => V2 a
 origin = mempty  
-
 oneOne = mkV2 1 1
 
 -- | Additive group :
@@ -109,6 +104,7 @@ class AdditiveGroup v => VectorSpace v where
   type Scalar v :: *
   -- | Scalar multiplication
   (.*) :: Scalar v -> v -> v
+
 
 (./) :: (VectorSpace v, Fractional (Scalar v)) => v -> Scalar v -> v
 v ./ n = recip n .* v
@@ -155,7 +151,6 @@ class Hermitian v => LinearMap m v where
   (#>) :: m -> v -> v
 
 
-
 -- | Multiplicative matrix semigroup ("multiplying" two matrices together)
 class MultiplicativeSemigroup m where
   -- | Matrix product
@@ -181,8 +176,8 @@ instance Num a => LinearMap (Mat2 a) (V2 a) where
 --   type DetTy (DiagMat2 a) = a
 --   det (DMat2 a00 a11) = a00 * a11
 
--- rescaleIso :: (DetTy m ~ Scalar v, VectorSpace v, Det m) => m -> v -> v
--- rescaleIso m v = det m .* v
+-- -- rescaleIso :: (DetTy m ~ Scalar v, VectorSpace v, Det m) => m -> v -> v
+-- -- rescaleIso m v = det m .* v
 
 
 
@@ -243,17 +238,17 @@ instance Fractional a => MatrixGroup (DiagMat2 a) (V2 a) where
 data LabeledPoint l a =
   LabeledPoint {
   -- | The coordinates of the `LabeledPoint` (i.e. where in the figure it will be rendered)
-   _lp :: V2 a,
+   _lp :: a,
    -- | Data associated with the `LabeledPoint`
    _lplabel :: l
    } deriving (Eq, Show)
 
 
-mkLabeledPoint :: V2 a -> l -> LabeledPoint l a
+-- mkLabeledPoint :: V2 a -> l -> LabeledPoint l a
 mkLabeledPoint = LabeledPoint
 
 -- | Given a labelling function and a `Point` `p`, returned a `LabeledPoint` containing `p` and the computed label
-labelPoint :: (V2 a -> l) -> V2 a -> LabeledPoint l a
+-- labelPoint :: (V2 a -> l) -> V2 a -> LabeledPoint l a
 labelPoint lf p = LabeledPoint p (lf p)
 
 -- moveLabeledPoint :: (Point a -> Point b) -> LabeledPoint l a -> LabeledPoint l b
@@ -274,8 +269,16 @@ vInf, vSup :: Ord a => V2 a -> V2 a -> V2 a
 vInf = liftV2 min
 vSup = liftV2 max
 
-midPoint :: Floating a => V2 a -> V2 a -> V2 a
-midPoint = liftV2 (\a b -> 1/2 * (a + b))
+
+
+midPoint :: (VectorSpace v, Fractional (Scalar v), Semigroup v, Monoid v) => v -> v -> v
+midPoint u v = centerOfMass [u, v]
+
+centerOfMass :: (Foldable t, VectorSpace v, Fractional (Scalar v), Semigroup v, Monoid v) =>
+     t v -> v
+centerOfMass vs = (foldr ins mempty vs) ./ n where
+  ins a b = a <> b
+  n = fromIntegral $ length vs
 
 
 

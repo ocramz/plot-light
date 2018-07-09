@@ -88,8 +88,9 @@ data Heatmap a = Heatmap {
 
 
 
-fromRationalLP :: Fractional a => LabeledPoint l Rational -> LabeledPoint l a
-fromRationalLP (LabeledPoint p l) = LabeledPoint (mkV2 (fromRational x) (fromRational y)) l where
+-- fromRationalLP :: Fractional a => LabeledPoint l Rational -> LabeledPoint l a--
+fromRationalLP (LabeledPoint p l) = 
+  LabeledPoint (mkV2 (fromRational x) (fromRational y)) l where
   (x, y) = _vxy p
 
 
@@ -99,10 +100,10 @@ fromRationalLP (LabeledPoint p l) = LabeledPoint (mkV2 (fromRational x) (fromRat
 -- | `prepData d` assumes the input lists correspond to evenly sampled values of a scalar-valued field.
 --
 -- The function extracts the pixel mesh size, the data ranges and places the data points within the unit square [0,1] x [0,1]
-prepData ::
-  (Ord t, Fractional a, Enum a) =>
-     [[t]]  -- ^ Data
-  -> (a, a, t, t, [LabeledPoint t a])  -- ^ (# of pixel rows, # of pixel columns, data minimum, data maximum, data points)
+-- prepData ::
+--   (Ord t, Fractional a, Enum a) =>
+--      [[t]]  -- ^ Data
+--   -> (a, a, t, t, [LabeledPoint t a])  -- ^ (# of pixel rows, # of pixel columns, data minimum, data maximum, data points)
 prepData ll = (nh, nw, valMin, valMax, d')
   where
     nh = fromIntegral $ length ll
@@ -118,8 +119,8 @@ toCoord ll = concat $ reverse $ go 0 ll [] where
   go i (x:xs) acc = go (i + 1) xs $ zip3 [0 ..] (repeat i) x : acc
   go _ [] acc = acc
 
-toUnitFramedLP :: (Fractional t) =>
-      t -> t -> (t, t, l) -> LabeledPoint l t
+-- toUnitFramedLP :: (Fractional t) =>
+--       t -> t -> (t, t, l) -> LabeledPoint l t
 toUnitFramedLP w h (i, j, x) = LabeledPoint p x
   where p = mkV2 (i/h) (j/w)
 
