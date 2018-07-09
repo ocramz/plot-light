@@ -31,8 +31,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- moveLabeledPointBwFrames,
   pointRange, 
   -- ** Operations on vectors
-  -- frameToFrame,
-  frameToFrameP, frameToFrameValue, fromFrame, toFrame,
+  frameToFrame, frameToFrameValue, fromFrame, toFrame,
   -- ** Typeclasses
   AdditiveGroup(..), negateAG, VectorSpace(..), (./), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..),
   -- ** Utilities
@@ -545,27 +544,24 @@ subdivSegment x1 x2 n = f <$> [0, 1 ..] where
 
 
 -- | Apply an affine transformation such that the resulting vector points to the unit square
--- fromFrame :: Fractional a => Frame a -> V2 a -> V2 a
+fromFrame :: Fractional a => Frame (V2 a) -> V2 a -> V2 a
 fromFrame from v = mfrom <\> (v ^-^ vfrom) where
-  vfrom = _fpmin from -- min.point vector of `from`
-  mfrom = diagMat2 (width from) (height from) -- rescaling matrix of `from`
+  (mfrom, vfrom) = frameToAffine from 
+
 
 -- | Apply an affine transformation to a vector that points within the unit square
--- toFrame :: Num a => Frame a -> V2 a -> V2 a
+toFrame :: Num a => Frame (V2 a) -> V2 a -> V2 a
 toFrame to v01 = (mto #> v01) ^+^ vto where
-  vto = _fpmin to     -- min.point vector of `to`
-  mto = diagMat2 (width to) (height to)       -- rescaling matrix of `to`
+  (mto, vto) = frameToAffine to
 
 
 
-
--- frameToAffine :: Num a => Frame a -> (DiagMat2 a, V2 a)
+frameToAffine :: Num a => Frame (V2 a) -> (DiagMat2 a, V2 a)
 frameToAffine frm = (m, v) where
   m = diagMat2 (width frm) (height frm)
   v = _fpmin frm
 
-
--- affineToFrame :: (Num a, LinearMap m (V2 a)) => m -> V2 a -> Frame a
+affineToFrame :: (Num a, LinearMap m (V2 a)) => m -> V2 a -> Frame (V2 a)
 affineToFrame m v = mkFrame pmin pmax
   where
     p11 = mkV2 1 1
@@ -574,9 +570,9 @@ affineToFrame m v = mkFrame pmin pmax
     pmax = v ^+^ (m #> v01)
     
 
--- | Identity of affine Frame transformations
--- idFrame :: Num a => Frame a -> Frame a
-idFrame = uncurry affineToFrame . frameToAffine
+-- -- | Identity of affine Frame transformations
+-- -- idFrame :: Num a => Frame a -> Frame a
+-- idFrame = uncurry affineToFrame . frameToAffine
 
 
 
@@ -592,24 +588,8 @@ idFrame = uncurry affineToFrame . frameToAffine
 -- 3. map `v01'` onto the target frame `F2`. 
 --
 -- NB: we do not check that `v` is actually contained within the `F1`, nor that `v01'` is still contained within [0,1] x [0, 1]. This has to be supplied correctly by the user.
--- frameToFrame :: Fractional a =>
---                       Frame a  -- ^ Initial frame
---                    -> Frame a  -- ^ Final frame
---                    -> Bool        -- ^ Flip L-R in [0,1] x [0,1]
---                    -> Bool     -- ^ Flip U-D in [0,1] x [0,1]
---                    -> V2 a     -- ^ Initial vector
---                    -> V2 a
--- frameToFrame from to fliplr flipud v = toFrame to v01'
---   where
---     v01 = fromFrame from v
---     v01' | fliplr && flipud = flipLR01 (flipUD01 v01)
---          | fliplr = flipLR01 v01
---          | flipud = flipUD01 v01
---          | otherwise = v01
-
-
--- frameToFrameP :: Fractional a => Frame a -> Frame a -> Point a -> Point a
-frameToFrameP fromf tof = toFrame tof . flipUD . fromFrame fromf 
+frameToFrame :: Fractional a => Frame (V2 a) -> Frame (V2 a) -> V2 a -> V2 a
+frameToFrame fromf tof = toFrame tof . flipUD . fromFrame fromf 
   where
     flipUD :: Num a => V2 a -> V2 a
     flipUD (V2 vx vy) = V2 vx (1 - vy)         

@@ -311,7 +311,7 @@ mkPolyLinePlot lo slj dats = PolyLineSh lo slj ps where
 
 -- | Histogram
 
--- hist :: [(a, b)] -> Shape b (Point a)  -- or something similar
+-- hist :: [(a, b)] -> Shape b (V2 a)  -- or something similar
 
 
 -- | Returns the 'Frame' associated with a 'Histogram' along with the bins as 'LabeledPoint's (where the point coordinates lie on the X axis and the label contains the histogram count)
@@ -369,37 +369,37 @@ histo n v = H.fillBuilder buildr v where
 
 -- | ==
 
--- -- | A NE is a NonEmpty list of things
--- newtype NE a = NE { unNE :: NE.NonEmpty a } deriving (Eq, Show, Functor, Foldable, Traversable, Generic)
+-- | A NE is a NonEmpty list of things
+newtype NE a = NE { unNE :: NE.NonEmpty a } deriving (Eq, Show, Functor, Foldable, Traversable, Generic)
 
--- singleton :: a -> NE a
--- singleton x = fromList x []
+singleton :: a -> NE a
+singleton x = fromList x []
 
--- fromList :: a -> [a] -> NE a
--- fromList x xs = fromList' $ x : xs
+fromList :: a -> [a] -> NE a
+fromList x xs = fromList' $ x : xs
 
--- fromList' :: [a] -> NE a
--- fromList' = NE . NE.fromList
+fromList' :: [a] -> NE a
+fromList' = NE . NE.fromList
 
--- toList :: NE a -> [a]
--- toList = NE.toList . unNE
+toList :: NE a -> [a]
+toList = NE.toList . unNE
 
--- neHead :: NE a -> a
--- neHead = NE.head . unNE
+neHead :: NE a -> a
+neHead = NE.head . unNE
 
--- append :: NE a -> NE a -> NE a
--- append u v = fromList' $ (toList u) ++ (toList v)
+append :: NE a -> NE a -> NE a
+append = liftNE2 (++)
 
+liftNE2 :: ([a2] -> [a1] -> [a]) -> NE a2 -> NE a1 -> NE a
+liftNE2 f u v = fromList' $ f (toList u) (toList v)
 
 
 
 
 -- | ==
 
-
-
--- rectangle, square           -- V2, V2
--- circle, point, glyph        -- V2
+-- rectangle, square, circle  -- V2, V2
+-- point, glyph               -- V2
 -- polyline, filled polyline   -- [V2]
 
 
@@ -408,7 +408,7 @@ data Sh p a =
   | Rec (ShapeCol p) a a
   | Sqr (ShapeCol p) a a
   | Line (ShapeCol p) a a
-  | PolyL (LineOptions p) StrokeLineJoin_ (NE.NonEmpty a)
+  | PolyL (LineOptions p) StrokeLineJoin_ (NE a)
   deriving (Eq, Show, Functor)
 
 -- | Construct a Frame from a Sh
@@ -417,7 +417,7 @@ mkShFrame sh = case sh of
     Rec _ p1 p2 -> mkFrame p1 p2
     Cir _ p1 p2 -> mkFrame p1 p2
     Sqr _ p1 p2 -> mkFrame p1 p2
-    PolyL _ _ ne -> frameFromPoints $ NE.toList ne
+    PolyL _ _ ne -> frameFromPoints $ toList ne
 
 
 -- Smart constructors
@@ -623,7 +623,7 @@ wrtSvg = Wrt SVG
 --                 -> Frame a
 --                 -> f (V2 a)
 --                 -> f (V2 a)
-convertShapeRef from to sh = frameToFrameP from to <$> sh
+convertShapeRef from to sh = frameToFrame from to <$> sh
 
 
   
