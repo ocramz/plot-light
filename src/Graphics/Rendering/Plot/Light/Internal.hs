@@ -439,11 +439,10 @@ liftNE2 f u v = fromList' $ f (toList u) (toList v)
 data Sh p a =
     Cir (ShapeCol p) a a
   | Rec (ShapeCol p) a a
-  -- | RecC (ShapeCol p) a a
+  | RecC (ShapeCol p) a a
   | Sqr (ShapeCol p) a a
   | Line (LineOptions p) a a
   | PolyL (LineOptions p) StrokeLineJoin_ (NE a)
-  -- | Scatter (ShapeCol p) GlyphShape_ (NE a)
   deriving (Eq, Show, Functor)
 
 
@@ -460,8 +459,10 @@ mkRec w h col vc = Rec col vc v2 where
   v2 = vc ^+^ fromCartesian w h 
 
 mkRecC :: Floating a => a -> a -> ShapeCol p -> V2 a -> Sh p (V2 a)
-mkRecC w h col v = mkRec w h col v' where
-  v' = v ^-^ (0.5 .* fromCartesian w h)
+mkRecC w h col v = RecC col v1' v2' where
+  vs = 0.5 .* fromCartesian w h 
+  v1' = v ^-^ vs
+  v2' = v ^+^ vs
 
 
 mkSqr :: Num a => a -> ShapeCol p -> V2 a -> Sh p (V2 a)  
@@ -480,7 +481,7 @@ mkSqr r col vc = Sqr col vc v2 where
 
 r0 = mkRec 10 10 (shapeColNoBorder C.red 1) (mkV2 10 20)
 r1 = mkRec 10 10 (shapeColNoBorder C.blue 0.5) (mkV2 0 0)
-r2 = mkRec 50 10 (shapeColNoBorder C.orange 0.7) (mkV2 5 10)
+r2 = mkRec 10 10 (shapeColNoBorder C.orange 0.7) (mkV2 5 10)
 
 -- -- shs :: [Shape Double (Point Double)]
 shs = [r0, r1, r2]
@@ -520,8 +521,11 @@ rectsFigData fd = (rOut, rIn)
 renderShape :: RealFloat a => Sh a (V2 a) -> Svg
 renderShape sh = case sh of
   Cir col p1 p2 -> circle (norm2 $ p2 ^-^ p1) col p1
-  Rec col p1 p2 -> rect (abs w) (abs h) col p1 where
+  Rec col p1 p2 -> rect w (abs h) col p1 where
     (w, h) = _vxy (p2 ^-^ p1)
+  RecC col p1 p2 -> rect w (abs h) col p1' where
+    (w, h) = _vxy (p2 ^-^ p1)
+    p1' = p1 ^-^ fromCartesian 0 h
 
 -- | Construct a Frame from a Sh
 mkShFrame :: Ord a => Sh t a -> Frame a
