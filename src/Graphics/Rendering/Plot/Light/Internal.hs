@@ -144,9 +144,7 @@ frameFromFigData fd = mkFrame oTo p2To where
     oTo = mkV2 left top
     p2To = mkV2 right bot
 
--- figFWidth, figFHeight :: Num a => FigureData a -> a
--- figFWidth = width . frameFromFigData
--- figFHeight = height . frameFromFigData
+
 
 figureDataDefault :: Floating a => FigureData a
 figureDataDefault = FigureData 400 300 0.1 0.9 0.1 0.9 10
@@ -433,33 +431,22 @@ liftNE2 f u v = fromList' $ f (toList u) (toList v)
 
 
 
--- | ==
-
--- rectangle, square, circle  -- V2, V2
--- point, glyph               -- V2
--- polyline, filled polyline   -- [V2]
 
 
+
+-- | =============
+-- | A DSL for geometrical shapes
 data Sh p a =
     Cir (ShapeCol p) a a
   | Rec (ShapeCol p) a a
+  -- | RecC (ShapeCol p) a a
   | Sqr (ShapeCol p) a a
   | Line (LineOptions p) a a
   | PolyL (LineOptions p) StrokeLineJoin_ (NE a)
+  -- | Scatter (ShapeCol p) GlyphShape_ (NE a)
   deriving (Eq, Show, Functor)
 
 
-renderShape sh = case sh of
-  Cir col p1 p2 -> circle (norm2 $ p2 ^-^ p1) col p1
-  -- Rec col p1 p2 -> 
-
--- | Construct a Frame from a Sh
-mkShFrame :: Ord a => Sh t a -> Frame a
-mkShFrame sh = case sh of
-    Rec _ p1 p2 -> mkFrame p1 p2
-    Cir _ p1 p2 -> mkFrame p1 p2
-    Sqr _ p1 p2 -> mkFrame p1 p2
-    PolyL _ _ ne -> frameFromPoints $ toList ne
 
 
 -- Smart constructors
@@ -472,6 +459,11 @@ mkRec :: Num a => a -> a -> ShapeCol p -> V2 a -> Sh p (V2 a)
 mkRec w h col vc = Rec col vc v2 where
   v2 = vc ^+^ fromCartesian w h 
 
+mkRecC :: Floating a => a -> a -> ShapeCol p -> V2 a -> Sh p (V2 a)
+mkRecC w h col v = mkRec w h col v' where
+  v' = v ^-^ (0.5 .* fromCartesian w h)
+
+
 mkSqr :: Num a => a -> ShapeCol p -> V2 a -> Sh p (V2 a)  
 mkSqr r col vc = Sqr col vc v2 where
   v2 = vc ^+^ fromCartesian r r
@@ -481,46 +473,17 @@ mkSqr r col vc = Sqr col vc v2 where
 
 
 
+-- c0 = mkCir 10 (shapeColNoBorder C.red 0.9) (mkV2 10 20)
+-- c1 = mkCir 5 (shapeColNoBorder C.orange 0.9) (mkV2 5 15)
+-- c2 = mkCir 15 (shapeColNoBorder C.blue 0.3) (mkV2 12 17)
+-- c3 = mkCir 20 (shapeColNoBorder C.yellow 1) (mkV2 0 0)
 
-
-
--- | =============
-
--- | A DSL for geometrical shapes.
--- |
--- | NB : the 'Point' parameter always refers to the center of the shape.
---
--- NB2 : the 'a' type parameter appears where the Point parameter used to be
--- data Shape p a =
---     RectCenteredSh p p (ShapeCol p) a
---   | RectCenteredMidpointBaseSh p p (ShapeCol p) a  
---   | RectSh p p (ShapeCol p) a
---   | SquareCenteredSh p (ShapeCol p) a
---   | LineSh (LineOptions p) a a
---   | CircleSh p (ShapeCol p) a
---   | PolyLineSh (LineOptions p) StrokeLineJoin_ [a]
---   deriving (Eq, Show, Functor)
-
--- -- -- FilledPolyLine
--- -- -- ...
-
-
-
-
-
-
-
--- c0 = CircleSh 10 (shapeColNoBorder C.red 0.9) (mkV2 10 20)
--- c1 = CircleSh 5 (shapeColNoBorder C.orange 0.9) (mkV2 5 15)
--- c2 = CircleSh 15 (shapeColNoBorder C.blue 0.3) (mkV2 12 17)
--- c3 = CircleSh 20 (shapeColNoBorder C.yellow 1) (mkV2 0 0)
-
--- r0 = RectSh 10 10 (shapeColNoBorder C.red 1) (mkV2 10 20)
--- r1 = RectSh 10 10 (shapeColNoBorder C.blue 0.5) (mkV2 0 0)
--- r2 = RectSh 50 10 (shapeColNoBorder C.orange 0.7) (mkV2 5 10)
+r0 = mkRec 10 10 (shapeColNoBorder C.red 1) (mkV2 10 20)
+r1 = mkRec 10 10 (shapeColNoBorder C.blue 0.5) (mkV2 0 0)
+r2 = mkRec 50 10 (shapeColNoBorder C.orange 0.7) (mkV2 5 10)
 
 -- -- shs :: [Shape Double (Point Double)]
--- shs = [r0, r1, r2]
+shs = [r0, r1, r2]
 -- -- shs = [c0,c1,c2]
 
 
@@ -528,128 +491,74 @@ mkSqr r col vc = Sqr col vc v2 where
 
 
 
--- test0 =
---   do
---   let
---     figdata = figureDataDefault
---     to = frameFromFigData figdata
---     (rout, rin) = rectsFigData figdata 
---     svg_t = svgHeader' figdata $ do
---       render0 to shs
---       renderShape rout
---       renderShape rin
---   T.writeFile "examples/ex_dsl3.svg" $ T.pack $ renderSvg svg_t
+test0 =
+  do
+  let
+    figdata = figureDataDefault
+    to = frameFromFigData figdata
+    (rout, rin) = rectsFigData figdata 
+    svg_t = svgHeader' figdata $ do
+      render0 to shs
+      renderShape rout
+      renderShape rin
+  T.writeFile "examples/ex_dsl3.svg" $ T.pack $ renderSvg svg_t
 
 
--- -- | Rectangles based on the inner and outer frames of the drawable canvas
--- -- rectsFigData
--- --   :: Floating a =>
--- --      FigureData a -> (Shape a (V2 a), Shape a (V2 a))
--- rectsFigData fd = (rOut, rIn)
---   where
---     col = shapeColNoFill C.black 1 1
---     frIn = frameFromFigData fd
---     pc = midPoint (_fpmin frIn) (_fpmax frIn)
---     rIn = RectCenteredSh (width frIn) (height frIn) col pc 
---     rOut = RectCenteredSh (figWidth fd) (figHeight fd) col pc
-
-
-
--- render0 :: (Functor t, Foldable t, Show a, RealFrac a) =>
---            Frame (V2 a)
---         -> t (Shape a (V2 a))
---         -> Svg
-render0 to shs = renderShape `mapM_` shs' where
-  (Wrt SVG _ shs') = wrapped to shs 
+-- | Rectangles based on the inner and outer frames of the drawable canvas
+-- rectsFigData :: (Num p, Fractional a) => FigureData a -> (Sh p (V2 a), Sh p (V2 a))
+rectsFigData fd = (rOut, rIn)
+  where
+    col = shapeColNoFill C.black 1 1
+    frIn = frameFromFigData fd
+    pc = midPoint (_fpmin frIn) (_fpmax frIn)
+    rIn = mkRecC (width frIn) (height frIn) col pc 
+    rOut = mkRecC (figWidth fd) (figHeight fd) col pc
 
 
 
+-- | NB : We must only render a 'Shape' that's in the SVG reference system
+renderShape :: RealFloat a => Sh a (V2 a) -> Svg
+renderShape sh = case sh of
+  Cir col p1 p2 -> circle (norm2 $ p2 ^-^ p1) col p1
+  Rec col p1 p2 -> rect (abs w) (abs h) col p1 where
+    (w, h) = _vxy (p2 ^-^ p1)
+
+-- | Construct a Frame from a Sh
+mkShFrame :: Ord a => Sh t a -> Frame a
+mkShFrame sh = case sh of
+    Rec _ p1 p2 -> mkFrame p1 p2
+    Cir _ p1 p2 -> mkFrame p1 p2
+    Sqr _ p1 p2 -> mkFrame p1 p2
+    PolyL _ _ ne -> frameFromPoints $ toList ne
 
 
+render0 :: (Functor t, Foldable t, Show a, RealFloat a) =>
+           Frame (V2 a)
+        -> t (Sh a (V2 a))
+        -> Svg
+render0 to shs = renderShape `mapM_` wrapped to shs 
 
 
-
--- -- | NB : We must only render a 'Shape' that's in the SVG reference system
--- --
--- -- The vertical correction for corner-anchored shapes is applied at this stage
--- renderShape :: (Show a, RealFrac a) => Shape a (V2 a) -> Svg
--- renderShape sh =
---   let
---     fv h p = V2 0 (- h) ^+^ p  
---   in
---   case sh of
---       RectCenteredSh w h col p -> rectCentered w h col p 
---       RectCenteredMidpointBaseSh w h col p ->
---         rectCenteredMidpointBase w h col (fv h p)      
---       RectSh w h col p -> rect w h col (fv h p) 
---       SquareCenteredSh w col p -> squareCentered w col p
---       CircleSh rad col p -> circle rad col p
---       LineSh lopts p1 p2 -> line' p1 p2 lopts
---       PolyLineSh lopts slj ps -> polyline' lopts slj ps
 
 
 
 -- |
 -- 1) Computes the Frame that envelopes the input collection of points (i.e. the L1 convex hull)
--- 2) recomputes the point coordinates to fall within the destination frame in the SVG reference
--- 3) outputs the transformed shapes within a 'Wrt SVG' wrapper
---  
--- wrapped :: (Functor t, Foldable t, Fractional a, Ord a) =>
---            Frame a
---         -> t (Shape a (V2 a))
---         -> Wrt SVG a (t (Shape a (V2 a)))
-wrapped to shs = wrtSvg from $ convertShapeRef from to <$> shs where
+-- 2) recomputes the point coordinates to fall within the destination frame in the SVG reference  
+wrapped :: (Functor t, Foldable t, Fractional a, Ord a) =>
+           Frame (V2 a)
+        -> t (Sh p (V2 a))
+        -> t (Sh p (V2 a))
+wrapped to shs = convertShapeRef from to <$> shs where
   from = wrappingFrame shs
   
 
 -- | Compute the 'Frame' that envelopes a 'Foldable' container (e.g. a list or vector) of 'Shape's.
 --
 -- The result can be used as the "from" Frame used to compute the Screen-SVG coordinate transform
---
--- FIXME
--- wrappingFrame :: (Foldable t, Num a, Ord a) =>
---                  t (Shape a (V2 a))
---               -> Frame a
+wrappingFrame :: (Foldable t, Ord a, Monoid a) => t (Sh p a) -> Frame a
 wrappingFrame shs = foldr fc mempty shs where
   fc acc b = mkShFrame acc `mappend` b
-
--- -- FIXME
--- -- mkShapeFrame :: Ord a => Shape t (V2 a) -> Frame a
--- mkShapeFrame sh = case sh of
---     RectCenteredSh _ _ _ p -> mkFrame p p
---     RectSh _ _ _ p -> mkFrame p p
---     SquareCenteredSh _ _ p -> mkFrame p p
---     LineSh _ p1 p2 -> mkFrame p1 p2
---     CircleSh _ _ p -> mkFrame p p
---     PolyLineSh _ _ ps -> frameFromPoints ps
-  
-
-
-
-
-
-
--- | A thing of type 'sh' in a 'Frame'
--- 
--- | the Frame parameter denotes the destination frame
---
--- NB : we can put more than one shape in a Frame
-data Wrt r a sh = Wrt r (Frame a) sh deriving (Eq, Show, Functor)
-
--- -- instance Semigroup (Wrt r a sh) where
--- -- instance Monoid (Wrt r a sh) where 
-
--- wrtScreen :: Frame a -> sh -> Wrt Screen a sh
--- wrtScreen = Wrt Screen
-
-wrtSvg :: Frame a -> sh -> Wrt SVG a sh
-wrtSvg = Wrt SVG
-
--- screenToSvg :: Wrt Screen a sh -> Wrt SVG a sh
--- screenToSvg (Wrt Screen fr x) = Wrt SVG fr x
-
-
-
 
 
 
@@ -679,7 +588,25 @@ convertShapeRef from to sh = frameToFrame from to <$> sh
     
 
 
-    
+
+-- | A thing of type 'sh' in a 'Frame'
+-- 
+-- | the Frame parameter denotes the destination frame
+--
+-- NB : we can put more than one shape in a Frame
+data Wrt r a sh = Wrt r (Frame a) sh deriving (Eq, Show, Functor)
+
+-- -- instance Semigroup (Wrt r a sh) where
+-- -- instance Monoid (Wrt r a sh) where 
+
+-- wrtScreen :: Frame a -> sh -> Wrt Screen a sh
+-- wrtScreen = Wrt Screen
+
+wrtSvg :: Frame a -> sh -> Wrt SVG a sh
+wrtSvg = Wrt SVG
+
+-- screenToSvg :: Wrt Screen a sh -> Wrt SVG a sh
+-- screenToSvg (Wrt Screen fr x) = Wrt SVG fr x                             
 
 
 
