@@ -293,8 +293,9 @@ instance Ord a => Semigroup (Frame a) where
 frameDirac :: a -> Frame a
 frameDirac p = mkFrame p p
 
-instance Monoid a => Monoid (Frame a) where
+instance (Monoid a, Ord a) => Monoid (Frame a) where
   mempty = Frame mempty mempty
+  mappend = (<>)
 
 unitFrame :: Num a => Frame (V2 a)
 unitFrame = mkFrame origin oneOne
