@@ -521,11 +521,13 @@ rectsFigData fd = (rOut, rIn)
 renderShape :: RealFloat a => Sh a (V2 a) -> Svg
 renderShape sh = case sh of
   Cir col p1 p2 -> circle (norm2 $ p2 ^-^ p1) col p1
-  Rec col p1 p2 -> rect w (abs h) col p1 where
+  Rec col p1 p2 -> rect w h' col p1' where
+    h' = abs h
     (w, h) = _vxy (p2 ^-^ p1)
-  RecC col p1 p2 -> rect w (abs h) col p1' where
+    p1' = p1  ^-^ fromCartesian 0 h'
+  RecC col p1 p2 -> rect w (abs h) col p1 where
     (w, h) = _vxy (p2 ^-^ p1)
-    p1' = p1 -- ^-^ fromCartesian 0 h
+
 
 -- | Construct a Frame from a Sh
 -- mkShFrame :: Ord a => Sh t a -> Frame a
