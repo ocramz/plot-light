@@ -363,19 +363,6 @@ histo n v = H.fillBuilder buildr v where
 
 
 
--- data Sh p a =
---     ShR (ShapeCol p) (Frame a)
---   | ShC (ShapeCol p) (Frame a)
-
--- mkR :: (Ord a, Num a) => ShapeCol p -> a -> a -> V2 a -> Maybe (Sh p a)
--- mkR col w h v
---   | w >= 0 && h >= 0 = Just $ ShR col (mkFrame v (v ^+^ mkV2 w h))
---   | otherwise = Nothing
-
--- mkC :: (Ord a, Num a) => ShapeCol p -> a -> V2 a -> Maybe (Sh p a)
--- mkC col r v
---   | r >= 0 = Just $ ShC col $ mkFrame v (v ^+^ (r .* e1))
---   | otherwise = Nothing 
 
 
 
@@ -446,6 +433,9 @@ mkRec w h col vc = Rec col vc v2 where
 mkSqr :: Num a => a -> ShapeCol p -> V2 a -> Sh p (V2 a)  
 mkSqr r col vc = Sqr col vc v2 where
   v2 = vc ^+^ fromCartesian r r
+
+
+
 
 
 
