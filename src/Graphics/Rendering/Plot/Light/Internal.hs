@@ -321,10 +321,6 @@ data Plot =
 
 
 
--- class Measurable m where
-  -- measure :: m -> Maybe
-
-
 
 
 -- * PLOTTING
@@ -395,6 +391,45 @@ histo n v = H.fillBuilder buildr v where
   buildr = H.mkSimple bins
 
   
+
+
+
+
+-- data Aligned a =
+--     Centered (Shp a)
+--   | BLCorner (Shp a)
+--   | BSideC (Shp a)
+--   deriving (Eq, Show, Functor)
+
+-- data Shp a =
+--     C a a
+--   | R a a
+--   deriving (Eq, Show, Functor)
+
+-- mkRC :: a -> a -> Aligned a
+-- mkRC v1 v2 = Centered (R v1 v2)
+
+
+-- | -- 
+
+data Shp a =
+    Ci a
+  | Re (Align a)
+  | Pt a 
+  deriving (Eq, Show)
+
+data Align a =
+    Centered a
+  | BLCorner a
+  | BSideC a
+  deriving (Eq, Show)
+
+renderShp sh = case sh of
+  Ci v -> undefined
+  Re al -> case al of
+    Centered v -> undefined
+
+
 
 
 
@@ -477,15 +512,17 @@ mkSqr r col vc = Sqr col vc v2 where
 -- c0 = mkCir 10 (shapeColNoBorder C.red 0.9) (mkV2 10 20)
 -- c1 = mkCir 5 (shapeColNoBorder C.orange 0.9) (mkV2 5 15)
 -- c2 = mkCir 15 (shapeColNoBorder C.blue 0.3) (mkV2 12 17)
--- c3 = mkCir 20 (shapeColNoBorder C.yellow 1) (mkV2 0 0)
+c3 = mkCir 3 (shapeColNoBorder C.orange 0.5) (mkV2 0 0)
 
 r0 = mkRec 10 10 (shapeColNoBorder C.red 1) (mkV2 10 20)
 r1 = mkRec 10 10 (shapeColNoBorder C.blue 0.5) (mkV2 0 0)
-r2 = mkRec 10 10 (shapeColNoBorder C.orange 0.7) (mkV2 5 10)
+-- r2 = mkRec 10 10 (shapeColNoBorder C.orange 0.7) (mkV2 5 10)
 
 -- -- shs :: [Shape Double (Point Double)]
-shs = [r0, r1, r2]
+-- shs = [r0, r1, r2]
 -- -- shs = [c0,c1,c2]
+-- shs = [r0, r1, c3]
+shs = [r0, r1]
 
 
 
@@ -517,6 +554,12 @@ rectsFigData fd = (rOut, rIn)
 
 
 
+render0 :: (Functor t, Foldable t, Show a, RealFloat a) =>
+           Frame (V2 a)
+        -> t (Sh a (V2 a))
+        -> Svg
+render0 to shs = renderShape `mapM_` wrapped to shs 
+
 -- | NB : We must only render a 'Shape' that's in the SVG reference system
 renderShape :: RealFloat a => Sh a (V2 a) -> Svg
 renderShape sh = case sh of
@@ -525,33 +568,9 @@ renderShape sh = case sh of
     h' = abs h
     (w, h) = _vxy (p2 ^-^ p1)
     p1' = p1  ^-^ fromCartesian 0 h'
-  RecC col p1 p2 -> rect w (abs h) col p1 where
+  RecC col p1 p2 -> rect w h' col p1 where
+    h' = abs h
     (w, h) = _vxy (p2 ^-^ p1)
-
-
--- | Construct a Frame from a Sh
--- mkShFrame :: Ord a => Sh t a -> Frame a
-mkShFrame :: (Fractional a, Ord a) => Sh t (V2 a) -> Frame (V2 a)
-mkShFrame sh = case sh of
-    Rec _ p1 p2 -> frameMidp p1 p2 -- mkFrame p1 p2
-    RecC _ p1 p2 -> frameMidp p1 p2 -- mkFrame p1 p2
-    Cir _ p1 p2 -> frameMidp p1 p2 -- mkFrame p1 p2
-    Sqr _ p1 p2 -> frameMidp p1 p2 -- mkFrame p1 p2
-    PolyL _ _ ne -> frameFromPoints $ toList ne
-
-
-frameMidp :: Fractional a => V2 a -> V2 a -> Frame (V2 a)
-frameMidp p1 p2 = frameDirac $ midPoint p1 p2
-
-
-render0 :: (Functor t, Foldable t, Show a, RealFloat a) =>
-           Frame (V2 a)
-        -> t (Sh a (V2 a))
-        -> Svg
-render0 to shs = renderShape `mapM_` wrapped to shs 
-
-
-
 
 
 -- |
@@ -571,6 +590,19 @@ wrapped to shs = convertShapeRef from to <$> shs where
 -- wrappingFrame :: (Foldable t, Ord a, Monoid a) => t (Sh p a) -> Frame a
 wrappingFrame shs = foldr fc mempty shs where
   fc acc b = mkShFrame acc `mappend` b
+
+-- | Construct a Frame from a Sh
+-- mkShFrame :: Ord a => Sh t a -> Frame a
+mkShFrame :: (Fractional a, Ord a) => Sh t (V2 a) -> Frame (V2 a)
+mkShFrame sh = case sh of
+    Rec _ p1 p2 -> mkFrame p1 p2
+    RecC _ p1 p2 -> mkFrame p1 p2
+    Cir _ p1 p2 -> mkFrame p1 p2
+    -- Sqr _ p1 p2 -> frameMidp p1 p2 -- mkFrame p1 p2
+    PolyL _ _ ne -> frameFromPoints $ toList ne
+
+frameMidp :: Fractional a => V2 a -> V2 a -> Frame (V2 a)
+frameMidp p1 p2 = frameDirac $ midPoint p1 p2
 
 
 
