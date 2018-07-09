@@ -1,4 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses, TypeFamilies, FlexibleContexts, FlexibleInstances, DeriveGeneric, DeriveFunctor #-}
+
 {- |
 This module provides functionality for working with affine transformations (i.e. in the unit square)
  
@@ -17,7 +18,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- *** AxisData, AxisFrame
   AxisData(..), AxisFrame(..), -- axisX, axisY, mkAxisPoints,
   -- ** Vectors
-  V2(..), mkV2, _vxy, 
+  V2(..), mkV2, fromCartesian, _vxy, 
   -- pointFromV2,
   -- ** Matrices
   Mat2(..), DiagMat2(..), diagMat2,
@@ -27,9 +28,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   norm2, normalize2,
   -- ** Vector construction
   -- ** Operations on points
-  -- movePoint, moveLabeledPoint, moveLabeledPointV2, xyDispl,
   -- moveLabeledPointBwFrames,
-  -- (-.),
   pointRange, 
   -- ** Operations on vectors
   -- frameToFrame,
@@ -49,6 +48,7 @@ import GHC.Generics
 import GHC.Real (Ratio(..))
 import Data.Scientific
 import Data.Semigroup (Semigroup(..))
+import Data.Bifunctor
 
 
 
@@ -64,6 +64,9 @@ instance Show a => Show (V2 a) where
 mkV2 :: a -> a -> V2 a
 mkV2 = V2
 
+-- | Build a V2 from its Cartesian components
+fromCartesian :: Num a => a -> a -> V2 a
+fromCartesian w h = (w .* e1) ^+^ (h .* e2)
 
 instance Num a => Semigroup (V2 a) where
   (V2 a b) <> (V2 c d) = V2 (a + c) (b + d)  
@@ -131,7 +134,7 @@ norm2 v = sqrt $ v <.> v
 -- | Normalize a V2 w.r.t. its Euclidean norm
 normalize2 :: (InnerProduct v ~ Scalar v, Floating (Scalar v), Hermitian v) =>
      v -> v
-normalize2 v = (1/norm2 v) .* v
+normalize2 v = (1 / norm2 v) .* v
 
 
 -- -- | Create a V2 `v` from two endpoints p1, p2. That is `v` can be seen as pointing from `p1` to `p2`
@@ -176,8 +179,8 @@ instance Num a => LinearMap (Mat2 a) (V2 a) where
 --   type DetTy (DiagMat2 a) = a
 --   det (DMat2 a00 a11) = a00 * a11
 
--- -- rescaleIso :: (DetTy m ~ Scalar v, VectorSpace v, Det m) => m -> v -> v
--- -- rescaleIso m v = det m .* v
+-- -- -- rescaleIso :: (DetTy m ~ Scalar v, VectorSpace v, Det m) => m -> v -> v
+-- -- -- rescaleIso m v = det m .* v
 
 
 
@@ -241,23 +244,23 @@ data LabeledPoint l a =
    _lp :: a,
    -- | Data associated with the `LabeledPoint`
    _lplabel :: l
-   } deriving (Eq, Show)
+   } deriving (Eq, Show, Functor)
+
+instance Bifunctor LabeledPoint where
+  bimap f g (LabeledPoint l a) = LabeledPoint (g l) (f a)
 
 
--- mkLabeledPoint :: V2 a -> l -> LabeledPoint l a
+mkLabeledPoint :: a -> l -> LabeledPoint l a
 mkLabeledPoint = LabeledPoint
 
 -- | Given a labelling function and a `Point` `p`, returned a `LabeledPoint` containing `p` and the computed label
--- labelPoint :: (V2 a -> l) -> V2 a -> LabeledPoint l a
+labelPoint :: (a -> l) -> a -> LabeledPoint l a
 labelPoint lf p = LabeledPoint p (lf p)
 
--- moveLabeledPoint :: (Point a -> Point b) -> LabeledPoint l a -> LabeledPoint l b
-moveLabeledPoint f (LabeledPoint p l) = LabeledPoint (f p) l
 
--- | Apply a function to the label
+-- | Apply a function to the label; uses the Bifunctor instance
 mapLabel :: (l1 -> l2) -> LabeledPoint l1 a -> LabeledPoint l2 a
-mapLabel f (LabeledPoint p l) = LabeledPoint p (f l)
-
+mapLabel = first
 
 
 
@@ -283,7 +286,6 @@ centerOfMass vs = (foldr ins mempty vs) ./ n where
 
 
 -- | A Frame is really just a pair of things
-
 data Frame a = Frame {_fpmin :: a, _fpmax :: a} deriving (Eq, Show, Generic)
 
 mkFrame :: a -> a -> Frame a
@@ -293,6 +295,7 @@ mkFrame = Frame
 instance Ord a => Semigroup (Frame a) where
   (Frame p1min p1max) <> (Frame p2min p2max) = Frame (min p1min p2min) (max p1max p2max)
 
+-- | A degenerate Frame (min and max points coincide)
 frameDirac :: a -> Frame a
 frameDirac p = mkFrame p p
 
@@ -303,7 +306,11 @@ instance (Monoid a, Ord a) => Monoid (Frame a) where
 unitFrame :: Num a => Frame (V2 a)
 unitFrame = mkFrame origin oneOne
   
-
+-- | Create a `Frame` from a container of `V2`s `P`, i.e. construct two points `p1` and `p2` such that :
+--
+-- p1 := inf(x,y) P
+--
+-- p2 := sup(x,y) P
 frameFromPoints :: Ord a => [a] -> Frame a
 frameFromPoints ps = foldr ins (frameDirac $ head ps) ps where
   ins p fr = frameDirac p <> fr
@@ -325,28 +332,6 @@ mkFrameOrigin w h = mkFrame origin (mkV2 w h)
 
 
 
--- | Create a `Frame` from a container of `V2`s `P`, i.e. construct two points `p1` and `p2` such that :
---
--- p1 := inf(x,y) P
---
--- p2 := sup(x,y) P
-
--- frameFromPoints :: (Ord a, Foldable t, Functor t) => t (V2 a) -> Frame a
--- frameFromPoints ds = mkFrame (mkV2 mx my) (mkV2 mmx mmy)
---   where
---     xcoord = _vx <$> ds
---     ycoord = _vy <$> ds
---     mmx = maximum xcoord 
---     mmy = maximum ycoord 
---     mx = minimum xcoord 
---     my = minimum ycoord
-
-
-
--- | A NonEmpty collection , filled with V2's, could be used to express generic collection of points
-data NE a = NE { neHead :: !a, fneTail :: ![a] } deriving (Eq, Show, Generic)
-
-
 
 
 
@@ -356,14 +341,14 @@ data NE a = NE { neHead :: !a, fneTail :: ![a] } deriving (Eq, Show, Generic)
  
 
 -- | Frame corner coordinates
--- xmin, xmax, ymin, ymax :: Frame a -> a
+xmin, xmax, ymin, ymax :: Frame (V2 a) -> a
 xmin = _vx . _fpmin
 xmax = _vx . _fpmax
 ymin = _vy . _fpmin
 ymax = _vy . _fpmax
 
 -- | The `width` is the extent in the `x` direction and `height` is the extent in the `y` direction
--- width, height :: Num a => Frame a -> a
+width, height :: Num a => Frame (V2 a) -> a
 width f = abs $ xmax f - xmin f
 height f = abs $ ymax f - ymin f
 

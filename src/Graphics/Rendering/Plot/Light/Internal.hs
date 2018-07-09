@@ -2,6 +2,7 @@
 {-# language TypeFamilies, FlexibleContexts, ConstrainedClassMethods #-}
 {-# language MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances #-}
 {-# language TypeApplications #-}
+{-# language GeneralizedNewtypeDeriving, DeriveTraversable #-}
 module Graphics.Rendering.Plot.Light.Internal
   (
   -- * Frame
@@ -72,6 +73,7 @@ import qualified Data.Foldable as F (toList)
 import Data.List
 import Data.Functor.Identity
 -- import Control.Arrow (Arrow(..), (&&&), (***), first, second)
+import qualified Data.List.NonEmpty as NE
 import Control.Monad (forM, forM_)
 import Control.Monad.State
 -- import Data.Semigroup (Min(..), Max(..))
@@ -284,68 +286,8 @@ data Plot =
 
 
 
--- -- | Measurable typeclass, for things which have a spatial size
-
 -- class Measurable m where
---   type MeasTy m :: *
---   type MeasP m :: *
---   measure :: m -> MeasTy m
---   anchor :: m -> Point (MeasP m)
---   mkMeasure :: MeasTy m -> Point (MeasP m) -> m
-
--- -- -- Modify a 'Measurable'
--- -- modifyMeasure :: (Measurable mi, Measurable mo) => (MeasTy mi -> MeasTy mo) -> mi -> mo
--- -- modifyMeasure f =  mkMeasure . f . measure
-
--- rescale :: (Measurable m) => (MeasTy m -> MeasTy m) -> m -> m
--- rescale f m = mkMeasure (f meas) p where
---   meas = measure m
---   p = anchor m
-
-
--- data Rect a = Rect { rectW :: a, rectH :: a, rectAnchor :: Point a} deriving (Eq, Show)
--- mkRect = Rect
-
--- instance Measurable (Rect a) where
---   type MeasTy (Rect a) = (a, a)
---   type MeasP (Rect a) = a
---   measure r = (rectW r, rectH r)
---   anchor = rectAnchor
---   mkMeasure (w, h) p = mkRect w h p
-
--- -- instance Num a => Measurable (Frame a) where
--- --   type MeasTy (Frame a) = (a, a)
--- --   measure fr = (width fr, height fr)
-    
-
--- --
-
--- class Anchored a where
---   type AnchorTy a :: *
---   getAnchor :: a -> Point (AnchorTy a)
---   mkAnchored :: Point (AnchorTy a) -> a 
-
-  
-
--- -- | Framed typeclass, for things which can be enveloped by a Frame
-
--- class Framed o where
---   type FrTy o :: *
---   getFrame :: o -> Frame (FrTy o)
-
--- instance Framed (Point a) where
---   type FrTy (Point a) = a
---   getFrame p = Frame p p
-
--- instance Framed (Frame a) where
---   type FrTy (Frame a) = a
---   getFrame = id
-
--- instance (bv ~ H.BinValue bin, VU.Unbox bv, H.Bin bin, Ord bv, Num bv) => Framed (H.Histogram bin bv) where
---   type FrTy (H.Histogram bin bv) = bv 
---   getFrame = histGeometry
-
-
+  -- measure :: m -> Maybe
 
 
 
@@ -436,39 +378,74 @@ histo n v = H.fillBuilder buildr v where
 --   | otherwise = Nothing 
 
 
--- | ==
-
-
--- data Circ p a = Circ (V2 a) (ShapeCol p) (V2 a)
-
--- data Rect p a = Rect (V2 a) (ShapeCol p) (V2 a)
-
--- rescaleR :: Num a => DiagMat2 a -> Rect p a -> Rect p a
--- rescaleR m (Rect r col v) = Rect (m #> r) col v
-
--- class Rescale x where
---   type RTy x :: *
---   rescale :: DiagMat2 (RTy x) -> x -> x
-
--- instance Num a => Rescale (Rect p a) where
---   type RTy (Rect p a) = a
---   rescale = rescaleR
 
 
 -- | ==
 
+-- -- | A NE is a NonEmpty list of things
+-- newtype NE a = NE { unNE :: NE.NonEmpty a } deriving (Eq, Show, Functor, Foldable, Traversable, Generic)
+
+-- singleton :: a -> NE a
+-- singleton x = fromList x []
+
+-- fromList :: a -> [a] -> NE a
+-- fromList x xs = fromList' $ x : xs
+
+-- fromList' :: [a] -> NE a
+-- fromList' = NE . NE.fromList
+
+-- toList :: NE a -> [a]
+-- toList = NE.toList . unNE
+
+-- neHead :: NE a -> a
+-- neHead = NE.head . unNE
+
+-- append :: NE a -> NE a -> NE a
+-- append u v = fromList' $ (toList u) ++ (toList v)
 
 
--- rectangle, square, polygon  -- Frame (V2)
+
+
+
+-- | ==
+
+
+
+-- rectangle, square           -- V2, V2
 -- circle, point, glyph        -- V2
 -- polyline, filled polyline   -- [V2]
 
 
 data Sh p a =
-    Cir (ShapeCol p) (Frame a)
-  | Rec (ShapeCol p) (Frame a)
-  | PolyL (LineOptions p) StrokeLineJoin_ [a]
+    Cir (ShapeCol p) a a
+  | Rec (ShapeCol p) a a
+  | Sqr (ShapeCol p) a a
+  | Line (ShapeCol p) a a
+  | PolyL (LineOptions p) StrokeLineJoin_ (NE.NonEmpty a)
+  deriving (Eq, Show, Functor)
 
+-- | Construct a Frame from a Sh
+mkShFrame :: Ord a => Sh t a -> Frame a
+mkShFrame sh = case sh of
+    Rec _ p1 p2 -> mkFrame p1 p2
+    Cir _ p1 p2 -> mkFrame p1 p2
+    Sqr _ p1 p2 -> mkFrame p1 p2
+    PolyL _ _ ne -> frameFromPoints $ NE.toList ne
+
+
+-- Smart constructors
+
+mkCir :: Num a => a -> ShapeCol p -> V2 a -> Sh p (V2 a)
+mkCir r col vc = Cir col vc vcir where
+  vcir = vc ^+^ (r .* e1)
+
+mkRec :: Num a => a -> a -> ShapeCol p -> V2 a -> Sh p (V2 a)
+mkRec w h col vc = Rec col vc v2 where
+  v2 = vc ^+^ fromCartesian w h 
+
+mkSqr :: Num a => a -> ShapeCol p -> V2 a -> Sh p (V2 a)  
+mkSqr r col vc = Sqr col vc v2 where
+  v2 = vc ^+^ fromCartesian r r
 
 
 
@@ -517,37 +494,37 @@ shs = [r0, r1, r2]
 
 
 
--- test0 =
---   do
---   let
---     figdata = figureDataDefault
---     to = frameFromFigData figdata
---     (rout, rin) = rectsFigData figdata 
---     svg_t = svgHeader' figdata $ do
---       render0 to shs
---       renderShape rout
---       renderShape rin
---   T.writeFile "examples/ex_dsl2.svg" $ T.pack $ renderSvg svg_t
+test0 =
+  do
+  let
+    figdata = figureDataDefault
+    to = frameFromFigData figdata
+    (rout, rin) = rectsFigData figdata 
+    svg_t = svgHeader' figdata $ do
+      render0 to shs
+      renderShape rout
+      renderShape rin
+  T.writeFile "examples/ex_dsl3.svg" $ T.pack $ renderSvg svg_t
 
 
--- -- | Rectangles based on the inner and outer frames of the drawable canvas
--- -- rectsFigData
--- --   :: Floating a =>
--- --      FigureData a -> (Shape a (V2 a), Shape a (V2 a))
--- rectsFigData fd = (rOut, rIn)
---   where
---     col = shapeColNoFill C.black 1 1
---     frIn = frameFromFigData fd
---     pc = midPoint (_fpmin frIn) (_fpmax frIn)
---     rIn = RectCenteredSh (width frIn) (height frIn) col pc 
---     rOut = RectCenteredSh (figWidth fd) (figHeight fd) col pc
+-- | Rectangles based on the inner and outer frames of the drawable canvas
+rectsFigData
+  :: Floating a =>
+     FigureData a -> (Shape a (V2 a), Shape a (V2 a))
+rectsFigData fd = (rOut, rIn)
+  where
+    col = shapeColNoFill C.black 1 1
+    frIn = frameFromFigData fd
+    pc = midPoint (_fpmin frIn) (_fpmax frIn)
+    rIn = RectCenteredSh (width frIn) (height frIn) col pc 
+    rOut = RectCenteredSh (figWidth fd) (figHeight fd) col pc
 
 
 
--- render0 :: (Functor t, Foldable t, Show a, RealFrac a) =>
---            Frame a
---         -> t (Shape a (V2 a))
---         -> Svg
+render0 :: (Functor t, Foldable t, Show a, RealFrac a) =>
+           Frame (V2 a)
+        -> t (Shape a (V2 a))
+        -> Svg
 render0 to shs = renderShape `mapM_` shs' where
   (Wrt SVG _ shs') = wrapped to shs 
 
