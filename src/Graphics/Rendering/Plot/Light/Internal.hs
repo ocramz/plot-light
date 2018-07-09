@@ -76,6 +76,7 @@ import qualified Data.Foldable as F (toList)
 
 import Data.List
 import Data.Functor.Identity
+import Data.Bifunctor
 -- import Control.Arrow (Arrow(..), (&&&), (***), first, second)
 import qualified Data.List.NonEmpty as NE
 import Control.Monad (forM, forM_)
@@ -412,23 +413,98 @@ histo n v = H.fillBuilder buildr v where
 
 -- | -- 
 
-data Shp a =
-    Ci a
-  | Re (Align a)
-  | Pt a 
-  deriving (Eq, Show)
+-- data Shp a =
+--     Ci a
+--   | Re (Align a)
+--   | Pt a 
+--   deriving (Eq, Show)
+
+-- data Align a =
+--     Centered a
+--   | BLCorner a
+--   | BSideC a
+--   deriving (Eq, Show)
+
+-- renderShp sh = case sh of
+--   Ci v -> undefined
+--   Re al -> case al of
+--     Centered v -> undefined
+
+
+
+-- -- | -- 
+
+-- -- | For some shapes we can specify the anchor point alignment. When the alignment is unspecified, the anchor point is taken to be the shape center by default.
+-- data Shp p r a =
+--     Ci r (ShapeCol p) a
+--   | Re r r (ShapeCol p) (Align a)
+--   -- | Gly GlyphShape_ a 
+--   deriving (Eq, Show, Functor)
+
+-- instance Bifunctor (Shp p) where
+--   bimap f g sh = case sh of
+--     Ci r col v -> Ci (f r) col (g v)
+--     Re w h col v -> Re (f w) (f h) col (g <$> v)
+
+
+-- data Align a =
+--     Centered a
+--   | BLCorner a
+--   | BSideC a
+--   deriving (Eq, Show, Functor)
+
+-- -- -- | example smart constructor
+-- -- mkCi :: Num a => p -> ShapeCol p -> a -> a -> Shp p (V2 a)
+-- -- mkCi r col x y = Ci r col (fromCartesian x y)
+
+-- -- renderShp sh = case sh of
+-- --   Ci _ _ v -> undefined
+-- --   Re _ _ _ al -> case al of
+-- --     Centered v -> undefined
+
+
+
+
+-- | -- 
+
+-- | For some shapes we can specify the anchor point alignment. When the alignment is unspecified, the anchor point is taken to be the shape center by default.
+data Shp p d a =
+    Ci (ShapeCol p) d a
+  | Re (ShapeCol p) d (Align a)
+  | PyL [a]
+  -- | Gly GlyphShape_ a 
+  deriving (Eq, Show, Functor)
 
 data Align a =
     Centered a
   | BLCorner a
   | BSideC a
-  deriving (Eq, Show)
+  deriving (Eq, Show, Functor)
 
+instance Bifunctor (Shp p) where
+  bimap f g sh = case sh of
+    Ci col wd w -> Ci col (f wd) (g w)
+    Re col wd w -> Re col (f wd) (g <$> w)
+
+-- affine :: (Bifunctor p, LinearMap m b) => m -> b -> p b c -> p b c
+-- affine m v = first (\w -> m #> (w ^+^ v))
+
+-- affineInv :: (Bifunctor p, MatrixGroup m b) => m -> b -> p b c -> p b c
+-- affineInv m v = first (\w -> m <\> (w ^-^ v))
+
+
+
+-- | example smart constructor
+mkCi :: Num a => a -> ShapeCol p -> a -> a -> Shp p (V2 a) (V2 a)
+mkCi r col x y = Ci col (fromCartesian r 0) (fromCartesian x y)
+
+renderShp :: (Show a, RealFloat a) => Shp a (V2 a) (V2 a) -> Svg
 renderShp sh = case sh of
-  Ci v -> undefined
-  Re al -> case al of
-    Centered v -> undefined
-
+  Ci col vd v -> circle r col v where
+    r = norm2 vd
+  Re col vd al -> case al of
+    Centered v -> rectCentered w h col v where
+      (w, h) = _vxy vd
 
 
 
