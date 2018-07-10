@@ -396,71 +396,6 @@ histo n v = H.fillBuilder buildr v where
 
 
 
--- data Aligned a =
---     Centered (Shp a)
---   | BLCorner (Shp a)
---   | BSideC (Shp a)
---   deriving (Eq, Show, Functor)
-
--- data Shp a =
---     C a a
---   | R a a
---   deriving (Eq, Show, Functor)
-
--- mkRC :: a -> a -> Aligned a
--- mkRC v1 v2 = Centered (R v1 v2)
-
-
--- | -- 
-
--- data Shp a =
---     Ci a
---   | Re (Align a)
---   | Pt a 
---   deriving (Eq, Show)
-
--- data Align a =
---     Centered a
---   | BLCorner a
---   | BSideC a
---   deriving (Eq, Show)
-
--- renderShp sh = case sh of
---   Ci v -> undefined
---   Re al -> case al of
---     Centered v -> undefined
-
-
-
--- -- | -- 
-
--- -- | For some shapes we can specify the anchor point alignment. When the alignment is unspecified, the anchor point is taken to be the shape center by default.
--- data Shp p r a =
---     Ci r (ShapeCol p) a
---   | Re r r (ShapeCol p) (Align a)
---   -- | Gly GlyphShape_ a 
---   deriving (Eq, Show, Functor)
-
--- instance Bifunctor (Shp p) where
---   bimap f g sh = case sh of
---     Ci r col v -> Ci (f r) col (g v)
---     Re w h col v -> Re (f w) (f h) col (g <$> v)
-
-
--- data Align a =
---     Centered a
---   | BLCorner a
---   | BSideC a
---   deriving (Eq, Show, Functor)
-
--- -- -- | example smart constructor
--- -- mkCi :: Num a => p -> ShapeCol p -> a -> a -> Shp p (V2 a)
--- -- mkCi r col x y = Ci r col (fromCartesian x y)
-
--- -- renderShp sh = case sh of
--- --   Ci _ _ v -> undefined
--- --   Re _ _ _ al -> case al of
--- --     Centered v -> undefined
 
 
 
@@ -474,8 +409,6 @@ histo n v = H.fillBuilder buildr v where
 data Shp p d a =
     Ci (ShapeCol p) d a
   | Re (ShapeCol p) d (Align a)
-  -- | PyL [a]
-  -- | Gly GlyphShape_ a 
   deriving (Eq, Show, Functor)
 
 data Align a =
