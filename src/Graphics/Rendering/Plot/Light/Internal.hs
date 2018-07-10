@@ -405,17 +405,20 @@ histo n v = H.fillBuilder buildr v where
 -- | For some shapes we can specify the anchor point alignment. When the alignment is unspecified, the anchor point is taken to be the shape center by default.
 --
 -- The second type parameter `d` specifies a displacement vector, i.e. a radius vector for a circle or the "opposite corner" vector for a rectangle (which is why only /linear/ transformations should be applied).
--- The third type parameter `a` is assigned to an absolute position vector, so /affine/ functions are applied.
+-- The third type parameter `a` is assigned to an absolute position vector, so /affine/ functions are applied. The position vector is interpreted according to the 'Align' type.
 data Shp p d a =
     Ci (ShapeCol p) d a
   | Re (ShapeCol p) d (Align a)
   deriving (Eq, Show, Functor)
 
 data Align a =
-    Centered a
-  | BLCorner a
-  | BSideC a
+    Centered a  -- ^ Anchor point is in the center of the figure
+  | BLCorner a  -- ^ Anchor point is on the bottom-left corner of the figure
+  | BSideC a    -- ^ Anchor point is at the center of the bottom side of the figure
   deriving (Eq, Show, Functor)
+
+
+
 
 instance Bifunctor (Shp p) where
   bimap f g sh = case sh of
@@ -438,8 +441,62 @@ toFrameBimap to = bimap f g
     f v = mto #> v
     g v = mto #> (v ^+^ vto)    
 
-frameToFrameB from to = toFrameBimap to . fromFrameBimap from
+-- frameToFrameB :: (Bifunctor p, MatrixGroup (DiagMat2 a) b, Fractional a) =>
+--      Frame (V2 a) -> Frame (V2 a) -> p b (V2 a) -> p b (V2 a)
+frameToFrameB from to = toFrameBimap to . both flipUD . fromFrameBimap from where
+  flipUD (V2 vx vy) = mkV2 vx (1 - vy)
     
+both :: Bifunctor p => (a -> b) -> p a a -> p b b
+both f = bimap f f
+
+
+
+
+
+reposition :: (Foldable f, Ord a, Functor f, Fractional a) =>
+     Frame (V2 a)
+     -> f (Shp p (V2 a) (V2 a)) -> f (Shp p (V2 a) (V2 a))
+reposition to shs = frameToFrameB from to <$> shs where
+  from = wrappingFrame shs
+
+wrappingFrame :: (Foldable t, AdditiveGroup v, Ord v) =>
+     t (Shp a v v) -> Frame v                 
+wrappingFrame shs = foldr fc mempty shs where
+  fc acc b = mkShpFrame acc `mappend` b
+
+-- | Construct a Frame from the anchor point of the shape and the second point
+mkShpFrame :: AdditiveGroup v => Shp a v v -> Frame v
+mkShpFrame sh = case sh of
+  Ci _ vd v -> mkFrame v (v ^+^ vd) 
+  Re _ vd al -> case al of
+    Centered v -> mkFrame v (v ^+^ vd)
+    BLCorner v -> mkFrame v (v ^+^ vd)
+    BSideC v -> mkFrame v (v ^+^ vd) 
+
+
+
+ 
+render0 :: (Foldable t, Show a, RealFloat a, Functor t) =>
+           Frame (V2 a)
+        -> t (Shp a (V2 a) (V2 a))
+        -> Svg
+render0 to shs = renderShape `mapM_` reposition to shs 
+
+-- | Render a single shape as SVG
+renderShape :: (Show a, RealFloat a) => Shp a (V2 a) (V2 a) -> Svg
+renderShape sh = case sh of
+  Ci col vd v -> circle r col v where
+    r = norm2 vd
+  Re col vd al -> case al of
+    Centered v -> rectCentered w h col v where
+      (w, h) = _vxy vd
+    BLCorner v -> rect w h col v where
+      (w, h) = _vxy vd
+    BSideC v -> rectCenteredMidpointBase w h col v where
+      (w, h) = _vxy vd
+
+
+
 
 
 -- | example smart constructors
@@ -447,129 +504,35 @@ frameToFrameB from to = toFrameBimap to . fromFrameBimap from
 mkCi :: Num a => a -> ShapeCol p -> v -> Shp p (V2 a) v
 mkCi r col v = Ci col (fromCartesian r 0) v
 
-mkReBLC :: Num a => a -> a -> ShapeCol p -> v -> Shp p (V2 a) v
-mkReBLC w h col v = Re col vd (BLCorner v) where
+mkRe :: Num a => a -> a -> ShapeCol p -> v -> Shp p (V2 a) v
+mkRe w h col v = Re col vd (BLCorner v) where
   vd = fromCartesian w h 
 
+mkReBSC :: Fractional a => a -> a -> ShapeCol p -> v -> Shp p (V2 a) v
+mkReBSC w h col v = Re col vd (BSideC v) where
+  vd = fromCartesian (w/2) h
 
 
--- | Compute center of shape
-shpCenter :: (VectorSpace v, Fractional (Scalar v)) => Shp t v v -> v
-shpCenter sh = case sh of
-  Ci _ _ v -> v
-  Re _ vd al -> case al of
-    Centered v -> v
-    BLCorner v -> v ^+^ ((1/2) .* vd)
+c3 = mkCi 3 (shapeColNoBorder C.orange 1) (mkV2 0 0)
+r0 = mkRe 10 10 (shapeColNoBorder C.red 1) (mkV2 10 20)
+r1 = mkRe 10 10 (shapeColNoBorder C.blue 1) (mkV2 0 0)
 
--- mkFrameShp :: AdditiveGroup v => Shp a v v -> Frame v
--- mkFrameShp sh = case sh of
---   Ci _ vd v -> mkFrame (v ^+^ vd) (v ^-^ vd)
---   Re _ vd al -> case al of
---     Centered v -> mkFrame (v ^+^ vd) (v ^-^ vd)
---     BLCorner v -> mkFrame v (v ^+^ vd)
---     -- BSideC v -> let (w, h) = _vxy vd
-
-renderShp :: (Show a, RealFloat a) => Shp a (V2 a) (V2 a) -> Svg
-renderShp sh = case sh of
-  Ci col vd v -> circle r col v where
-    r = norm2 vd
-  Re col vd al -> case al of
-    Centered v -> rectCentered w h col v where
-      (w, h) = _vxy vd
-
-
-
-
-
-
-
-
--- | ==
-
--- | A NE is a NonEmpty list of things
-newtype NE a = NE { unNE :: NE.NonEmpty a } deriving (Eq, Show, Functor, Foldable, Traversable, Generic)
-
-singleton :: a -> NE a
-singleton x = fromList x []
-
-fromList :: a -> [a] -> NE a
-fromList x xs = fromList' $ x : xs
-
-fromList' :: [a] -> NE a
-fromList' = NE . NE.fromList
-
-toList :: NE a -> [a]
-toList = NE.toList . unNE
-
-neHead :: NE a -> a
-neHead = NE.head . unNE
-
-append :: NE a -> NE a -> NE a
-append = liftNE2 (++)
-
-liftNE2 :: ([a2] -> [a1] -> [a]) -> NE a2 -> NE a1 -> NE a
-liftNE2 f u v = fromList' $ f (toList u) (toList v)
-
-
-
-
-
-
-
--- | =============
--- | A DSL for geometrical shapes
-data Sh p a =
-    Cir (ShapeCol p) a a
-  | Rec (ShapeCol p) a a
-  | RecC (ShapeCol p) a a
-  | Sqr (ShapeCol p) a a
-  | Line (LineOptions p) a a
-  | PolyL (LineOptions p) StrokeLineJoin_ (NE a)
-  deriving (Eq, Show, Functor)
-
-
-
-
--- Smart constructors
-
-mkCir :: Num a => a -> ShapeCol p -> V2 a -> Sh p (V2 a)
-mkCir r col vc = Cir col vc vcir where
-  vcir = vc ^+^ (r .* e1)
-
-mkRec :: Num a => a -> a -> ShapeCol p -> V2 a -> Sh p (V2 a)
-mkRec w h col vc = Rec col vc v2 where
-  v2 = vc ^+^ fromCartesian w h 
-
-mkRecC :: Floating a => a -> a -> ShapeCol p -> V2 a -> Sh p (V2 a)
-mkRecC w h col v = RecC col v1' v2' where
-  vs = 0.5 .* fromCartesian w h 
-  v1' = v ^-^ vs
-  v2' = v ^+^ vs
-
-
-mkSqr :: Num a => a -> ShapeCol p -> V2 a -> Sh p (V2 a)  
-mkSqr r col vc = Sqr col vc v2 where
-  v2 = vc ^+^ fromCartesian r r
-
-
-
-
-
-
--- c0 = mkCir 10 (shapeColNoBorder C.red 0.9) (mkV2 10 20)
--- c1 = mkCir 5 (shapeColNoBorder C.orange 0.9) (mkV2 5 15)
--- c2 = mkCir 15 (shapeColNoBorder C.blue 0.3) (mkV2 12 17)
-c3 = mkCir 3 (shapeColNoBorder C.orange 1) (mkV2 0 0)
-
-r0 = mkRec 10 10 (shapeColNoBorder C.red 1) (mkV2 10 20)
-r1 = mkRec 10 10 (shapeColNoBorder C.blue 1) (mkV2 0 0)
--- r2 = mkRec 10 10 (shapeColNoBorder C.orange 0.7) (mkV2 5 10)
-
--- -- shs :: [Shape Double (Point Double)]
--- shs = [r0, r1, r2]
--- -- shs = [c0,c1,c2]
--- shs = [r0, r1, c3]
 shs = [r0, r1, c3]
+
+-- -- c0 = mkCir 10 (shapeColNoBorder C.red 0.9) (mkV2 10 20)
+-- -- c1 = mkCir 5 (shapeColNoBorder C.orange 0.9) (mkV2 5 15)
+-- -- c2 = mkCir 15 (shapeColNoBorder C.blue 0.3) (mkV2 12 17)
+-- c3 = mkCir 3 (shapeColNoBorder C.orange 1) (mkV2 0 0)
+
+-- r0 = mkRec 10 10 (shapeColNoBorder C.red 1) (mkV2 10 20)
+-- r1 = mkRec 10 10 (shapeColNoBorder C.blue 1) (mkV2 0 0)
+-- -- r2 = mkRec 10 10 (shapeColNoBorder C.orange 0.7) (mkV2 5 10)
+
+-- -- -- shs :: [Shape Double (Point Double)]
+-- -- shs = [r0, r1, r2]
+-- -- -- shs = [c0,c1,c2]
+-- -- shs = [r0, r1, c3]
+-- shs = [r0, r1, c3]
 
 
 
@@ -586,7 +549,7 @@ test0 =
       render0 to shs
       renderShape rout
       renderShape rin
-  T.writeFile "examples/ex_dsl3.svg" $ T.pack $ renderSvg svg_t
+  T.writeFile "examples/ex_dsl4.svg" $ T.pack $ renderSvg svg_t
 
 
 -- | Rectangles based on the inner and outer frames of the drawable canvas
@@ -596,60 +559,113 @@ rectsFigData fd = (rOut, rIn)
     col = shapeColNoFill C.black 1 1
     frIn = frameFromFigData fd
     pc = midPoint (_fpmin frIn) (_fpmax frIn)
-    rIn = mkRecC (width frIn) (height frIn) col pc 
-    rOut = mkRecC (figWidth fd) (figHeight fd) col pc
+    rIn = mkRe (width frIn) (height frIn) col pc 
+    rOut = mkRe (figWidth fd) (figHeight fd) col pc
 
 
 
-render0 :: (Functor t, Foldable t, Show a, RealFloat a) =>
-           Frame (V2 a)
-        -> t (Sh a (V2 a))
-        -> Svg
-render0 to shs = renderShape `mapM_` wrapped to shs 
 
--- | NB : We must only render a 'Shape' that's in the SVG reference system
-renderShape :: RealFloat a => Sh a (V2 a) -> Svg
-renderShape sh = case sh of
-  Cir col p1 p2 -> circle (norm2 $ p2 ^-^ p1) col p1
-  Rec col p1 p2 -> rect w h' col p1' where
-    h' = abs h
-    (w, h) = _vxy (p2 ^-^ p1)
-    p1' = p1  ^-^ fromCartesian 0 h'
-  RecC col p1 p2 -> rect w h' col p1 where
-    h' = abs h
-    (w, h) = _vxy (p2 ^-^ p1)
+
+
+-- | ==
+
+
+
+
+
+
+-- | =============
+-- | A DSL for geometrical shapes
+
+
+-- data Sh p a =
+--     Cir (ShapeCol p) a a
+--   | Rec (ShapeCol p) a a
+--   | RecC (ShapeCol p) a a
+--   | Sqr (ShapeCol p) a a
+--   | Line (LineOptions p) a a
+--   | PolyL (LineOptions p) StrokeLineJoin_ (NE.NonEmpty a)
+--   deriving (Eq, Show, Functor)
+
+-- -- Smart constructors
+
+-- mkCir :: Num a => a -> ShapeCol p -> V2 a -> Sh p (V2 a)
+-- mkCir r col vc = Cir col vc vcir where
+--   vcir = vc ^+^ (r .* e1)
+
+-- mkRec :: Num a => a -> a -> ShapeCol p -> V2 a -> Sh p (V2 a)
+-- mkRec w h col vc = Rec col vc v2 where
+--   v2 = vc ^+^ fromCartesian w h 
+
+-- mkRecC :: Floating a => a -> a -> ShapeCol p -> V2 a -> Sh p (V2 a)
+-- mkRecC w h col v = RecC col v1' v2' where
+--   vs = 0.5 .* fromCartesian w h 
+--   v1' = v ^-^ vs
+--   v2' = v ^+^ vs
+
+
+-- mkSqr :: Num a => a -> ShapeCol p -> V2 a -> Sh p (V2 a)  
+-- mkSqr r col vc = Sqr col vc v2 where
+--   v2 = vc ^+^ fromCartesian r r
+
+
+
+
+
+
+
+
+
+
+-- render0 :: (Functor t, Foldable t, Show a, RealFloat a) =>
+--            Frame (V2 a)
+--         -> t (Sh a (V2 a))
+--         -> Svg
+-- render0 to shs = renderShape `mapM_` wrapped to shs 
+
+-- -- | NB : We must only render a 'Shape' that's in the SVG reference system
+-- renderShape :: RealFloat a => Sh a (V2 a) -> Svg
+-- renderShape sh = case sh of
+--   Cir col p1 p2 -> circle (norm2 $ p2 ^-^ p1) col p1
+--   Rec col p1 p2 -> rect w h' col p1' where
+--     h' = abs h
+--     (w, h) = _vxy (p2 ^-^ p1)
+--     p1' = p1  ^-^ fromCartesian 0 h'
+--   RecC col p1 p2 -> rect w h' col p1 where
+--     h' = abs h
+--     (w, h) = _vxy (p2 ^-^ p1)
 
 
 -- |
 -- 1) Computes the Frame that envelopes the input collection of points (i.e. the L1 convex hull)
 -- 2) recomputes the point coordinates to fall within the destination frame in the SVG reference  
-wrapped :: (Functor t, Foldable t, Fractional a, Ord a) =>
-           Frame (V2 a)
-        -> t (Sh p (V2 a))
-        -> t (Sh p (V2 a))
-wrapped to shs = convertShapeRef from to <$> shs where
-  from = wrappingFrame shs
+-- wrapped :: (Functor t, Foldable t, Fractional a, Ord a) =>
+--            Frame (V2 a)
+--         -> t (Sh p (V2 a))
+--         -> t (Sh p (V2 a))
+-- wrapped to shs = convertShapeRef from to <$> shs where
+--   from = wrappingFrame shs
   
 
 -- | Compute the 'Frame' that envelopes a 'Foldable' container (e.g. a list or vector) of 'Shape's.
 --
 -- The result can be used as the "from" Frame used to compute the Screen-SVG coordinate transform
 -- wrappingFrame :: (Foldable t, Ord a, Monoid a) => t (Sh p a) -> Frame a
-wrappingFrame shs = foldr fc mempty shs where
-  fc acc b = mkShFrame acc `mappend` b
+-- wrappingFrame shs = foldr fc mempty shs where
+--   fc acc b = mkShFrame acc `mappend` b
 
--- | Construct a Frame from a Sh
--- mkShFrame :: Ord a => Sh t a -> Frame a
-mkShFrame :: (Fractional a, Ord a) => Sh t (V2 a) -> Frame (V2 a)
-mkShFrame sh = case sh of
-    Rec _ p1 p2 -> mkFrame p1 p2
-    RecC _ p1 p2 -> mkFrame p1 p2
-    Cir _ p1 p2 -> mkFrame p1 p2
-    -- Sqr _ p1 p2 -> frameMidp p1 p2 -- mkFrame p1 p2
-    PolyL _ _ ne -> frameFromPoints $ toList ne
+-- -- | Construct a Frame from a Sh
+-- -- mkShFrame :: Ord a => Sh t a -> Frame a
+-- mkShFrame :: (Fractional a, Ord a) => Sh t (V2 a) -> Frame (V2 a)
+-- mkShFrame sh = case sh of
+--     Rec _ p1 p2 -> mkFrame p1 p2
+--     RecC _ p1 p2 -> mkFrame p1 p2
+--     Cir _ p1 p2 -> mkFrame p1 p2
+--     -- Sqr _ p1 p2 -> frameMidp p1 p2 -- mkFrame p1 p2
+--     PolyL _ _ ne -> frameFromPoints $ NE.toList ne
 
-frameMidp :: Fractional a => V2 a -> V2 a -> Frame (V2 a)
-frameMidp p1 p2 = frameDirac $ midPoint p1 p2
+-- frameMidp :: Fractional a => V2 a -> V2 a -> Frame (V2 a)
+-- frameMidp p1 p2 = frameDirac $ midPoint p1 p2
 
 
 
@@ -668,6 +684,10 @@ convertShapeRef :: (Functor f, Fractional a) =>
                 -> f (V2 a)
                 -> f (V2 a)
 convertShapeRef from to sh = frameToFrame from to <$> sh
+
+
+
+
 
 
   

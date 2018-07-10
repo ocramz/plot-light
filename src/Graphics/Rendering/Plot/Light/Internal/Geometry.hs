@@ -85,7 +85,7 @@ oneOne = mkV2 1 1
 -- > v ^+^ zero == zero ^+^ v == v
 --
 -- > v ^-^ v == zero
-class AdditiveGroup v where
+class Monoid v => AdditiveGroup v where
   -- | Identity element
   zero :: v
   -- | Group action ("sum")
