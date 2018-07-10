@@ -102,6 +102,7 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 import qualified Data.Colour as C
 import qualified Data.Colour.Names as C
 import qualified Data.Colour.SRGB as C
+import qualified Data.Colour.SRGB.Linear as C
 
 import qualified Data.Histogram as H (Histogram(..), Bin(..), bins, asList)
 import qualified Data.Histogram.Bin as H (BinD(..), binD, BinI(..), binI, binSize, UniformBin(..))
@@ -188,7 +189,9 @@ withSvg figdat fn = do
 data Col a = Col {
     cColour :: C.Colour Double  -- ^ Colour
   , cAlpha :: a                 -- ^ Opacity, [0 .. 1]
-  } deriving (Eq, Show)
+  } deriving (Eq)
+instance Show a => Show (Col a) where
+  show (Col c _) = show c
 
 -- | 'Col' constructor
 mkCol :: C.Colour Double -> a -> Col a
@@ -207,7 +210,14 @@ data ShapeCol a =
     NoBorderCol (Col a)  -- ^ Only fill colour
   | NoFillCol (Col a) a   -- ^ Only border colour + stroke width
   | BothCol (Col a) (Col a) a -- ^ Fill and border colours + stroke width
-  deriving (Eq, Show)
+  deriving (Eq)
+
+instance Show a => Show (ShapeCol a) where
+  show k = case k of
+    NoBorderCol co -> show co
+    NoFillCol co _ -> show co
+    BothCol co1 co2 _ -> unwords [show co1, show co2]
+    
 
 -- | Construct a 'ShapeCol' for shapes that have no border stroke (i.e. have only the fill colour)
 shapeColNoBorder :: C.Colour Double -> a -> ShapeCol a
@@ -400,8 +410,9 @@ histo n v = H.fillBuilder buildr v where
 -- | A DSL for geometrical shapes
 
 data Shp p vd v =
-    C (ShapeCol p) vd v
-  | R (ShapeCol p) vd v deriving (Eq, Show)
+    C (ShapeCol p) vd v  -- ^ Circle
+  | R (ShapeCol p) vd v  -- ^ Rectangle
+  deriving (Eq, Show)
 
 instance Bifunctor (Shp p) where
   bimap f g sh = case sh of
@@ -430,16 +441,22 @@ bias sh = case sh of
   r@_ -> mix2r fbias r where
     fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
 
-reposition :: (Foldable f, Ord a, Functor f, Fractional a) =>
-     Frame (V2 a) -> f (Shp p (V2 a) (V2 a)) -> f (Shp p (V2 a) (V2 a))
+-- reposition :: (Foldable f, Ord a, Functor f, Fractional a) =>
+--      Frame (V2 a) -> f (Shp p (V2 a) (V2 a)) -> f (Shp p (V2 a) (V2 a))
 reposition to shs = frameToFrameB from to <$> shs where
   from = wrappingFrame shs
 
-wrappingFrame :: (Foldable t, Ord v, AdditiveGroup v) => t (Shp p v v) -> Frame v
-wrappingFrame shs = foldMap insf shs where
-  insf sh = case sh of
+
+wrappingFrame :: (AdditiveGroup v, Ord v) => [Shp p v v] -> Frame v
+wrappingFrame shs = foldr insf fzero shs where
+  fzero = mkF $ head shs
+  insf sh acc = mkF sh `mappend` acc
+  mkF sh = case sh of
     C _ vd v -> mkFrame v (v ^+^ vd)
     R _ vd v -> mkFrame v (v ^+^ vd)
+
+
+  
 
 -- | Given :
 --
@@ -488,7 +505,7 @@ mkReC w h col v = R col vs v' where
   vs = fromCartesian w h
   v' = v ^-^ (0.5 .* vs)
 
-c4 = mkC 1 (shapeColNoBorder C.blue 0.6) (mkV2 30 30 )
+c4 = mkC 1 (shapeColNoBorder C.blue 0.6) (mkV2 30 20 )
 c3 = mkC 1 (shapeColNoBorder C.blue 1) (mkV2 0 0)
 
 -- r0 = mkR 5 5 (shapeColNoBorder C.red 1) (mkV2 20 20)
@@ -508,17 +525,17 @@ shs = [r21, r22, r23, r24, c3, c4]
 
 
 
-render0 :: (Foldable t, Floating a, Real a, Functor t) =>
-           Frame (V2 a)
-        -> t (Shp a (V2 a) (V2 a))
-        -> Svg
+-- render0 :: (Foldable t, Floating a, Real a, Functor t) =>
+--            Frame (V2 a)
+--         -> t (Shp a (V2 a) (V2 a))
+--         -> Svg
 render0 to shs = renderShape `mapM_` wrapped to shs
 
 
-wrapped :: (Foldable f, Ord a, Functor f, Fractional a) =>
-           Frame (V2 a)
-        -> f (Shp p (V2 a) (V2 a))
-        -> f (Shp p (V2 a) (V2 a))
+-- wrapped :: (Foldable f, Ord a, Functor f, Fractional a) =>
+--            Frame (V2 a)
+--         -> f (Shp p (V2 a) (V2 a))
+--         -> f (Shp p (V2 a) (V2 a))
 wrapped to shs = bias . frameToFrameB from to <$> shs where
   from = wrappingFrame shs
 
