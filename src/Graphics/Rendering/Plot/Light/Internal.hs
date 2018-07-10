@@ -427,7 +427,7 @@ renderShape sh = case sh of
 bias :: Num a => Shp p (V2 a) (V2 a) -> Shp p (V2 a) (V2 a)
 bias sh = case sh of
   c@C{} -> c
-  r@R{} -> mix2r fbias r where
+  r@_ -> mix2r fbias r where
     fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
 
 reposition :: (Foldable f, Ord a, Functor f, Fractional a) =>
@@ -488,9 +488,11 @@ mkReC w h col v = R col vs v' where
   vs = fromCartesian w h
   v' = v ^-^ (0.5 .* vs)
 
-c3 = mkC 1 (shapeColNoBorder C.orange 1) (mkV2 0 0)
-r0 = mkR 5 5 (shapeColNoBorder C.red 1) (mkV2 20 20)
-r1 = mkR 5 5 (shapeColNoBorder C.blue 1) (mkV2 0 0)
+c4 = mkC 1 (shapeColNoBorder C.blue 0.6) (mkV2 30 30 )
+c3 = mkC 1 (shapeColNoBorder C.blue 1) (mkV2 0 0)
+
+-- r0 = mkR 5 5 (shapeColNoBorder C.red 1) (mkV2 20 20)
+-- r1 = mkR 5 5 (shapeColNoBorder C.blue 1) (mkV2 0 0)
 
 rectb w h x y = mkR w h (shapeColNoBorder C.red 1) (mkV2 x y)
 r21 = rectb 5 5 0 0
@@ -500,23 +502,24 @@ r24 = rectb 5 15 30 0
 -- -- shs = [r0, r1, c3]
 -- -- shs = [r0, r1]
 
-shs = [r21, r22, r23, r24]
+shs = [r21, r22, r23, r24, c3, c4]
 
 
 
 
 
-render0
-  :: (Foldable t, Floating a, Real a, Functor t) =>
-     Frame (V2 a)
-     -> t (Shp a (V2 a) (V2 a)) -> Svg
+render0 :: (Foldable t, Floating a, Real a, Functor t) =>
+           Frame (V2 a)
+        -> t (Shp a (V2 a) (V2 a))
+        -> Svg
 render0 to shs = renderShape `mapM_` wrapped to shs
+
 
 wrapped :: (Foldable f, Ord a, Functor f, Fractional a) =>
            Frame (V2 a)
         -> f (Shp p (V2 a) (V2 a))
         -> f (Shp p (V2 a) (V2 a))
-wrapped to shs = frameToFrameB from to <$> shs where
+wrapped to shs = bias . frameToFrameB from to <$> shs where
   from = wrappingFrame shs
 
 
