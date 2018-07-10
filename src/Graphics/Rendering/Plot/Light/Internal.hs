@@ -505,7 +505,7 @@ mkReC w h col v = R col vs v' where
   vs = fromCartesian w h
   v' = v ^-^ (0.5 .* vs)
 
-c4 = mkC 1 (shapeColNoBorder C.blue 0.6) (mkV2 30 20 )
+c4 = mkC 1 (shapeColNoBorder C.blue 0.6) (mkV2 30 15 )
 c3 = mkC 1 (shapeColNoBorder C.blue 1) (mkV2 0 0)
 
 -- r0 = mkR 5 5 (shapeColNoBorder C.red 1) (mkV2 20 20)
