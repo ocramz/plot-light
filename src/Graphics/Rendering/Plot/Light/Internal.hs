@@ -443,7 +443,7 @@ toFrameBimap to = bimap f g
 
 -- frameToFrameB :: (Bifunctor p, MatrixGroup (DiagMat2 a) b, Fractional a) =>
 --      Frame (V2 a) -> Frame (V2 a) -> p b (V2 a) -> p b (V2 a)
-frameToFrameB from to = toFrameBimap to . both flipUD . fromFrameBimap from where
+frameToFrameB from to = toFrameBimap to . second flipUD . fromFrameBimap from where
   flipUD (V2 vx vy) = mkV2 vx (1 - vy)
     
 both :: Bifunctor p => (a -> b) -> p a a -> p b b
@@ -490,10 +490,12 @@ renderShape sh = case sh of
   Re col vd al -> case al of
     Centered v -> rectCentered w h col v where
       (w, h) = _vxy vd
-    BLCorner v -> rect w h col v where
+    BLCorner v -> rect w h col v' where
       (w, h) = _vxy vd
-    BSideC v -> rectCenteredMidpointBase w h col v where
+      v' = v ^-^ fromCartesian 0 h
+    BSideC v -> rectCenteredMidpointBase w h col v' where
       (w, h) = _vxy vd
+      v' = v ^-^ fromCartesian 0 h
 
 
 
@@ -512,17 +514,27 @@ mkReC :: Num a => a -> a -> ShapeCol p -> v -> Shp p (V2 a) v
 mkReC w h col v = Re col vd (Centered v) where
   vd = fromCartesian w h
 
+mkSquareC w col v = mkReC w w col v  
+
 mkReBSC :: Fractional a => a -> a -> ShapeCol p -> v -> Shp p (V2 a) v
 mkReBSC w h col v = Re col vd (BSideC v) where
   vd = fromCartesian (w/2) h
 
 
 c3 = mkCi 1 (shapeColNoBorder C.orange 1) (mkV2 0 0)
-r0 = mkReBSC 5 5 (shapeColNoBorder C.red 1) (mkV2 30 30)
+r0 = mkReBSC 5 5 (shapeColNoBorder C.red 1) (mkV2 20 20)
 r1 = mkReBSC 5 5 (shapeColNoBorder C.blue 1) (mkV2 0 0)
 
+rectb w h x y = mkRe w h (shapeColNoBorder C.red 1) (mkV2 x y)
+r21 = rectb 5 5 0 0
+r22 = rectb 5 10 10 0
+r23 = rectb 5 2 20 0
+r24 = rectb 5 15 30 0
 -- shs = [r0, r1, c3]
-shs = [r0, r1]
+-- shs = [r0, r1]
+
+shs = [r21, r22, r23, r24]
+
 
 -- -- c0 = mkCir 10 (shapeColNoBorder C.red 0.9) (mkV2 10 20)
 -- -- c1 = mkCir 5 (shapeColNoBorder C.orange 0.9) (mkV2 5 15)
