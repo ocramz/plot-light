@@ -559,17 +559,17 @@ mkSqr r col vc = Sqr col vc v2 where
 -- c0 = mkCir 10 (shapeColNoBorder C.red 0.9) (mkV2 10 20)
 -- c1 = mkCir 5 (shapeColNoBorder C.orange 0.9) (mkV2 5 15)
 -- c2 = mkCir 15 (shapeColNoBorder C.blue 0.3) (mkV2 12 17)
-c3 = mkCir 3 (shapeColNoBorder C.orange 0.5) (mkV2 0 0)
+c3 = mkCir 3 (shapeColNoBorder C.orange 1) (mkV2 0 0)
 
 r0 = mkRec 10 10 (shapeColNoBorder C.red 1) (mkV2 10 20)
-r1 = mkRec 10 10 (shapeColNoBorder C.blue 0.5) (mkV2 0 0)
+r1 = mkRec 10 10 (shapeColNoBorder C.blue 1) (mkV2 0 0)
 -- r2 = mkRec 10 10 (shapeColNoBorder C.orange 0.7) (mkV2 5 10)
 
 -- -- shs :: [Shape Double (Point Double)]
 -- shs = [r0, r1, r2]
 -- -- shs = [c0,c1,c2]
 -- shs = [r0, r1, c3]
-shs = [r0, r1]
+shs = [r0, r1, c3]
 
 
 
