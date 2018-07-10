@@ -500,10 +500,18 @@ mkC r col v = C col vd v where vd = r .* e1
 mkR :: Num a => a -> a -> ShapeCol p -> v -> Shp p (V2 a) v
 mkR w h col v = R col vd v where vd = fromCartesian w h
 
+mkRBC w h col v = R col vs v where
+  vs = fromCartesian (w/2) h
+  v' = v ^-^ fromCartesian 0 (w/2)
+  
+
 mkReC :: Fractional a => a -> a -> ShapeCol p -> V2 a -> Shp p (V2 a) (V2 a)
 mkReC w h col v = R col vs v' where
   vs = fromCartesian w h
-  v' = v ^-^ (0.5 .* vs)
+  v' = v ^-^ (0.5 .* vs)  
+
+mkSqrC :: Fractional a => a -> ShapeCol p -> V2 a -> Shp p (V2 a) (V2 a)
+mkSqrC w col v = mkReC w w col v  
 
 c4 = mkC 1 (shapeColNoBorder C.blue 0.6) (mkV2 30 15 )
 c3 = mkC 1 (shapeColNoBorder C.blue 1) (mkV2 0 0)
