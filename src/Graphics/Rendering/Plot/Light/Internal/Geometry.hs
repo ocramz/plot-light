@@ -542,10 +542,6 @@ affineToFrame m v = mkFrame pmin pmax
     pmax = v ^+^ (m #> v01)
     
 
--- -- | Identity of affine Frame transformations
--- -- idFrame :: Num a => Frame a -> Frame a
--- idFrame = uncurry affineToFrame . frameToAffine
-
 
 
 

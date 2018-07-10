@@ -439,7 +439,7 @@ toFrameBimap to = bimap f g
   where
     (mto, vto) = frameToAffine to
     f v = mto #> v
-    g v = mto #> (v ^+^ vto)    
+    g v = (mto #> v) ^+^ vto
 
 -- frameToFrameB :: (Bifunctor p, MatrixGroup (DiagMat2 a) b, Fractional a) =>
 --      Frame (V2 a) -> Frame (V2 a) -> p b (V2 a) -> p b (V2 a)
@@ -506,18 +506,23 @@ mkCi r col v = Ci col (fromCartesian r 0) v
 
 mkRe :: Num a => a -> a -> ShapeCol p -> v -> Shp p (V2 a) v
 mkRe w h col v = Re col vd (BLCorner v) where
-  vd = fromCartesian w h 
+  vd = fromCartesian w h
+
+mkReC :: Num a => a -> a -> ShapeCol p -> v -> Shp p (V2 a) v
+mkReC w h col v = Re col vd (Centered v) where
+  vd = fromCartesian w h
 
 mkReBSC :: Fractional a => a -> a -> ShapeCol p -> v -> Shp p (V2 a) v
 mkReBSC w h col v = Re col vd (BSideC v) where
   vd = fromCartesian (w/2) h
 
 
-c3 = mkCi 3 (shapeColNoBorder C.orange 1) (mkV2 0 0)
-r0 = mkRe 10 10 (shapeColNoBorder C.red 1) (mkV2 10 20)
-r1 = mkRe 10 10 (shapeColNoBorder C.blue 1) (mkV2 0 0)
+c3 = mkCi 1 (shapeColNoBorder C.orange 1) (mkV2 0 0)
+r0 = mkReBSC 5 5 (shapeColNoBorder C.red 1) (mkV2 30 30)
+r1 = mkReBSC 5 5 (shapeColNoBorder C.blue 1) (mkV2 0 0)
 
-shs = [r0, r1, c3]
+-- shs = [r0, r1, c3]
+shs = [r0, r1]
 
 -- -- c0 = mkCir 10 (shapeColNoBorder C.red 0.9) (mkV2 10 20)
 -- -- c1 = mkCir 5 (shapeColNoBorder C.orange 0.9) (mkV2 5 15)
@@ -559,8 +564,8 @@ rectsFigData fd = (rOut, rIn)
     col = shapeColNoFill C.black 1 1
     frIn = frameFromFigData fd
     pc = midPoint (_fpmin frIn) (_fpmax frIn)
-    rIn = mkRe (width frIn) (height frIn) col pc 
-    rOut = mkRe (figWidth fd) (figHeight fd) col pc
+    rIn = mkReC (width frIn) (height frIn) col pc 
+    rOut = mkReC (figWidth fd) (figHeight fd) col pc
 
 
 
