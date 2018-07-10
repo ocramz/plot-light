@@ -36,6 +36,7 @@ library
                        Graphics.Rendering.Plot.Light.PlotTypes.TimeSeries.Candlestick
                        Graphics.Rendering.Plot.Light.Internal.Utils
                        Data.Parsers
+                       Data.Bifunctor.Pair
   build-depends:       base >= 4.7 && < 5
                      , blaze-markup >= 0.8.0.0
                      , blaze-svg >= 0.3.6.1

@@ -77,6 +77,7 @@ import qualified Data.Foldable as F (toList)
 import Data.List
 import Data.Functor.Identity
 import Data.Bifunctor
+import Data.Bifunctor.Pair (Pair(..), Mix2(..))
 -- import Control.Arrow (Arrow(..), (&&&), (***), first, second)
 import qualified Data.List.NonEmpty as NE
 import Control.Monad (forM, forM_)
@@ -283,7 +284,7 @@ data GlyphShape_ =
 -- --       -> a               -- ^ Stroke width
 -- --       -> GlyphShape_     -- ^ Glyph shape
 -- --       -> C.Colour Double -- ^ Glyph colour
--- --       -> a               -- ^ Opacity
+ -- --       -> a               -- ^ Opacity
 -- --       -> Point a         -- ^ Position
 -- --       -> Svg
 -- glyph w sw sh col alpha p =
@@ -395,51 +396,64 @@ histo n v = H.fillBuilder buildr v where
 
 
 
--- | === Align 
-data Align a =
-    Centered a  -- ^ Anchor point is in the center of the figure
-  | BLCorner a  -- ^ Anchor point is on the bottom-left corner of the figure
-  | BSideC a    -- ^ Anchor point is at the center of the bottom side of the figure
-  deriving (Eq, Show, Functor)
+-- | =============
+-- | A DSL for geometrical shapes
+
+data Shp p vd v =
+    C (ShapeCol p) vd v
+  | R (ShapeCol p) vd v deriving (Eq, Show)
+
+instance Bifunctor (Shp p) where
+  bimap f g sh = case sh of
+    C k vd v -> C k (f vd) (g v)
+    R k vd v -> R k (f vd) (g v)
+
+instance Mix2 (Shp p) where
+  mix2 f g sh = case sh of
+    C k vd v -> C k (f vd v) (g vd v)
+    R k vd v -> R k (f vd v) (g vd v)
+
+renderShape :: (Floating a, Real a) => Shp a (V2 a) (V2 a) -> Svg
+renderShape sh = case sh of
+  C col vd v -> circle r col v where r = norm2 vd
+  R col vd v -> rect w h col v where (w, h) = _vxy vd
 
 
--- | === Pair 
-data Pair a b = P a b deriving (Eq, Show)
+   
+-- bias :: (Mix2 p, Num a) => p (V2 a) (V2 a) -> p (V2 a) (V2 a)
+-- bias sh = mix2r fbias sh where
+--   fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
 
-instance Bifunctor Pair where
-  bimap f g (P x y) = P (f x) (g y)
+bias :: Num a => Shp p (V2 a) (V2 a) -> Shp p (V2 a) (V2 a)
+bias sh = case sh of
+  c@C{} -> c
+  r@R{} -> mix2r fbias r where
+    fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
 
--- | Mix2 generalizes Bifunctor because each field is updated with both values  
-class Mix2 p where
-  {-# MINIMAL mix2 #-}
-  mix2 :: (a -> b -> c) -> (a -> b -> d) -> p a b -> p c d
-  mix2l :: (a -> y -> b) -> p a y -> p b y
-  mix2l f = mix2 f (\_ y -> y)
-  mix2r :: (x -> b -> c) -> p x b -> p x c
-  mix2r g = mix2 const g
+reposition :: (Foldable f, Ord a, Functor f, Fractional a) =>
+     Frame (V2 a) -> f (Shp p (V2 a) (V2 a)) -> f (Shp p (V2 a) (V2 a))
+reposition to shs = frameToFrameB from to <$> shs where
+  from = wrappingFrame shs
 
-instance Mix2 Pair where
-  mix2 f g (P x y) = P (f x y) (g x y)
+wrappingFrame :: (Foldable t, Ord v, AdditiveGroup v) => t (Shp p v v) -> Frame v
+wrappingFrame shs = foldMap insf shs where
+  insf sh = case sh of
+    C _ vd v -> mkFrame v (v ^+^ vd)
+    R _ vd v -> mkFrame v (v ^+^ vd)
 
-
-
-
-
--- | --
-
--- | A Shape DSL, version #348756
--- | For some shapes we can specify the anchor point alignment. When the alignment is unspecified, the anchor point is taken to be the shape center by default.
-data Sh p a =
-    Cir (ShapeCol p) a
-  | Rec (ShapeCol p) a -- (Align a)
-  deriving (Eq, Show, Functor)
-
-
-
-
-
-
-
+-- | Given :
+--
+-- * a starting frame (in the screen reference)
+-- * a destination frame (in the SVG reference)
+-- * a 'Shape' whose anchoring point is assumed to be bound by the starting frame
+--
+-- compose the affine transformations required to move the 'Shape' from starting to destination frame.
+--
+-- NB : this should be the /only/ function dedicated to transforming point coordinates
+frameToFrameB :: (Bifunctor p, MatrixGroup (DiagMat2 a) v, Fractional a) =>
+     Frame (V2 a) -> Frame (V2 a) -> p v (V2 a) -> p v (V2 a)
+frameToFrameB from to = toFrameBimap to . second flipUD . fromFrameBimap from where
+  flipUD (V2 vx vy) = mkV2 vx (1 - vy)  
 
 fromFrameBimap :: (MatrixGroup (DiagMat2 a) b, Fractional a, Bifunctor p) =>
      Frame (V2 a) -> p b (V2 a) -> p b (V2 a)
@@ -457,169 +471,77 @@ toFrameBimap to = bimap f g
     f v = mto #> v
     g v = (mto #> v) ^+^ vto
 
-frameToFrameB :: (Bifunctor p, MatrixGroup (DiagMat2 a) v, Fractional a) =>
-     Frame (V2 a) -> Frame (V2 a) -> p v (V2 a) -> p v (V2 a)
-frameToFrameB from to = toFrameBimap to . second flipUD . fromFrameBimap from where
-  flipUD (V2 vx vy) = mkV2 vx (1 - vy)
-    
-
-wrappingFrame :: (Foldable t, Ord v, Functor t, AdditiveGroup v) =>
-     t (Pair v v) -> Frame v
-wrappingFrame al = foldMap id $ asdf <$> al where
-  asdf (P v vd) = mkFrame v (v ^+^ vd)
-
-
--- bla to shs = bias (reposition to shs)
-
-
-
--- reposition :: (Foldable f, Ord a, Functor f, Fractional a) =>
---               Frame (V2 a)
---            -> f (Pair (V2 a) (V2 a))
---            -> f (Pair (V2 a) (V2 a))
-reposition to shs = frameToFrameB from to `map` shs where
-  from = wrappingFrame shs
-
--- reposition' to shs = frameToFrameB from to <$$> shs where
---   from = wrappingFrame <$> shs
-
-mkCir :: Num a1 => a1 -> ShapeCol p -> a -> Sh p (Align (Pair a (V2 a1)))
-mkCir r col v = Cir col $ Centered $ P v v2 where v2 = r .* e1
-
-
-(<$$>) :: (Functor f, Functor g) => (x -> y) -> g (f x) -> g (f y)
-(<$$>) = fmap . fmap
-
-
--- | Vertical shift introduced by non-centered shapes
-bias :: (Mix2 p, Num a) =>
-        Align (p (V2 a) (V2 a))
-     -> Align (p (V2 a) (V2 a))
-bias al = let
-  fbias vd v = v' where
-    v' = v ^-^ fromCartesian 0 (_vy vd)
-  in
-  case al of
-  (BLCorner p) -> BLCorner (mix2r fbias p)
-  (BSideC p) -> BSideC (mix2r fbias p)
-  c -> c
-  
-
-
-
-renderShape sh = case sh of
-  Cir col al -> case al of
-    Centered (P vd v) -> circle r col v where r = norm2 vd
-  Rec col al -> case al of
-        Centered (P vd v) -> rectCentered w h col v
-          where (w, h) = _vxy vd
-        BLCorner (P vd v) -> rect w h col v
-          where (w, h) = _vxy vd
-          
-
-
-
-
- 
-
--- render0 to shs = renderShape `mapM_` reposition to shs 
-
--- -- | Render a single shape as SVG
--- renderShape sh = case sh of
---   Ci col vd v -> circle r col v where
---     r = norm2 vd
---   Re col vd al -> case al of
---     Centered v -> rectCentered w h col v where
---       (w, h) = _vxy vd
---     BLCorner v -> rect w h col v' where
---       (w, h) = _vxy vd
---       v' = v ^-^ fromCartesian 0 h
---     BSideC v -> rectCenteredMidpointBase w h col v' where
---       (w, h) = _vxy vd
---       v' = v ^-^ fromCartesian 0 h
-
-
 
 
 
 
 -- | example smart constructors
 
--- mkCi :: Num a => a -> ShapeCol p -> v -> Shp p (V2 a) v
--- mkCi r col v = Ci col (fromCartesian r 0) v
+mkC :: Num a => a -> ShapeCol p -> v -> Shp p (V2 a) v
+mkC r col v = C col vd v where vd = r .* e1
 
--- mkRe :: Num a => a -> a -> ShapeCol p -> v -> Shp p (V2 a) v
--- mkRe w h col v = Re col vd (BLCorner v) where
---   vd = fromCartesian w h
+mkR :: Num a => a -> a -> ShapeCol p -> v -> Shp p (V2 a) v
+mkR w h col v = R col vd v where vd = fromCartesian w h
 
--- mkReC :: Num a => a -> a -> ShapeCol p -> v -> Shp p (V2 a) v
--- mkReC w h col v = Re col vd (Centered v) where
---   vd = fromCartesian w h
+mkReC :: Fractional a => a -> a -> ShapeCol p -> V2 a -> Shp p (V2 a) (V2 a)
+mkReC w h col v = R col vs v' where
+  vs = fromCartesian w h
+  v' = v ^-^ (0.5 .* vs)
 
--- mkSquareC w col v = mkReC w w col v  
+c3 = mkC 1 (shapeColNoBorder C.orange 1) (mkV2 0 0)
+r0 = mkR 5 5 (shapeColNoBorder C.red 1) (mkV2 20 20)
+r1 = mkR 5 5 (shapeColNoBorder C.blue 1) (mkV2 0 0)
 
--- mkReBSC :: Fractional a => a -> a -> ShapeCol p -> v -> Shp p (V2 a) v
--- mkReBSC w h col v = Re col vd (BSideC v) where
---   vd = fromCartesian (w/2) h
-
-
--- c3 = mkCi 1 (shapeColNoBorder C.orange 1) (mkV2 0 0)
--- r0 = mkReBSC 5 5 (shapeColNoBorder C.red 1) (mkV2 20 20)
--- r1 = mkReBSC 5 5 (shapeColNoBorder C.blue 1) (mkV2 0 0)
-
--- rectb w h x y = mkRe w h (shapeColNoBorder C.red 1) (mkV2 x y)
--- r21 = rectb 5 5 0 0
--- r22 = rectb 5 10 10 0
--- r23 = rectb 5 2 20 0
--- r24 = rectb 5 15 30 0
+rectb w h x y = mkR w h (shapeColNoBorder C.red 1) (mkV2 x y)
+r21 = rectb 5 5 0 0
+r22 = rectb 5 10 10 0
+r23 = rectb 5 2 20 0
+r24 = rectb 5 15 30 0
 -- -- shs = [r0, r1, c3]
 -- -- shs = [r0, r1]
 
--- shs = [r21, r22, r23, r24]
-
-
--- -- -- c0 = mkCir 10 (shapeColNoBorder C.red 0.9) (mkV2 10 20)
--- -- -- c1 = mkCir 5 (shapeColNoBorder C.orange 0.9) (mkV2 5 15)
--- -- -- c2 = mkCir 15 (shapeColNoBorder C.blue 0.3) (mkV2 12 17)
--- -- c3 = mkCir 3 (shapeColNoBorder C.orange 1) (mkV2 0 0)
-
--- -- r0 = mkRec 10 10 (shapeColNoBorder C.red 1) (mkV2 10 20)
--- -- r1 = mkRec 10 10 (shapeColNoBorder C.blue 1) (mkV2 0 0)
--- -- -- r2 = mkRec 10 10 (shapeColNoBorder C.orange 0.7) (mkV2 5 10)
-
--- -- -- -- shs :: [Shape Double (Point Double)]
--- -- -- shs = [r0, r1, r2]
--- -- -- -- shs = [c0,c1,c2]
--- -- -- shs = [r0, r1, c3]
--- -- shs = [r0, r1, c3]
+shs = [r21, r22, r23, r24]
 
 
 
 
 
+render0
+  :: (Foldable t, Floating a, Real a, Functor t) =>
+     Frame (V2 a)
+     -> t (Shp a (V2 a) (V2 a)) -> Svg
+render0 to shs = renderShape `mapM_` wrapped to shs
 
--- test0 =
---   do
---   let
---     figdata = figureDataDefault
---     to = frameFromFigData figdata
---     (rout, rin) = rectsFigData figdata 
---     svg_t = svgHeader' figdata $ do
---       render0 to shs
---       renderShape rout
---       renderShape rin
---   T.writeFile "examples/ex_dsl4.svg" $ T.pack $ renderSvg svg_t
+wrapped :: (Foldable f, Ord a, Functor f, Fractional a) =>
+           Frame (V2 a)
+        -> f (Shp p (V2 a) (V2 a))
+        -> f (Shp p (V2 a) (V2 a))
+wrapped to shs = frameToFrameB from to <$> shs where
+  from = wrappingFrame shs
 
 
--- -- | Rectangles based on the inner and outer frames of the drawable canvas
--- -- rectsFigData :: (Num p, Fractional a) => FigureData a -> (Sh p (V2 a), Sh p (V2 a))
--- rectsFigData fd = (rOut, rIn)
---   where
---     col = shapeColNoFill C.black 1 1
---     frIn = frameFromFigData fd
---     pc = midPoint (_fpmin frIn) (_fpmax frIn)
---     rIn = mkReC (width frIn) (height frIn) col pc 
---     rOut = mkReC (figWidth fd) (figHeight fd) col pc
+test0 =
+  do
+  let
+    figdata = figureDataDefault
+    to = frameFromFigData figdata
+    (rout, rin) = rectsFigData figdata 
+    svg_t = svgHeader' figdata $ do
+      render0 to shs
+      renderShape rout
+      renderShape rin
+  T.writeFile "examples/ex_dsl5.svg" $ T.pack $ renderSvg svg_t
+
+
+-- | Rectangles based on the inner and outer frames of the drawable canvas
+-- rectsFigData :: (Num p, Fractional a) => FigureData a -> (Sh p (V2 a), Sh p (V2 a))
+rectsFigData fd = (rOut, rIn)
+  where
+    col = shapeColNoFill C.black 1 1
+    frIn = frameFromFigData fd
+    pc = midPoint (_fpmin frIn) (_fpmax frIn)
+    rIn = mkReC (width frIn) (height frIn) col pc 
+    rOut = mkReC (figWidth fd) (figHeight fd) col pc
 
 
 
@@ -632,130 +554,6 @@ renderShape sh = case sh of
 
 -- | ==
 
-
-
-
-
-
--- | =============
--- | A DSL for geometrical shapes
-
-
--- data Sh p a =
---     Cir (ShapeCol p) a a
---   | Rec (ShapeCol p) a a
---   | RecC (ShapeCol p) a a
---   | Sqr (ShapeCol p) a a
---   | Line (LineOptions p) a a
---   | PolyL (LineOptions p) StrokeLineJoin_ (NE.NonEmpty a)
---   deriving (Eq, Show, Functor)
-
--- -- Smart constructors
-
--- mkCir :: Num a => a -> ShapeCol p -> V2 a -> Sh p (V2 a)
--- mkCir r col vc = Cir col vc vcir where
---   vcir = vc ^+^ (r .* e1)
-
--- mkRec :: Num a => a -> a -> ShapeCol p -> V2 a -> Sh p (V2 a)
--- mkRec w h col vc = Rec col vc v2 where
---   v2 = vc ^+^ fromCartesian w h 
-
--- mkRecC :: Floating a => a -> a -> ShapeCol p -> V2 a -> Sh p (V2 a)
--- mkRecC w h col v = RecC col v1' v2' where
---   vs = 0.5 .* fromCartesian w h 
---   v1' = v ^-^ vs
---   v2' = v ^+^ vs
-
-
--- mkSqr :: Num a => a -> ShapeCol p -> V2 a -> Sh p (V2 a)  
--- mkSqr r col vc = Sqr col vc v2 where
---   v2 = vc ^+^ fromCartesian r r
-
-
-
-
-
-
-
-
-
-
--- render0 :: (Functor t, Foldable t, Show a, RealFloat a) =>
---            Frame (V2 a)
---         -> t (Sh a (V2 a))
---         -> Svg
--- render0 to shs = renderShape `mapM_` wrapped to shs 
-
--- -- | NB : We must only render a 'Shape' that's in the SVG reference system
--- renderShape :: RealFloat a => Sh a (V2 a) -> Svg
--- renderShape sh = case sh of
---   Cir col p1 p2 -> circle (norm2 $ p2 ^-^ p1) col p1
---   Rec col p1 p2 -> rect w h' col p1' where
---     h' = abs h
---     (w, h) = _vxy (p2 ^-^ p1)
---     p1' = p1  ^-^ fromCartesian 0 h'
---   RecC col p1 p2 -> rect w h' col p1 where
---     h' = abs h
---     (w, h) = _vxy (p2 ^-^ p1)
-
-
--- |
--- 1) Computes the Frame that envelopes the input collection of points (i.e. the L1 convex hull)
--- 2) recomputes the point coordinates to fall within the destination frame in the SVG reference  
--- wrapped :: (Functor t, Foldable t, Fractional a, Ord a) =>
---            Frame (V2 a)
---         -> t (Sh p (V2 a))
---         -> t (Sh p (V2 a))
--- wrapped to shs = convertShapeRef from to <$> shs where
---   from = wrappingFrame shs
-  
-
--- | Compute the 'Frame' that envelopes a 'Foldable' container (e.g. a list or vector) of 'Shape's.
---
--- The result can be used as the "from" Frame used to compute the Screen-SVG coordinate transform
--- wrappingFrame :: (Foldable t, Ord a, Monoid a) => t (Sh p a) -> Frame a
--- wrappingFrame shs = foldr fc mempty shs where
---   fc acc b = mkShFrame acc `mappend` b
-
--- -- | Construct a Frame from a Sh
--- -- mkShFrame :: Ord a => Sh t a -> Frame a
--- mkShFrame :: (Fractional a, Ord a) => Sh t (V2 a) -> Frame (V2 a)
--- mkShFrame sh = case sh of
---     Rec _ p1 p2 -> mkFrame p1 p2
---     RecC _ p1 p2 -> mkFrame p1 p2
---     Cir _ p1 p2 -> mkFrame p1 p2
---     -- Sqr _ p1 p2 -> frameMidp p1 p2 -- mkFrame p1 p2
---     PolyL _ _ ne -> frameFromPoints $ NE.toList ne
-
--- frameMidp :: Fractional a => V2 a -> V2 a -> Frame (V2 a)
--- frameMidp p1 p2 = frameDirac $ midPoint p1 p2
-
-
-
--- | Given :
---
--- * a starting frame (in the screen reference)
--- * a destination frame (in the SVG reference)
--- * a 'Shape' whose anchoring point is assumed to be bound by the starting frame
---
--- compose the affine transformations required to move the 'Shape' from starting to destination frame.
---
--- NB : this should be the /only/ function dedicated to transforming point coordinates
-convertShapeRef :: (Functor f, Fractional a) =>
-                   Frame (V2 a)
-                -> Frame (V2 a)
-                -> f (V2 a)
-                -> f (V2 a)
-convertShapeRef from to sh = frameToFrame from to <$> sh
-
-
-
-
-
-
-  
--- (<$$$>) :: (Functor f, Functor g, Functor h) => (x -> y) -> h (g (f x)) -> h (g (f y))
--- (<$$$>) = fmap . fmap . fmap
 
 
     
