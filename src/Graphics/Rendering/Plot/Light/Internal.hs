@@ -72,7 +72,7 @@ module Graphics.Rendering.Plot.Light.Internal
 import Data.Semigroup -- (Semigroup(..))
 import Data.Monoid
 
-import qualified Data.Foldable as F (toList)
+import qualified Data.Foldable as F (toList, fold, foldMap)
 
 import Data.List
 import Data.Functor.Identity
@@ -404,6 +404,32 @@ histo n v = H.fillBuilder buildr v where
 
   
 
+-- -- | A composite collection type that carries stuff and a 'Frame' that delimits it
+-- data Bag a x = Bag a (Frame x) deriving (Eq, Show)
+
+-- instance (Monoid a, Monoid x, Ord x) => Monoid (Bag a x) where
+--   mempty = Bag mempty mempty
+
+-- (&) :: (Monoid a, Monoid x, Ord x) => Bag a x -> Bag a x -> Bag a x
+-- (Bag f1 fr1) & (Bag f2 fr2) =
+--   Bag (f1 `mappend` f2) (fr1 `mappend` fr2)
+
+
+class HasFrame m where
+  type HasFrameTy m :: *
+  frame :: m -> Frame (HasFrameTy m)
+
+instance HasFrame (V2 a) where
+  type HasFrameTy (V2 a) = V2 a
+  frame = frameDirac
+
+instance HasFrame (Frame a) where
+  type HasFrameTy (Frame a) = a
+  frame = id
+
+instance AdditiveGroup v => HasFrame (Shp p v v) where
+  type HasFrameTy (Shp p v v) = v
+  frame = mkFrameShp
 
 
 -- | =============
@@ -450,9 +476,11 @@ bias sh = case sh of
 wrappingFrame :: (Foldable t, AdditiveGroup v, Ord v) => t (Shp p v v) -> Frame v
 wrappingFrame shs = foldr insf fzero ssh where
   (sh:ssh) = F.toList shs
-  fzero = mkF sh
-  insf s acc = mkF s `mappend` acc
-  mkF s = case s of
+  fzero = mkFrameShp sh
+  insf s acc = mkFrameShp s `mappend` acc
+
+mkFrameShp :: AdditiveGroup v => Shp p v v -> Frame v
+mkFrameShp s = case s of
     C _ vd v -> mkFrame v (v ^+^ vd)
     R _ vd v -> mkFrame v (v ^+^ vd)
 
