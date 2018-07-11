@@ -433,17 +433,19 @@ renderShape sh = case sh of
    
 
 
-bias :: Num a => Shp p (V2 a) (V2 a) -> Shp p (V2 a) (V2 a)
-bias sh = case sh of
-  c@C{} -> c
-  r@_ -> mix2r fbias r where
-    fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
+
 
 reposition :: (Foldable f, Ord a, Functor f, Fractional a) =>
      Frame (V2 a) -> f (Shp p (V2 a) (V2 a)) -> f (Shp p (V2 a) (V2 a))
 reposition to shs = bias . frameToFrameB from to <$> shs where
   from = wrappingFrame shs
 
+
+bias :: Num a => Shp p (V2 a) (V2 a) -> Shp p (V2 a) (V2 a)
+bias sh = case sh of
+  c@C{} -> c
+  r@_ -> mix2r fbias r where
+    fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
 
 wrappingFrame :: (Foldable t, AdditiveGroup v, Ord v) => t (Shp p v v) -> Frame v
 wrappingFrame shs = foldr insf fzero ssh where
