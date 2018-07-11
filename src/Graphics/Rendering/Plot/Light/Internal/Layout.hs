@@ -22,29 +22,33 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 
 
-
 -- | =============
 -- | A DSL for geometrical shapes
 
 data Shp p vd v =
-    C (ShapeCol p) vd v  -- ^ Circle
-  | R (ShapeCol p) vd v  -- ^ Rectangle
+    Circle (ShapeCol p) vd v  -- ^ Circle
+  | RectBL (ShapeCol p) vd v  -- ^ Rectangle, anchored bottom-left
+  | RectC (ShapeCol p) vd v  -- ^ Rectangle, anchored center
   deriving (Eq, Show)
 
 instance Bifunctor (Shp p) where
   bimap f g sh = case sh of
-    C k vd v -> C k (f vd) (g v)
-    R k vd v -> R k (f vd) (g v)
+    Circle k vd v -> Circle k (f vd) (g v)
+    RectBL k vd v -> RectBL k (f vd) (g v)
+    RectC k vd v -> RectC k (f vd) (g v)    
 
 instance Mix2 (Shp p) where
   mix2 f g sh = case sh of
-    C k vd v -> C k (f vd v) (g vd v)
-    R k vd v -> R k (f vd v) (g vd v)
+    Circle k vd v -> Circle k (f vd v) (g vd v)
+    RectBL k vd v -> RectBL k (f vd v) (g vd v) 
+    RectC k vd v -> RectC k (f vd v) (g vd v)   
 
 renderShape :: (Floating a, Real a) => Shp a (V2 a) (V2 a) -> Svg
 renderShape sh = case sh of
-  C col vd v -> circle r col v where r = norm2 vd
-  R col vd v -> rect w h col v where (w, h) = _vxy vd
+  Circle col vd v -> circle r col v where r = norm2 vd
+  RectBL col vd v -> rect w h col v where (w, h) = _vxy vd
+  -- RectC col vd v -> rect w h col v where (w, h) = _vxy vd
+  
 
 
 
@@ -55,8 +59,9 @@ reposition to shs = bias . frameToFrameB from to <$> shs where
 
 bias :: Num a => Shp p (V2 a) (V2 a) -> Shp p (V2 a) (V2 a)
 bias sh = case sh of
-  c@C{} -> c
-  r@_ -> mix2r fbias r where
+  c@Circle{} -> c
+  r@RectC{}  -> r
+  r@RectBL{} -> mix2r fbias r where
     fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
 
 
@@ -69,8 +74,9 @@ wrappingFrame shs = foldr insf fzero ssh where
 
 mkFrameShp :: AdditiveGroup v => Shp p v v -> Frame v
 mkFrameShp s = case s of
-    C _ vd v -> mkFrame v (v ^+^ vd)
-    R _ vd v -> mkFrame v (v ^+^ vd)
+    Circle _ vd v -> mkFrame v (v ^+^ vd)
+    RectBL _ vd v -> mkFrame v (v ^+^ vd)
+    RectC _ vd v  -> mkFrame v (v ^+^ vd)    
 
   
 -- | Given :
@@ -109,24 +115,26 @@ toFrameBimap to = bimap f g
 
 -- | example smart constructors
 
-mkC :: Num a => a -> ShapeCol p -> v -> Shp p (V2 a) v
-mkC r col v = C col vd v where vd = r .* e1
+-- mkC :: Num a => a -> ShapeCol p -> v -> Shp p (V2 a) v
+mkC r col v = Circle col vd v where vd = r .* e1
 
-mkR :: Num a => a -> a -> ShapeCol p -> v -> Shp p (V2 a) v
-mkR w h col v = R col vd v where vd = fromCartesian w h
+-- mkR :: Num a => a -> a -> ShapeCol p -> v -> Shp p (V2 a) v
+mkR w h col v = RectBL col vd v where vd = fromCartesian w h
 
-mkRBC w h col v = R col vs v where
-  vs = fromCartesian (w/2) h
-  v' = v ^-^ fromCartesian 0 (w/2)
-  
+-- mkRBC w h col v = RectBL col vs v where
+--   vs = fromCartesian (w/2) h
+--   v' = v ^-^ fromCartesian 0 (w/2)
 
-mkReC :: Fractional a => a -> a -> ShapeCol p -> V2 a -> Shp p (V2 a) (V2 a)
-mkReC w h col v = R col vs v' where
-  vs = fromCartesian w h
+mkReC w h col v = RectC col vs v' where
+  vs = 0.5 .* fromCartesian w h  
   v' = v ^-^ (0.5 .* vs)  
+  
+-- mkReC w h col v = R col vs v' where
+--   vs = fromCartesian w h
+--   v' = v ^-^ (0.5 .* vs)  
 
-mkSqrC :: Fractional a => a -> ShapeCol p -> V2 a -> Shp p (V2 a) (V2 a)
-mkSqrC w col v = mkReC w w col v  
+-- mkSqrC :: Fractional a => a -> ShapeCol p -> V2 a -> Shp p (V2 a) (V2 a)
+-- mkSqrC w col v = mkReC w w col v  
 
 c4 = mkC 1 (shapeColNoBorder C.blue 0.6) (mkV2 30 15 )
 c3 = mkC 1 (shapeColNoBorder C.blue 1) (mkV2 0 0)
@@ -148,6 +156,10 @@ shs = [r21, r22, r23, r24, c3, c4]
 
 
 
+
+
+
+
 render0 :: (Foldable t, Floating a, Real a, Functor t) =>
            Frame (V2 a)
         -> t (Shp a (V2 a) (V2 a))
@@ -163,7 +175,6 @@ test0 =
     (rout, rin) = rectsFigData figdata 
     svg_t = svgHeader' figdata $ do
       render0 to shs
-      
       renderShape rout
       renderShape rin
   T.writeFile "examples/ex_dsl5.svg" $ T.pack $ renderSvg svg_t
