@@ -431,9 +431,7 @@ renderShape sh = case sh of
 
 
    
--- bias :: (Mix2 p, Num a) => p (V2 a) (V2 a) -> p (V2 a) (V2 a)
--- bias sh = mix2r fbias sh where
---   fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
+
 
 bias :: Num a => Shp p (V2 a) (V2 a) -> Shp p (V2 a) (V2 a)
 bias sh = case sh of
@@ -441,20 +439,20 @@ bias sh = case sh of
   r@_ -> mix2r fbias r where
     fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
 
--- reposition :: (Foldable f, Ord a, Functor f, Fractional a) =>
---      Frame (V2 a) -> f (Shp p (V2 a) (V2 a)) -> f (Shp p (V2 a) (V2 a))
-reposition to shs = frameToFrameB from to <$> shs where
+reposition :: (Foldable f, Ord a, Functor f, Fractional a) =>
+     Frame (V2 a) -> f (Shp p (V2 a) (V2 a)) -> f (Shp p (V2 a) (V2 a))
+reposition to shs = bias . frameToFrameB from to <$> shs where
   from = wrappingFrame shs
 
 
-wrappingFrame :: (AdditiveGroup v, Ord v) => [Shp p v v] -> Frame v
-wrappingFrame shs = foldr insf fzero shs where
-  fzero = mkF $ head shs
-  insf sh acc = mkF sh `mappend` acc
-  mkF sh = case sh of
+wrappingFrame :: (Foldable t, AdditiveGroup v, Ord v) => t (Shp p v v) -> Frame v
+wrappingFrame shs = foldr insf fzero ssh where
+  (sh:ssh) = F.toList shs
+  fzero = mkF sh
+  insf s acc = mkF s `mappend` acc
+  mkF s = case s of
     C _ vd v -> mkFrame v (v ^+^ vd)
     R _ vd v -> mkFrame v (v ^+^ vd)
-
 
   
 
@@ -533,19 +531,14 @@ shs = [r21, r22, r23, r24, c3, c4]
 
 
 
--- render0 :: (Foldable t, Floating a, Real a, Functor t) =>
---            Frame (V2 a)
---         -> t (Shp a (V2 a) (V2 a))
---         -> Svg
-render0 to shs = renderShape `mapM_` wrapped to shs
+render0 :: (Foldable t, Floating a, Real a, Functor t) =>
+           Frame (V2 a)
+        -> t (Shp a (V2 a) (V2 a))
+        -> Svg
+render0 to shs = renderShape `mapM_` reposition to shs
 
 
--- wrapped :: (Foldable f, Ord a, Functor f, Fractional a) =>
---            Frame (V2 a)
---         -> f (Shp p (V2 a) (V2 a))
---         -> f (Shp p (V2 a) (V2 a))
-wrapped to shs = bias . frameToFrameB from to <$> shs where
-  from = wrappingFrame shs
+
 
 
 test0 =
@@ -556,6 +549,7 @@ test0 =
     (rout, rin) = rectsFigData figdata 
     svg_t = svgHeader' figdata $ do
       render0 to shs
+      
       renderShape rout
       renderShape rin
   T.writeFile "examples/ex_dsl5.svg" $ T.pack $ renderSvg svg_t
