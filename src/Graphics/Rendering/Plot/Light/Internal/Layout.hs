@@ -21,6 +21,22 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 
 
+data S a =
+    C a
+  | R (Align a) deriving (Eq, Show, Functor)
+
+data Align a =
+    Center a
+  | BL a deriving (Eq, Show, Functor)
+
+mkRBl :: a -> b -> S (Pair a b)
+mkRBl vd v = R (BL (P vd v))
+
+-- biasS :: Mix2 p => (x -> b -> c) -> Align (p x b) -> p x c
+biasS f al = mix2r f <$> al 
+
+
+
 
 -- | =============
 -- | A DSL for geometrical shapes
@@ -108,6 +124,10 @@ toFrameBimap to = bimap f g
     (mto, vto) = frameToAffine to
     f v = mto #> v
     g v = (mto #> v) ^+^ vto
+
+
+
+
 
 
 
