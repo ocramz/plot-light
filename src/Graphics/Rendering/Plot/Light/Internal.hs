@@ -40,7 +40,7 @@ module Graphics.Rendering.Plot.Light.Internal
     -- ** Specialized plot elements
     pixel, pixel', plusGlyph, crossGlyph,
     -- candlestick,
-    GlyphShape_,     
+    -- GlyphShape_,    
     -- ** Plot legend
     pickColour, colourBar, legendBar, LegendPosition_(..),
 
