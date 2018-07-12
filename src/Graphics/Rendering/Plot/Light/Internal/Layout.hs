@@ -38,6 +38,14 @@ biasS f al = mix2r f <$> al
 
 
 
+
+
+
+
+
+
+
+
 -- | =============
 -- | A DSL for geometrical shapes
 
@@ -210,6 +218,145 @@ rectsFigData fd = (rOut, rIn)
     rIn = mkReC (width frIn) (height frIn) col pc 
     rOut = mkReC (figWidth fd) (figHeight fd) col pc
 
+
+
+
+
+-- | Some data structs for plotting options
+
+-- | Glyph shape for scatter plots
+data GlyphShape_ =
+  GlyphPlus | GlyphCross | GlyphCircle | GlyphSquare deriving (Eq, Show)
+
+
+-- -- -- | Scatterplot glyph shapes
+-- -- glyph :: (Show a, RealFrac a) =>
+-- --          a               -- ^ Width
+-- --       -> a               -- ^ Stroke width
+-- --       -> GlyphShape_     -- ^ Glyph shape
+-- --       -> C.Colour Double -- ^ Glyph colour
+ -- --       -> a               -- ^ Opacity
+-- --       -> Point a         -- ^ Position
+-- --       -> Svg
+-- glyph w sw sh col alpha p =
+--   let cf = shapeColNoBorder col alpha
+--   in 
+--     case sh of
+--       GlyphSquare -> squareCentered w cf p
+--       GlyphCircle -> circle w cf p
+--       GlyphCross -> crossGlyph w sw col p
+--       GlyphPlus -> plusGlyph w sw col p
+
+      
+
+-- data PlotOptions p a =
+--     LinePlot (LineOptions p) StrokeLineJoin_ a
+--   | ScatterPlot Glyph_ (ShapeCol p) a
+--   deriving (Eq, Show)
+
+
+data AxisRange a = AxisRange {aoMin :: a, aoMax :: a}
+  deriving (Eq, Show)
+
+data Plot2d a =
+  Plot2d (Frame a) (AxisRange a) (AxisRange a)
+  deriving (Eq, Show)
+
+
+data Plot =
+    LinePlot
+  | Histogram
+  deriving (Eq, Show)
+
+
+
+
+
+
+
+
+
+-- | =======
+-- | HasFrame typeclass, a generic way to create a bounding Frame from something (e.g. a shape) that has a spatial extension
+
+class HasFrame m where
+  type FrameTy m :: *
+  frame :: m -> Frame (FrameTy m)
+
+instance HasFrame (V2 a) where
+  type FrameTy (V2 a) = V2 a
+  frame = frameDirac
+
+instance HasFrame (Frame a) where
+  type FrameTy (Frame a) = a
+  frame = id
+
+-- instance AdditiveGroup v => HasFrame (Shp p v v) where
+--   type FrameTy (Shp p v v) = v
+--   frame = mkFrameShp
+
+
+-- -- a generic `wrappingFrame`
+-- -- wrappingFrameG :: (Foldable t, HasFrame m, Ord (FrameTy m), Monoid (FrameTy m)) =>
+-- --      t m -> Frame (FrameTy m)
+-- wrappingFrameG shs = foldr insf fzero ssh where
+--   (sh:ssh) = F.toList shs
+--   fzero = frame sh
+--   insf s acc = frame s `mappend` acc
+
+
+-- | A thing of type 'sh' in a 'Frame'
+-- 
+-- | the Frame parameter denotes the destination frame
+--
+-- NB : we can put more than one shape in a Frame
+data Wrt r a sh = Wrt r (Frame a) sh deriving (Eq, Show, Functor)
+
+-- -- instance Semigroup (Wrt r a sh) where
+-- -- instance Monoid (Wrt r a sh) where 
+
+
+
+-- | Screen reference system (origin is bottom-left screen corner)
+data Screen = Screen deriving (Show)
+-- | SVG reference system (origin is top-left screen corner)
+data SVG = SVG deriving (Show)
+
+
+-- wrtScreen :: Frame a -> sh -> Wrt Screen a sh
+-- wrtScreen = Wrt Screen
+
+wrtSvg :: Frame a -> sh -> Wrt SVG a sh
+wrtSvg = Wrt SVG
+
+-- screenToSvg :: Wrt Screen a sh -> Wrt SVG a sh
+-- screenToSvg (Wrt Screen fr x) = Wrt SVG fr x                             
+
+
+-- | A V2 labeled by the reference frame
+data V r a = V r (V2 a) deriving (Eq, Show)
+
+mkVScreen :: V2 a -> V Screen a
+mkVScreen = V Screen
+
+mkVSvg :: V2 a -> V SVG a
+mkVSvg = V SVG
+
+
+
+
+
+
+-- | A composite collection type that carries stuff and a 'Frame' that delimits it
+
+-- data Bag a x = Bag a (Frame x) deriving (Eq, Show)
+
+-- instance (Monoid a, Monoid x, Ord x) => Monoid (Bag a x) where
+--   mempty = Bag mempty mempty
+
+-- (&) :: (Monoid a, Monoid x, Ord x) => Bag a x -> Bag a x -> Bag a x
+-- (Bag f1 fr1) & (Bag f2 fr2) =
+--   Bag (f1 `mappend` f2) (fr1 `mappend` fr2)
 
 
 
