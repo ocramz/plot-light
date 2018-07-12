@@ -63,11 +63,31 @@ mkNC = E . Right
 -- | derived combinators
 
 
-type Shape v = E (Pair v v)
+type Shape p v = E (p v v)
 
 
 mkRecBL :: a -> b -> E (Pair a b)
 mkRecBL vd v = mkNC $ RecBL (P vd v) 
+
+
+
+
+
+-- wrappingFrame :: (Foldable t, AdditiveGroup v, Ord v) => t (Shp p v v) -> Frame v
+-- wrappingFrame shs = foldr insf fzero ssh where
+--   (sh:ssh) = F.toList shs
+--   fzero = mkFrameShp sh
+--   insf s acc = mkFrameShp s `mappend` acc
+
+-- mkFrameShp :: AdditiveGroup v => Shp p v v -> Frame v
+-- mkFrameShp s = case s of
+--     Circle _ vd v -> mkFrame v (v ^+^ vd)
+--     RectBL _ vd v -> mkFrame v (v ^+^ vd)
+--     RectC _ vd v  -> mkFrame v (v ^+^ vd)    
+
+-- mkFrameE s = getE fget gget where
+--   fget sh = case sh of
+    
 
 
 -- | 
