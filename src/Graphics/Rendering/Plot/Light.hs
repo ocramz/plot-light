@@ -151,7 +151,8 @@ module Graphics.Rendering.Plot.Light (
   plotFun2, colourBar,
   -- ** Scatter
   -- scatter, scatterLP, scatterLPBar,
-  ScatterPointData(..), GlyphShape_(..),
+  -- ScatterPointData(..),
+  -- GlyphShape_(..),
   -- ** Histogram
   -- densityD, histogramD,
   -- * Plot elements

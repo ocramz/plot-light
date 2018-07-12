@@ -1,5 +1,4 @@
 {-# LANGUAGE MultiParamTypeClasses, TypeFamilies, FlexibleContexts, FlexibleInstances, DeriveGeneric, DeriveFunctor #-}
-
 {- |
 This module provides functionality for working with affine transformations (i.e. in the unit square)
  
@@ -111,6 +110,7 @@ class AdditiveGroup v => VectorSpace v where
 
 (./) :: (VectorSpace v, Fractional (Scalar v)) => v -> Scalar v -> v
 v ./ n = recip n .* v
+
   
 instance Num a => VectorSpace (V2 a) where
   type Scalar (V2 a) = a

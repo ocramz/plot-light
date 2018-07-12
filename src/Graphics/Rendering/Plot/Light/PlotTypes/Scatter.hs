@@ -80,29 +80,29 @@ import qualified Data.Text.IO as T
 
   
       
--- | Parameters for a scatterplot glyph
-data ScatterPointData a = ScatterPointData
-  {
-    spGlyphShape :: GlyphShape_   -- ^ Glyph shape
-  , spSize :: a                   -- ^ Glyph size
-  , spStrokeWidth :: a            -- ^ Glyph stroke width
-  , spColour :: C.Colour Double   -- ^ Glyph colour
-  , spAlpha :: a                  -- ^ Glyph opacity
-  } deriving (Eq, Show)
+-- -- | Parameters for a scatterplot glyph
+-- data ScatterPointData a = ScatterPointData
+--   {
+--     spGlyphShape :: GlyphShape_   -- ^ Glyph shape
+--   , spSize :: a                   -- ^ Glyph size
+--   , spStrokeWidth :: a            -- ^ Glyph stroke width
+--   , spColour :: C.Colour Double   -- ^ Glyph colour
+--   , spAlpha :: a                  -- ^ Glyph opacity
+--   } deriving (Eq, Show)
 
 
--- modifyScatterPoint ::
---         (l -> b -> c)                             -- ^ Modifies glyph size
---      -> (l -> b -> c)                             -- ^ Modifies glyph stroke width
---      -> (l -> C.Colour Double -> C.Colour Double) -- ^ Modifies glyph colour
---      -> (l -> b -> c)                             -- ^ Modifies glyph opacity
---      -> ScatterPointData b                        -- ^ Initial glyph parameters
---      -> LabeledPoint l d                          -- ^ 'LabeledPoint' to be modified
---      -> ScatterPointData c                        -- ^ Final glyph parameters
-modifyScatterPoint f g h i (ScatterPointData glsh sz w col alpha) lp =
-  ScatterPointData glsh (f lab sz) (g lab w) (h lab col) (i lab alpha)
-  where
-    lab = _lplabel lp
+-- -- modifyScatterPoint ::
+-- --         (l -> b -> c)                             -- ^ Modifies glyph size
+-- --      -> (l -> b -> c)                             -- ^ Modifies glyph stroke width
+-- --      -> (l -> C.Colour Double -> C.Colour Double) -- ^ Modifies glyph colour
+-- --      -> (l -> b -> c)                             -- ^ Modifies glyph opacity
+-- --      -> ScatterPointData b                        -- ^ Initial glyph parameters
+-- --      -> LabeledPoint l d                          -- ^ 'LabeledPoint' to be modified
+-- --      -> ScatterPointData c                        -- ^ Final glyph parameters
+-- modifyScatterPoint f g h i (ScatterPointData glsh sz w col alpha) lp =
+--   ScatterPointData glsh (f lab sz) (g lab w) (h lab col) (i lab alpha)
+--   where
+--     lab = _lplabel lp
 
 
 
