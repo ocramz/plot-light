@@ -21,104 +21,100 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 
 
-newtype E a = E { unE :: Either (ShC a) (ShNC a)} deriving (Eq, Show)
+newtype E a = E { unE :: Either (ShC a) (ShNC a) } deriving (Eq, Show)
 
-bimapE :: (ShC a -> ShC b) -> (ShNC a -> ShNC b) -> E a -> E b
-bimapE f g (E ei) = E (bimap f g ei)
+bimapE :: (a -> b) -> (a -> b) -> E a -> E b
+bimapE f g (E ei) = E (bimap (f <$>) (g <$>) ei)
 
+firstE :: (b -> b) -> E b -> E b
+firstE f = bimapE f id
+
+secondE :: (b -> b) -> E b -> E b
+secondE g = bimapE id g
+
+bothE :: (a -> b) -> E a -> E b
+bothE f = bimapE f f
+
+-- | Extract
+getE :: (ShC a -> x) -> (ShNC a -> x) -> E a -> x
+getE f g ee = either f g $ unE ee
+
+
+
+-- | Shapes with centered anchor
 data ShC a =
     C a
-  | Line a a deriving (Eq, Show, Functor)
+  | Line a a
+  | Gly a 
+  | PolyL [a] deriving (Eq, Show, Functor)
 
+-- | Shapes with non-centered anchor
 data ShNC a =
-  Rec a deriving (Eq, Show, Functor)
+    RecBL a -- bottom-left corner
+  | RecBC a -- bottom-center
+  deriving (Eq, Show, Functor)
 
-mkRec :: a -> b -> E (Pair a b)
-mkRec vd v = E (Right $ Rec (P vd v))
+mkC :: ShC a -> E a
+mkC = E . Left
+
+mkNC :: ShNC a -> E a
+mkNC = E . Right
+
+
+-- | derived combinators
+
+-- transformE r = bimapE f g where
+--   f x = (r *) x
+--   g x = (r +) x 
+
+
+
+mkRecBL :: a -> b -> E (Pair a b)
+mkRecBL vd v = mkNC $ RecBL (P vd v) 
+
+
+-- | 
+
+repositionE :: (Mix2 p, Bifunctor p, Fractional a) =>
+               Frame (V2 a)
+            -> Frame (V2 a)
+            -> E (p (V2 a) (V2 a)) -> E (p (V2 a) (V2 a))
+repositionE from to = biasE . frameToFrameBE from to 
+
+-- | Vertical bias applied only to NC shapes (i.e. via `secondE`)
+biasE :: (Mix2 p, Num a) => E (p (V2 a) (V2 a)) -> E (p (V2 a) (V2 a))
+biasE x = secondE (mix2r fbias) x where
+  fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
+
+frameToFrameBE :: (Bifunctor p, MatrixGroup (DiagMat2 a) b, Fractional a) =>
+     Frame (V2 a) -> Frame (V2 a) -> E (p b (V2 a)) -> E (p b (V2 a))
+frameToFrameBE from to = toFrameBE to . bothE (second flipUD) .fromFrameBE from
+  where
+    flipUD (V2 vx vy) = mkV2 vx (1 - vy)  
+    
+
+fromFrameBE :: (MatrixGroup (DiagMat2 a) b, Fractional a, Bifunctor p) =>
+     Frame (V2 a) -> E (p b (V2 a)) -> E (p b (V2 a))
+fromFrameBE from = bothE (bimap f g)
+  where
+    (mfrom, vfrom) = frameToAffine from
+    f v = mfrom <\> v
+    g v = mfrom <\> (v ^-^ vfrom)        
+    
+
+toFrameBE :: (Num a, LinearMap (DiagMat2 a) b, Bifunctor p) =>
+     Frame (V2 a) -> E (p b (V2 a)) -> E (p b (V2 a))
+toFrameBE to = bothE (bimap f g)
+  where
+    (mto, vto) = frameToAffine to
+    f v = mto #> v
+    g v = (mto #> v) ^+^ vto
+
 
 
 -- | -- --
 
 
-
-
--- data Sh b a =
---     Cir a
---   | Rec b
---   | Line a a deriving (Eq, Show, Functor)
-
--- instance Bifunctor Sh where
---   bimap f g sh = case sh of
---     Cir a -> Cir (g a)
---     Rec b -> Rec (f b)
---     Line p1 p2 -> Line (g p1) (g p2)
-
--- mkRec :: a1 -> b -> Sh (Anchor (Pair a1 b)) a2
--- mkRec vd v = Rec $ C $ P vd v 
-
--- r0 = mkRec 2 3
-
-
--- | -- --
-
-
-
--- data Sh a =
---     Cir a
---   | Rec (Anchor a)
---   | Line a a
---   | Gly a
---   | PolyL a
---   deriving (Eq, Show, Functor)
-
--- rescaleSh :: (Bifunctor p, VectorSpace vd, Functor f) => Scalar vd -> f (p vd c) -> f (p vd c)
--- rescaleSh r sh = fr <$> sh where
---   fr = first (r .*)
-
--- biasSh :: Mix2 p => (x -> c -> c) -> Anchor (p x c) -> Anchor (p x c)
--- biasSh f al = case al of
---   Bl p -> Bl $ mix2r f p
---   x@_ -> x
-
-
--- -- mkCir :: a -> b -> Sh (Pair a b)
--- mkCir vd v = Cir (P vd v)
-
--- -- mkRecC vd v = Rec (C (P vd v))
-
--- -- cir0 :: Sh (Pair (V2 Double) Double)
--- cir0 = rescaleSh 4 $ mkCir (mkV2 1 0) 3
-
-
-
-
-
-
-
-
--- data S a =
---     Cir a
---   | Rec (Align a)
---   | Line a a
---   | Gly a
---   | PolyL [a]
---   deriving (Eq, Show, Functor)
-
--- data Align a =
---     Center a
---   | BottomL a deriving (Eq, Show, Functor)
-
--- -- mkRBl :: a -> b -> S (Pair a b)
--- mkRBl vd v = Rec (BottomL (P vd v))
-
--- -- -- biasS :: Mix2 p => (x -> b -> c) -> Align (p x b) -> p x c
--- -- biasS f al = mix2r f <$> al
-
-
-
--- biasS f al = case al of
---   p@Center{} -> p
---   BottomL b -> BottomL $ mix2r f b
 
 
 
@@ -231,80 +227,80 @@ toFrameBimap to = bimap f g
 
 -- | example smart constructors
 
--- mkC :: Num a => a -> ShapeCol p -> v -> Shp p (V2 a) v
-mkC r col v = Circle col vd v where vd = r .* e1
+-- -- mkC :: Num a => a -> ShapeCol p -> v -> Shp p (V2 a) v
+-- mkC r col v = Circle col vd v where vd = r .* e1
 
--- mkR :: Num a => a -> a -> ShapeCol p -> v -> Shp p (V2 a) v
-mkR w h col v = RectBL col vd v where vd = fromCartesian w h
+-- -- mkR :: Num a => a -> a -> ShapeCol p -> v -> Shp p (V2 a) v
+-- mkR w h col v = RectBL col vd v where vd = fromCartesian w h
 
--- mkRBC w h col v = RectBL col vs v where
---   vs = fromCartesian (w/2) h
---   v' = v ^-^ fromCartesian 0 (w/2)
+-- -- mkRBC w h col v = RectBL col vs v where
+-- --   vs = fromCartesian (w/2) h
+-- --   v' = v ^-^ fromCartesian 0 (w/2)
 
-mkReC w h col v = RectC col vs v' where
-  vs = 0.5 .* fromCartesian w h  
-  v' = v ^-^ (0.5 .* vs)  
-  
--- mkReC w h col v = R col vs v' where
---   vs = fromCartesian w h
+-- mkReC w h col v = RectC col vs v' where
+--   vs = 0.5 .* fromCartesian w h  
 --   v' = v ^-^ (0.5 .* vs)  
+  
+-- -- mkReC w h col v = R col vs v' where
+-- --   vs = fromCartesian w h
+-- --   v' = v ^-^ (0.5 .* vs)  
 
--- mkSqrC :: Fractional a => a -> ShapeCol p -> V2 a -> Shp p (V2 a) (V2 a)
--- mkSqrC w col v = mkReC w w col v  
+-- -- mkSqrC :: Fractional a => a -> ShapeCol p -> V2 a -> Shp p (V2 a) (V2 a)
+-- -- mkSqrC w col v = mkReC w w col v  
 
-c4 = mkC 1 (shapeColNoBorder C.blue 0.6) (mkV2 30 15 )
-c3 = mkC 1 (shapeColNoBorder C.blue 1) (mkV2 0 0)
+-- c4 = mkC 1 (shapeColNoBorder C.blue 0.6) (mkV2 30 15 )
+-- c3 = mkC 1 (shapeColNoBorder C.blue 1) (mkV2 0 0)
 
--- r0 = mkR 5 5 (shapeColNoBorder C.red 1) (mkV2 20 20)
--- r1 = mkR 5 5 (shapeColNoBorder C.blue 1) (mkV2 0 0)
+-- -- r0 = mkR 5 5 (shapeColNoBorder C.red 1) (mkV2 20 20)
+-- -- r1 = mkR 5 5 (shapeColNoBorder C.blue 1) (mkV2 0 0)
 
-rectb w h x y = mkR w h (shapeColNoBorder C.red 1) (mkV2 x y)
-r21 = rectb 5 5 0 0
-r22 = rectb 5 10 10 0
-r23 = rectb 5 2 20 0
-r24 = rectb 5 15 30 0
--- -- shs = [r0, r1, c3]
--- -- shs = [r0, r1]
+-- rectb w h x y = mkR w h (shapeColNoBorder C.red 1) (mkV2 x y)
+-- r21 = rectb 5 5 0 0
+-- r22 = rectb 5 10 10 0
+-- r23 = rectb 5 2 20 0
+-- r24 = rectb 5 15 30 0
+-- -- -- shs = [r0, r1, c3]
+-- -- -- shs = [r0, r1]
 
-shs = [r21, r22, r23, r24, c3, c4]
-
-
-
-
-
-
+-- shs = [r21, r22, r23, r24, c3, c4]
 
 
 
--- render0 :: (Foldable t, Floating a, Real a, Functor t) =>
---            Frame (V2 a)
---         -> t (Shp a (V2 a) (V2 a))
---         -> Svg
-render0 to shs = renderShape `mapM_` reposition to shs
 
 
-test0 =
-  do
-  let
-    figdata = figureDataDefault
-    to = frameFromFigData figdata
-    (rout, rin) = rectsFigData figdata 
-    svg_t = svgHeader' figdata $ do
-      render0 to shs
-      renderShape rout
-      renderShape rin
-  T.writeFile "examples/ex_dsl5.svg" $ T.pack $ renderSvg svg_t
 
 
--- | Rectangles based on the inner and outer frames of the drawable canvas
--- rectsFigData :: (Num p, Fractional a) => FigureData a -> (Sh p (V2 a), Sh p (V2 a))
-rectsFigData fd = (rOut, rIn)
-  where
-    col = shapeColNoFill C.black 1 1
-    frIn = frameFromFigData fd
-    pc = midPoint (_fpmin frIn) (_fpmax frIn)
-    rIn = mkReC (width frIn) (height frIn) col pc 
-    rOut = mkReC (figWidth fd) (figHeight fd) col pc
+
+
+-- -- render0 :: (Foldable t, Floating a, Real a, Functor t) =>
+-- --            Frame (V2 a)
+-- --         -> t (Shp a (V2 a) (V2 a))
+-- --         -> Svg
+-- render0 to shs = renderShape `mapM_` reposition to shs
+
+
+-- test0 =
+--   do
+--   let
+--     figdata = figureDataDefault
+--     to = frameFromFigData figdata
+--     (rout, rin) = rectsFigData figdata 
+--     svg_t = svgHeader' figdata $ do
+--       render0 to shs
+--       renderShape rout
+--       renderShape rin
+--   T.writeFile "examples/ex_dsl5.svg" $ T.pack $ renderSvg svg_t
+
+
+-- -- | Rectangles based on the inner and outer frames of the drawable canvas
+-- -- rectsFigData :: (Num p, Fractional a) => FigureData a -> (Sh p (V2 a), Sh p (V2 a))
+-- rectsFigData fd = (rOut, rIn)
+--   where
+--     col = shapeColNoFill C.black 1 1
+--     frIn = frameFromFigData fd
+--     pc = midPoint (_fpmin frIn) (_fpmax frIn)
+--     rIn = mkReC (width frIn) (height frIn) col pc 
+--     rOut = mkReC (figWidth fd) (figHeight fd) col pc
 
 
 
