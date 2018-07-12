@@ -40,7 +40,6 @@ getE :: (ShC a -> x) -> (ShNC a -> x) -> E a -> x
 getE f g ee = either f g $ unE ee
 
 
-
 -- | Shapes with centered anchor
 data ShC a =
     C a
@@ -63,10 +62,8 @@ mkNC = E . Right
 
 -- | derived combinators
 
--- transformE r = bimapE f g where
---   f x = (r *) x
---   g x = (r +) x 
 
+type Shape v = E (Pair v v)
 
 
 mkRecBL :: a -> b -> E (Pair a b)
