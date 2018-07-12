@@ -21,23 +21,104 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 
 
-data S a =
+newtype E a = E { unE :: Either (ShC a) (ShNC a)} deriving (Eq, Show)
+
+bimapE :: (ShC a -> ShC b) -> (ShNC a -> ShNC b) -> E a -> E b
+bimapE f g (E ei) = E (bimap f g ei)
+
+data ShC a =
     C a
-  | R (Align a) deriving (Eq, Show, Functor)
+  | Line a a deriving (Eq, Show, Functor)
 
-data Align a =
-    Center a
-  | BL a deriving (Eq, Show, Functor)
+data ShNC a =
+  Rec a deriving (Eq, Show, Functor)
 
-mkRBl :: a -> b -> S (Pair a b)
-mkRBl vd v = R (BL (P vd v))
+mkRec :: a -> b -> E (Pair a b)
+mkRec vd v = E (Right $ Rec (P vd v))
 
--- biasS :: Mix2 p => (x -> b -> c) -> Align (p x b) -> p x c
-biasS f al = mix2r f <$> al 
 
+-- | -- --
 
 
 
+
+-- data Sh b a =
+--     Cir a
+--   | Rec b
+--   | Line a a deriving (Eq, Show, Functor)
+
+-- instance Bifunctor Sh where
+--   bimap f g sh = case sh of
+--     Cir a -> Cir (g a)
+--     Rec b -> Rec (f b)
+--     Line p1 p2 -> Line (g p1) (g p2)
+
+-- mkRec :: a1 -> b -> Sh (Anchor (Pair a1 b)) a2
+-- mkRec vd v = Rec $ C $ P vd v 
+
+-- r0 = mkRec 2 3
+
+
+-- | -- --
+
+
+
+-- data Sh a =
+--     Cir a
+--   | Rec (Anchor a)
+--   | Line a a
+--   | Gly a
+--   | PolyL a
+--   deriving (Eq, Show, Functor)
+
+-- rescaleSh :: (Bifunctor p, VectorSpace vd, Functor f) => Scalar vd -> f (p vd c) -> f (p vd c)
+-- rescaleSh r sh = fr <$> sh where
+--   fr = first (r .*)
+
+-- biasSh :: Mix2 p => (x -> c -> c) -> Anchor (p x c) -> Anchor (p x c)
+-- biasSh f al = case al of
+--   Bl p -> Bl $ mix2r f p
+--   x@_ -> x
+
+
+-- -- mkCir :: a -> b -> Sh (Pair a b)
+-- mkCir vd v = Cir (P vd v)
+
+-- -- mkRecC vd v = Rec (C (P vd v))
+
+-- -- cir0 :: Sh (Pair (V2 Double) Double)
+-- cir0 = rescaleSh 4 $ mkCir (mkV2 1 0) 3
+
+
+
+
+
+
+
+
+-- data S a =
+--     Cir a
+--   | Rec (Align a)
+--   | Line a a
+--   | Gly a
+--   | PolyL [a]
+--   deriving (Eq, Show, Functor)
+
+-- data Align a =
+--     Center a
+--   | BottomL a deriving (Eq, Show, Functor)
+
+-- -- mkRBl :: a -> b -> S (Pair a b)
+-- mkRBl vd v = Rec (BottomL (P vd v))
+
+-- -- -- biasS :: Mix2 p => (x -> b -> c) -> Align (p x b) -> p x c
+-- -- biasS f al = mix2r f <$> al
+
+
+
+-- biasS f al = case al of
+--   p@Center{} -> p
+--   BottomL b -> BottomL $ mix2r f b
 
 
 
@@ -78,15 +159,22 @@ renderShape sh = case sh of
 
 reposition :: (Foldable f, Ord a, Functor f, Fractional a) =>
      Frame (V2 a) -> f (Shp p (V2 a) (V2 a)) -> f (Shp p (V2 a) (V2 a))
-reposition to shs = bias . frameToFrameB from to <$> shs where
+reposition to shs = reposition1 from to <$> shs where
   from = wrappingFrame shs
+
+reposition1 :: Fractional a =>
+               Frame (V2 a)
+            -> Frame (V2 a)
+            -> Shp p (V2 a) (V2 a)
+            -> Shp p (V2 a) (V2 a)
+reposition1 from to = bias . frameToFrameB from to 
+
 
 bias :: Num a => Shp p (V2 a) (V2 a) -> Shp p (V2 a) (V2 a)
 bias sh = case sh of
-  c@Circle{} -> c
-  r@RectC{}  -> r
   r@RectBL{} -> mix2r fbias r where
     fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
+  x@_ -> x
 
 
 
@@ -123,7 +211,7 @@ fromFrameBimap from = bimap f g
   where
     (mfrom, vfrom) = frameToAffine from
     f v = mfrom <\> v
-    g v = mfrom <\> (v ^-^ vfrom)
+    g v = mfrom <\> (v ^-^ vfrom)    
 
 toFrameBimap :: (Num a, LinearMap (DiagMat2 a) b, Bifunctor p) =>
      Frame (V2 a) -> p b (V2 a) -> p b (V2 a)
@@ -188,10 +276,10 @@ shs = [r21, r22, r23, r24, c3, c4]
 
 
 
-render0 :: (Foldable t, Floating a, Real a, Functor t) =>
-           Frame (V2 a)
-        -> t (Shp a (V2 a) (V2 a))
-        -> Svg
+-- render0 :: (Foldable t, Floating a, Real a, Functor t) =>
+--            Frame (V2 a)
+--         -> t (Shp a (V2 a) (V2 a))
+--         -> Svg
 render0 to shs = renderShape `mapM_` reposition to shs
 
 

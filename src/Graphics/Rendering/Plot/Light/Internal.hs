@@ -339,6 +339,15 @@ histo n v = H.fillBuilder buildr v where
 
   
 
+-- data Body vd v = Body (NE.NonEmpty vd) v deriving (Eq, Show)
+
+-- instance Bifunctor Body where
+--   bimap f g (Body vds v) = Body (f <$> vds) (g v)
+
+-- instance Mix2 Body where
+--   mix2 f g (Body vds v) = Body (f <$> vds <*> v) (g vds v)
+
+
 
 
 
