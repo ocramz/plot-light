@@ -456,8 +456,6 @@ wrappingFrame shs = foldr insf fzero shs where
     R _ vd v -> mkFrame v (v ^+^ vd)
 
 
-  
-
 -- | Given :
 --
 -- * a starting frame (in the screen reference)
