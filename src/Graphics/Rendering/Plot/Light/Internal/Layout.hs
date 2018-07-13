@@ -61,7 +61,7 @@ bothE f = bimapE f f
 
 -- | Extract/interpret
 
-interpretE :: ([a] -> p) -> E a -> p
+interpretE :: ([a] -> x) -> E a -> x
 interpretE f = getE (getShC f) (getShNC f)
 
 getE :: (ShC a -> x) -> (ShNC a -> x) -> E a -> x
