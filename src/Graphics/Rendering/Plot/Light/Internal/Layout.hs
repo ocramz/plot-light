@@ -113,33 +113,29 @@ mkRecBL :: a -> a -> Shape1 a -- E (Pair a a)
 mkRecBL vd v = mkNC $ RecBL (P vd v) 
 
 
+-- | --
 
-mkFrameE :: Ord a => E a -> Frame a
-mkFrameE = interpretE frameFromPoints
+mkFrameE :: Ord a => E (Pair x a) -> Frame a
+mkFrameE = interpretE (frameFromPointsWith f) where
+  f (P _ v) = v
 
--- wrappingFrame :: (Foldable t, AdditiveGroup v, Ord v) => t (Shp p v v) -> Frame v
--- wrappingFrameE :: (Foldable t, Ord v, Monoid v) => t (E v) -> Frame v
-wrappingFrameE fzero shs = foldr insf fzero ssh where
+wrappingFrameE :: (Foldable t, Ord v, Monoid v) => t (E (Pair v1 v)) -> Frame v
+wrappingFrameE shs = foldr insf fzero ssh where
   (sh:ssh) = F.toList shs
-  -- fzero = mkFrameE sh
-  insf (P _ s) acc = mkFrameE s `mappend` acc
-
--- mkFrameShp :: AdditiveGroup v => Shp p v v -> Frame v
--- mkFrameShp s = case s of
---     Circle _ vd v -> mkFrame v (v ^+^ vd)
---     RectBL _ vd v -> mkFrame v (v ^+^ vd)
---     RectC _ vd v  -> mkFrame v (v ^+^ vd)    
-
--- mkFrameE s = getE fget gget where
---   fget sh = case sh of
-    
+  fzero = mkFrameE sh
+  insf s acc = mkFrameE s `mappend` acc
 
 
--- | 
+-- | --
 
--- repositionE to shs = reposition1E from to <$> shs where
---   from = wrappingFrameE shs
+repositionE :: (Foldable f, Ord a, Functor f, Fractional a) =>
+               Frame (V2 a)
+            -> f (E (Pair (V2 a) (V2 a)))
+            -> f (E (Pair (V2 a) (V2 a)))
+repositionE to shs = reposition1E from to <$> shs where
+  from = wrappingFrameE shs
 
+-- | Reposition a single shape
 reposition1E :: (Mix2 p, Bifunctor p, Fractional a) =>
                Frame (V2 a)
             -> Frame (V2 a)

@@ -10,7 +10,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** LabeledPoint
   LabeledPoint(..), mkLabeledPoint, labelPoint, mapLabel,
   -- ** Frame
-  Frame(..), mkFrame, unitFrame, frameFromPoints, mkFrameOrigin,
+  Frame(..), mkFrame, unitFrame, frameFromPoints, frameFromPointsWith, mkFrameOrigin,
   height, width, xmin, xmax, ymin, ymax, isPointInFrame, frameToAffine,
   frameDirac,
   -- ** Axis
@@ -40,7 +40,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
 where
 
 -- import Data.Monoid ((<>))
-
+import qualified Data.Foldable as F (toList)
 import Control.Exception
 import Control.Monad.Catch (MonadThrow(..), throwM)
 import GHC.Generics
@@ -311,9 +311,18 @@ unitFrame = mkFrame origin oneOne
 -- p1 := inf(x,y) P
 --
 -- p2 := sup(x,y) P
-frameFromPoints :: Ord a => [a] -> Frame a
-frameFromPoints ps = foldr ins (frameDirac $ head ps) ps where
+-- frameFromPoints :: Ord a => [a] -> Frame a
+-- frameFromPoints ps = foldr ins (frameDirac $ head ps) ps where
+--   ins p fr = frameDirac p <> fr
+frameFromPoints :: (Foldable t, Ord a) => t a -> Frame a
+frameFromPoints = frameFromPointsWith id
+
+frameFromPointsWith :: (Foldable t, Ord b) => (a -> b) -> t a -> Frame b
+frameFromPointsWith f ps = foldr ins (frameDirac $ head psl) psl where
   ins p fr = frameDirac p <> fr
+  psl = f <$> F.toList ps
+
+  
 
 
 
