@@ -16,10 +16,15 @@ import qualified Data.Colour.SRGB as C
 import qualified Data.Text as T
 import qualified Data.Text.IO as T (writeFile)
 
-import Text.Blaze.Svg
+import Text.Blaze.Svg (Svg)
 import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 
+
+
+
+
+-- --
 
 newtype E a = E { unE :: Either (ShC a) (ShNC a) } deriving (Eq, Show)
 
@@ -35,9 +40,22 @@ secondE g = bimapE id g
 bothE :: (a -> b) -> E a -> E b
 bothE f = bimapE f f
 
--- | Extract
+-- | Extract/interpret
 getE :: (ShC a -> x) -> (ShNC a -> x) -> E a -> x
 getE f g ee = either f g $ unE ee
+
+getShC :: ([a] -> p) -> ShC a -> p
+getShC f s = case s of
+  C x -> f [x]
+  Line x y -> f [x, y]
+  Gly x -> f [x]
+  PolyL xs -> f xs
+
+getShNC :: ([a] -> p) -> ShNC a -> p
+getShNC f s = case s of
+  RecBL x -> f [x]
+  RecBC x -> f [x]
+
 
 
 -- | Shapes with centered anchor
@@ -65,8 +83,10 @@ mkNC = E . Right
 
 type Shape p v = E (p v v)
 
+type Shape1 v = E (Pair v v)
 
-mkRecBL :: a -> b -> E (Pair a b)
+
+mkRecBL :: a -> a -> Shape1 a -- E (Pair a a)
 mkRecBL vd v = mkNC $ RecBL (P vd v) 
 
 
