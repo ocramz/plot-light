@@ -42,10 +42,18 @@ instance (Applicative g, Applicative f) => Applicative (Compose f g) where
 
 
 
+data PlotTy a =
+    Scatter [a]
+  | PolyLine [a]
+  deriving (Eq, Show)
+
+
 
 -- --
 
 newtype E a = E { unE :: Either (ShC a) (ShNC a) } deriving (Eq, Show)
+instance Functor E where
+  fmap = bothE
 
 bimapE :: (a -> b) -> (a -> b) -> E a -> E b
 bimapE f g (E ei) = E (bimap (f <$>) (g <$>) ei)
@@ -61,32 +69,40 @@ bothE f = bimapE f f
 
 -- | Extract/interpret
 
-interpretE :: ([a] -> x) -> E a -> x
+-- interpretE :: ([a] -> x) -> E a -> x
 interpretE f = getE (getShC f) (getShNC f)
 
 getE :: (ShC a -> x) -> (ShNC a -> x) -> E a -> x
 getE f g ee = either f g $ unE ee
 
-getShC :: ([a] -> p) -> ShC a -> p
+-- getShC :: ([a] -> p) -> ShC a -> p
 getShC f s = case s of
-  C x -> f [x]
-  Line x y -> f [x, y]
-  Gly x -> f [x]
-  PolyL xs -> f xs
+  C x -> f x
+  Line x -> f x
+  -- Line x y -> f [x, y]
+  -- Gly x -> f [x]
+  -- PolyL xs -> f xs
 
-getShNC :: ([a] -> p) -> ShNC a -> p
+-- getShNC :: ([a] -> p) -> ShNC a -> p
 getShNC f s = case s of
-  RecBL x -> f [x]
-  RecBC x -> f [x]
+  RecBL x -> f x
+  RecBC x -> f x
+
+
+mkHull :: (AdditiveGroup v, Functor f) => Pair (f v) v -> f v
+mkHull (P vds v) = f <$> vds where
+  f vd = v ^+^ vd
+
 
 
 
 -- | Shapes with centered anchor
 data ShC a =
     C a
-  | Line a a
-  | Gly a 
-  | PolyL [a] deriving (Eq, Show, Functor)
+  | Line a 
+  -- | Gly a 
+  -- | PolyL [a]
+  deriving (Eq, Show, Functor)
 
 -- | Shapes with non-centered anchor
 data ShNC a =
@@ -103,9 +119,7 @@ mkNC = E . Right
 
 -- | derived combinators
 
-
 type Shape p v = E (p v v)
-
 type Shape1 v = E (Pair v v)
 
 
@@ -113,28 +127,38 @@ mkRecBL :: a -> a -> Shape1 a -- E (Pair a a)
 mkRecBL vd v = mkNC $ RecBL (P vd v) 
 
 
--- | --
 
--- | Constructs a Frame from a shape, using the second parameter only (position vectors)
-mkFrameE :: Ord a => E (Pair x a) -> Frame a
-mkFrameE = interpretE (frameFromPointsWith f) where
-  f (P _ v) = v
 
-wrappingFrameE :: (Foldable t, Ord v, Monoid v) => t (E (Pair v1 v)) -> Frame v
-wrappingFrameE shs = foldr insf fzero ssh where
-  (sh:ssh) = F.toList shs
-  fzero = mkFrameE sh
-  insf s acc = mkFrameE s `mappend` acc
 
 
 -- | --
 
-repositionE :: (Foldable f, Ord a, Functor f, Fractional a) =>
-               Frame (V2 a)
-            -> f (E (Pair (V2 a) (V2 a)))
-            -> f (E (Pair (V2 a) (V2 a)))
-repositionE to shs = reposition1E from to <$> shs where
-  from = wrappingFrameE shs
+-- -- | Constructs a Frame from a shape, using the second parameter only (position vectors)
+-- mkFrameE :: Ord a => E (Pair x a) -> Frame a
+-- mkFrameE = interpretE (frameFromPointsWith f) where
+--   f (P _ v) = v
+
+-- wrappingFrameE :: (Foldable t, Ord v, Monoid v) => t (E (Pair v1 v)) -> Frame v
+-- wrappingFrameE shs = foldr insf fzero ssh where
+--   (sh:ssh) = F.toList shs
+--   fzero = mkFrameE sh
+--   insf s acc = mkFrameE s `mappend` acc
+
+
+
+
+
+
+
+
+-- | --
+
+-- repositionE :: (Foldable f, Ord a, Functor f, Fractional a) =>
+--                Frame (V2 a)
+--             -> f (E (Pair (V2 a) (V2 a)))
+--             -> f (E (Pair (V2 a) (V2 a)))
+-- repositionE to shs = reposition1E from to <$> shs where
+--   from = wrappingFrameE shs
 
 -- | Reposition a single shape
 reposition1E :: (Mix2 p, Bifunctor p, Fractional a) =>
@@ -150,7 +174,7 @@ biasE x = mapShNC (mix2r fbias) x where
 
 frameToFrameBE :: (Bifunctor p, MatrixGroup (DiagMat2 a) b, Fractional a) =>
      Frame (V2 a) -> Frame (V2 a) -> E (p b (V2 a)) -> E (p b (V2 a))
-frameToFrameBE from to = toFrameBE to . bothE (second flipUD) .fromFrameBE from
+frameToFrameBE from to = toFrameBE to . bothE (second flipUD) . fromFrameBE from
   where
     flipUD (V2 vx vy) = mkV2 vx (1 - vy)  
     
@@ -526,7 +550,7 @@ Design :
 
 -}
 
-data PlotType = HeatMap | Scatter | TimeSeries 
+-- data PlotType = HeatMap | Scatter | TimeSeries 
 
 
 
