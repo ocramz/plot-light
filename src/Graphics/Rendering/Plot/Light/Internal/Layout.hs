@@ -68,53 +68,25 @@ bothE :: (a -> b) -> E a -> E b
 bothE f = bimapE f f
 
 -- | Extract/interpret
+interpretE :: (a -> x) -> E a -> x
+interpretE f ee = either (f . unC) (f . unNC) $ unE ee
 
--- interpretE :: ([a] -> x) -> E a -> x
-interpretE f = getE (getShC f) (getShNC f)
-
-getE :: (ShC a -> x) -> (ShNC a -> x) -> E a -> x
-getE f g ee = either f g $ unE ee
-
--- getShC :: ([a] -> p) -> ShC a -> p
-getShC f s = case s of
-  C x -> f x
-  Line x -> f x
-  -- Line x y -> f [x, y]
-  -- Gly x -> f [x]
-  -- PolyL xs -> f xs
-
--- getShNC :: ([a] -> p) -> ShNC a -> p
-getShNC f s = case s of
-  RecBL x -> f x
-  RecBC x -> f x
-
-
-mkHull :: (AdditiveGroup v, Functor f) => Pair (f v) v -> f v
-mkHull (P vds v) = f <$> vds where
-  f vd = v ^+^ vd
-
-
+-- mkHull :: (AdditiveGroup v, Functor f) => Pair (f v) v -> f v
+-- mkHull (P vds v) = f <$> vds where
+--   f vd = v ^+^ vd
 
 
 -- | Shapes with centered anchor
-data ShC a =
-    C a
-  | Line a 
-  -- | Gly a 
-  -- | PolyL [a]
-  deriving (Eq, Show, Functor)
+newtype ShC a = C { unC :: a } deriving (Eq, Show, Functor)
 
 -- | Shapes with non-centered anchor
-data ShNC a =
-    RecBL a -- bottom-left corner
-  | RecBC a -- bottom-center
-  deriving (Eq, Show, Functor)
+newtype ShNC a = NC { unNC :: a } deriving (Eq, Show, Functor)
 
-mkC :: ShC a -> E a
-mkC = E . Left
+-- mkC :: ShC a -> E a
+mkC = E . Left . C
 
-mkNC :: ShNC a -> E a
-mkNC = E . Right
+-- mkNC :: ShNC a -> E a
+mkNC = E . Right . NC
 
 
 -- | derived combinators
@@ -123,8 +95,8 @@ type Shape p v = E (p v v)
 type Shape1 v = E (Pair v v)
 
 
-mkRecBL :: a -> a -> Shape1 a -- E (Pair a a)
-mkRecBL vd v = mkNC $ RecBL (P vd v) 
+-- mkRecBL :: a -> a -> Shape1 a -- E (Pair a a)
+-- mkRecBL vd v = mkNC $ RecBL (P vd v) 
 
 
 
