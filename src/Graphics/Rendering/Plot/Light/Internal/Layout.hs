@@ -115,6 +115,7 @@ mkRecBL vd v = mkNC $ RecBL (P vd v)
 
 -- | --
 
+-- | Constructs a Frame from a shape, using the second parameter only (position vectors)
 mkFrameE :: Ord a => E (Pair x a) -> Frame a
 mkFrameE = interpretE (frameFromPointsWith f) where
   f (P _ v) = v
