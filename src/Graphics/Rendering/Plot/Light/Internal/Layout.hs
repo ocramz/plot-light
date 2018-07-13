@@ -6,6 +6,8 @@ import Data.Bifunctor.Pair
 import qualified Data.Foldable as F (toList)
 import qualified Data.IntMap as IM
 
+import Control.Monad (ap)
+
 import Graphics.Rendering.Plot.Light.Internal.Geometry
 import Graphics.Rendering.Plot.Light.Internal
 
@@ -22,6 +24,23 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 
 
+newtype Compose f g a = Compose { unCompose :: f (g a) }
+
+instance (Functor g, Functor f) => Functor (Compose f g) where
+  fmap f = Compose . fmap (fmap f) . unCompose
+  -- fmap f (Compose fga) = Compose ((fmap . fmap ) f fga)
+
+instance (Applicative g, Applicative f) => Applicative (Compose f g) where
+  pure = Compose . pure . pure
+  -- -- (<*>) :: Compose f g (a -> b) -> Compose f g a -> Compose f g b
+  Compose f <*> Compose k = Compose $ (<*>) <$> f <*> k
+  -- Compose f <*> Compose k = Compose $ liftedAp <*> k where
+  --   liftedAp = fmap (<*>) f 
+
+-- instance Foldable (Compose f g) where
+--   foldr = _
+
+
 
 
 -- --
@@ -31,16 +50,20 @@ newtype E a = E { unE :: Either (ShC a) (ShNC a) } deriving (Eq, Show)
 bimapE :: (a -> b) -> (a -> b) -> E a -> E b
 bimapE f g (E ei) = E (bimap (f <$>) (g <$>) ei)
 
-firstE :: (b -> b) -> E b -> E b
-firstE f = bimapE f id
+mapShC :: (b -> b) -> E b -> E b
+mapShC f = bimapE f id
 
-secondE :: (b -> b) -> E b -> E b
-secondE g = bimapE id g
+mapShNC :: (b -> b) -> E b -> E b
+mapShNC g = bimapE id g
 
 bothE :: (a -> b) -> E a -> E b
 bothE f = bimapE f f
 
 -- | Extract/interpret
+
+interpretE :: ([a] -> p) -> E a -> p
+interpretE f = getE (getShC f) (getShNC f)
+
 getE :: (ShC a -> x) -> (ShNC a -> x) -> E a -> x
 getE f g ee = either f g $ unE ee
 
@@ -91,13 +114,15 @@ mkRecBL vd v = mkNC $ RecBL (P vd v)
 
 
 
-
+mkFrameE :: Ord a => E a -> Frame a
+mkFrameE = interpretE frameFromPoints
 
 -- wrappingFrame :: (Foldable t, AdditiveGroup v, Ord v) => t (Shp p v v) -> Frame v
--- wrappingFrame shs = foldr insf fzero ssh where
---   (sh:ssh) = F.toList shs
---   fzero = mkFrameShp sh
---   insf s acc = mkFrameShp s `mappend` acc
+-- wrappingFrameE :: (Foldable t, Ord v, Monoid v) => t (E v) -> Frame v
+wrappingFrameE fzero shs = foldr insf fzero ssh where
+  (sh:ssh) = F.toList shs
+  -- fzero = mkFrameE sh
+  insf (P _ s) acc = mkFrameE s `mappend` acc
 
 -- mkFrameShp :: AdditiveGroup v => Shp p v v -> Frame v
 -- mkFrameShp s = case s of
@@ -112,15 +137,18 @@ mkRecBL vd v = mkNC $ RecBL (P vd v)
 
 -- | 
 
-repositionE :: (Mix2 p, Bifunctor p, Fractional a) =>
+-- repositionE to shs = reposition1E from to <$> shs where
+--   from = wrappingFrameE shs
+
+reposition1E :: (Mix2 p, Bifunctor p, Fractional a) =>
                Frame (V2 a)
             -> Frame (V2 a)
             -> E (p (V2 a) (V2 a)) -> E (p (V2 a) (V2 a))
-repositionE from to = biasE . frameToFrameBE from to 
+reposition1E from to = biasE . frameToFrameBE from to 
 
 -- | Vertical bias applied only to NC shapes (i.e. via `secondE`)
 biasE :: (Mix2 p, Num a) => E (p (V2 a) (V2 a)) -> E (p (V2 a) (V2 a))
-biasE x = secondE (mix2r fbias) x where
+biasE x = mapShNC (mix2r fbias) x where
   fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
 
 frameToFrameBE :: (Bifunctor p, MatrixGroup (DiagMat2 a) b, Fractional a) =>

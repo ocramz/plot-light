@@ -6,6 +6,10 @@ import Data.Bifunctor
 -- | === Pair 
 data Pair a b = P a b deriving (Eq, Show)
 
+instance (Monoid a, Monoid b) => Monoid (Pair a b) where
+  mempty = P mempty mempty
+  (P u1 v1) `mappend` (P u2 v2) = P (u1 `mappend` u2) (v1 `mappend` v2)
+
 instance Bifunctor Pair where
   bimap f g (P x y) = P (f x) (g y)
 
@@ -20,3 +24,9 @@ class Mix2 p where
 
 instance Mix2 Pair where
   mix2 f g (P x y) = P (f x y) (g x y)
+
+-- | The Ord instance only compares the second component.
+--
+-- NB this is different from the Ord instance of a regular tuple
+instance (Eq a, Eq vd, Ord a) => Ord (Pair vd a) where
+  (P _ v1) <= (P _ v2) = v1 <= v2
