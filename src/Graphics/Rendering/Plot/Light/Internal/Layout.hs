@@ -118,16 +118,19 @@ type Shape1 v = E (Pair v v)
 --   from = wrappingFrameE shs
 
 -- | Reposition a single shape
-reposition1E :: (Mix2 p, Fractional a) =>
-                Frame (V2 a)
-             -> Frame (V2 a)
-             -> E (p (V2 a) (V2 a)) -> E (p (V2 a) (V2 a))
-reposition1E from to = biasE . frameToFrameBE from to
+-- reposition1E :: (Mix2 p, Fractional a) =>
+--                 Frame (V2 a)
+--              -> Frame (V2 a)
+--              -> E (p (V2 a) (V2 a)) -> E (p (V2 a) (V2 a))
+-- reposition1E from to = biasE . frameToFrameBE from to
 
--- -- | Vertical bias applied only to NC shapes (i.e. via `secondE`)
-biasE :: (Mix2 p, Num a) => E (p (V2 a) (V2 a)) -> E (p (V2 a) (V2 a))
-biasE x = secondE (mix2r fbias) x where
-  fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
+-- | Vertical bias applied only to NC shapes (i.e. via `secondE`)
+-- biasE :: (Mix2 p, Num a) => E (p (V2 a) (V2 a)) -> E (p (V2 a) (V2 a))
+-- biasE x = secondE (mix2r fbias) x where
+--   fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
+
+biasEWith :: Mix2 p => (x -> b -> b) -> E (p x b) -> E (p x b)
+biasEWith fbias = secondE (mix2r fbias)
 
 frameToFrameBE :: (Bifunctor p, Functor f, Fractional a, MatrixGroup (DiagMat2 a) b) =>
                   Frame (V2 a) -> Frame (V2 a) -> f (p b (V2 a)) -> f (p b (V2 a))
