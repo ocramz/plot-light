@@ -47,7 +47,7 @@ instance (Applicative g, Applicative f) => Applicative (Compose f g) where
 --
 -- * Anchored either at its center or not
 -- * Has an anchor point (= position vector) and zero or more size vectors (e.g. a rectangle has only one size vector (i.e. is uniquely defined by its position vector and its size vector), a general N-polygon has N)
-newtype Shape a = Shape { unShape :: E (Pair [V2 a] (V2 a)) }
+newtype Shape a = Shape { unShape :: E (Pair [V2 a] (V2 a)) } deriving (Eq, Show)
 
 mkShape :: E (Pair [V2 a] (V2 a)) -> Shape a
 mkShape = Shape

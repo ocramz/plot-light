@@ -1,7 +1,7 @@
 module Data.Bifunctor.Pair (Pair(..), mkPair, Mix2(..))where
 
 import Data.Bifunctor
-
+import Data.Semigroup
 
 -- | === Pair 
 data Pair a b = P a b deriving (Eq, Show)
@@ -9,9 +9,12 @@ data Pair a b = P a b deriving (Eq, Show)
 mkPair :: a -> b -> Pair a b
 mkPair = P
 
+instance (Semigroup a, Semigroup b) => Semigroup (Pair a b) where
+  (P u1 v1) <> (P u2 v2) = P (u1 <> u2) (v1 <> v2)  
+  
 instance (Monoid a, Monoid b) => Monoid (Pair a b) where
   mempty = P mempty mempty
-  (P u1 v1) `mappend` (P u2 v2) = P (u1 `mappend` u2) (v1 `mappend` v2)
+  mappend = (<>)
 
 instance Bifunctor Pair where
   bimap f g (P x y) = P (f x) (g y)
