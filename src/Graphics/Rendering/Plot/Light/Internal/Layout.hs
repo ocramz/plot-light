@@ -5,7 +5,7 @@ import Data.Bifunctor
 import Data.Bifunctor.Pair
 import qualified Data.Foldable as F (toList)
 import qualified Data.IntMap as IM
-
+import qualified Data.List.NonEmpty as NE
 import Control.Monad (ap)
 
 import Graphics.Rendering.Plot.Light.Internal.Geometry
@@ -41,11 +41,32 @@ instance (Applicative g, Applicative f) => Applicative (Compose f g) where
 --   foldr = _
 
 
+-- | ========= 
 
-data PlotTy a =
-    Scatter [a]
-  | PolyLine [a]
-  deriving (Eq, Show)
+-- | A shape is :
+--
+-- * Anchored either at its center or not
+-- * Has an anchor point (= position vector) and zero or more size vectors (e.g. a rectangle has only one size vector (i.e. is uniquely defined by its position vector and its size vector), a general N-polygon has N)
+newtype Shape a = Shape { unShape :: E (Pair [V2 a] (V2 a)) }
+
+mkShape :: E (Pair [V2 a] (V2 a)) -> Shape a
+mkShape = Shape
+
+ 
+
+-- data PlotTy a =
+--     Scatter [a]
+--   | PolyLine [a]
+--   deriving (Eq, Show)
+
+data PlotElem p a =
+   Line a a
+ | RectBL (ShapeCol p) a
+ deriving (Eq, Show, Functor)
+
+mkRectBL :: Num a => a -> a -> ShapeCol p -> V2 a -> PlotElem p (Shape a)
+mkRectBL w h col v = RectBL col $ mkShape $ mkNC (mkPair [vd] v) where
+  vd = fromCartesian w h
 
 
 -- | Anchored shapes
@@ -78,8 +99,8 @@ mkNC = E . Right
 
 -- | derived combinators
 
-type Shape p v = E (p v v)
-type Shape1 v = E (Pair v v)
+-- type Shape p v = E (p v v)
+-- type Shape1 v = E (Pair v v)
 
 
 -- mkRecBL :: a -> a -> Shape1 a -- E (Pair a a)
@@ -129,7 +150,9 @@ type Shape1 v = E (Pair v v)
 -- biasE x = secondE (mix2r fbias) x where
 --   fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
 
-biasEWith :: Mix2 p => (x -> b -> b) -> E (p x b) -> E (p x b)
+-- | Modify the position component of a pair using both size and position parameters.
+-- This only applies to non-centered shapes (i.e. via `secondE`)
+biasEWith :: Mix2 p => (x -> a -> a) -> E (p x a) -> E (p x a)
 biasEWith fbias = secondE (mix2r fbias)
 
 frameToFrameBE :: (Bifunctor p, Functor f, Fractional a, MatrixGroup (DiagMat2 a) b) =>
@@ -170,96 +193,94 @@ toFrameBE to = fmap (bimap f g)
 -- | =============
 -- | A DSL for geometrical shapes
 
-data Shp p vd v =
-    Circle (ShapeCol p) vd v  -- ^ Circle
-  | RectBL (ShapeCol p) vd v  -- ^ Rectangle, anchored bottom-left
-  | RectC (ShapeCol p) vd v  -- ^ Rectangle, anchored center
-  deriving (Eq, Show)
+-- data Shp p vd v =
+--     Circle (ShapeCol p) vd v  -- ^ Circle
+--   | RectBL (ShapeCol p) vd v  -- ^ Rectangle, anchored bottom-left
+--   | RectC (ShapeCol p) vd v  -- ^ Rectangle, anchored center
+--   deriving (Eq, Show)
 
-instance Bifunctor (Shp p) where
-  bimap f g sh = case sh of
-    Circle k vd v -> Circle k (f vd) (g v)
-    RectBL k vd v -> RectBL k (f vd) (g v)
-    RectC k vd v -> RectC k (f vd) (g v)    
+-- instance Bifunctor (Shp p) where
+--   bimap f g sh = case sh of
+--     Circle k vd v -> Circle k (f vd) (g v)
+--     RectBL k vd v -> RectBL k (f vd) (g v)
+--     RectC k vd v -> RectC k (f vd) (g v)    
 
-instance Mix2 (Shp p) where
-  mix2 f g sh = case sh of
-    Circle k vd v -> Circle k (f vd v) (g vd v)
-    RectBL k vd v -> RectBL k (f vd v) (g vd v) 
-    RectC k vd v -> RectC k (f vd v) (g vd v)   
+-- instance Mix2 (Shp p) where
+--   mix2 f g sh = case sh of
+--     Circle k vd v -> Circle k (f vd v) (g vd v)
+--     RectBL k vd v -> RectBL k (f vd v) (g vd v) 
+--     RectC k vd v -> RectC k (f vd v) (g vd v)   
 
-renderShape :: (Floating a, Real a) => Shp a (V2 a) (V2 a) -> Svg
-renderShape sh = case sh of
-  Circle col vd v -> circle r col v where r = norm2 vd
-  RectBL col vd v -> rect w h col v where (w, h) = _vxy vd
-  -- RectC col vd v -> rect w h col v where (w, h) = _vxy vd
+-- renderShape :: (Floating a, Real a) => Shp a (V2 a) (V2 a) -> Svg
+-- renderShape sh = case sh of
+--   Circle col vd v -> circle r col v where r = norm2 vd
+--   RectBL col vd v -> rect w h col v where (w, h) = _vxy vd
+--   -- RectC col vd v -> rect w h col v where (w, h) = _vxy vd
   
 
+-- reposition :: (Foldable f, Ord a, Functor f, Fractional a) =>
+--      Frame (V2 a) -> f (Shp p (V2 a) (V2 a)) -> f (Shp p (V2 a) (V2 a))
+-- reposition to shs = reposition1 from to <$> shs where
+--   from = wrappingFrame shs
+
+-- reposition1 :: Fractional a =>
+--                Frame (V2 a)
+--             -> Frame (V2 a)
+--             -> Shp p (V2 a) (V2 a)
+--             -> Shp p (V2 a) (V2 a)
+-- reposition1 from to = bias . frameToFrameB from to 
 
 
-reposition :: (Foldable f, Ord a, Functor f, Fractional a) =>
-     Frame (V2 a) -> f (Shp p (V2 a) (V2 a)) -> f (Shp p (V2 a) (V2 a))
-reposition to shs = reposition1 from to <$> shs where
-  from = wrappingFrame shs
-
-reposition1 :: Fractional a =>
-               Frame (V2 a)
-            -> Frame (V2 a)
-            -> Shp p (V2 a) (V2 a)
-            -> Shp p (V2 a) (V2 a)
-reposition1 from to = bias . frameToFrameB from to 
-
-
-bias :: Num a => Shp p (V2 a) (V2 a) -> Shp p (V2 a) (V2 a)
-bias sh = case sh of
-  r@RectBL{} -> mix2r fbias r where
-    fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
-  x@_ -> x
+-- bias :: Num a => Shp p (V2 a) (V2 a) -> Shp p (V2 a) (V2 a)
+-- bias sh = case sh of
+--   r@RectBL{} -> mix2r fbias r where
+--     fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
+--   x@_ -> x
 
 
 
-wrappingFrame :: (Foldable t, AdditiveGroup v, Ord v) => t (Shp p v v) -> Frame v
-wrappingFrame shs = foldr insf fzero ssh where
-  (sh:ssh) = F.toList shs
-  fzero = mkFrameShp sh
-  insf s acc = mkFrameShp s `mappend` acc
+-- wrappingFrame :: (Foldable t, AdditiveGroup v, Ord v) => t (Shp p v v) -> Frame v
+-- wrappingFrame shs = foldr insf fzero ssh where
+--   (sh:ssh) = F.toList shs
+--   fzero = mkFrameShp sh
+--   insf s acc = mkFrameShp s `mappend` acc
 
-mkFrameShp :: AdditiveGroup v => Shp p v v -> Frame v
-mkFrameShp s = case s of
-    Circle _ vd v -> mkFrame v (v ^+^ vd)
-    RectBL _ vd v -> mkFrame v (v ^+^ vd)
-    RectC _ vd v  -> mkFrame v (v ^+^ vd)    
+-- mkFrameShp :: AdditiveGroup v => Shp p v v -> Frame v
+-- mkFrameShp s = case s of
+--     Circle _ vd v -> mkFrame v (v ^+^ vd)
+--     RectBL _ vd v -> mkFrame v (v ^+^ vd)
+--     RectC _ vd v  -> mkFrame v (v ^+^ vd)    
 
   
--- | Given :
---
--- * a starting frame (in the screen reference)
--- * a destination frame (in the SVG reference)
--- * a 'Shape' whose anchoring point is assumed to be bound by the starting frame
---
--- compose the affine transformations required to move the 'Shape' from starting to destination frame.
---
--- NB : this should be the /only/ function dedicated to transforming point coordinates
-frameToFrameB :: (Bifunctor p, MatrixGroup (DiagMat2 a) v, Fractional a) =>
-     Frame (V2 a) -> Frame (V2 a) -> p v (V2 a) -> p v (V2 a)
-frameToFrameB from to = toFrameBimap to . second flipUD . fromFrameBimap from where
-  flipUD (V2 vx vy) = mkV2 vx (1 - vy)  
+-- -- | Given :
+-- --
+-- -- * a starting frame (in the screen reference)
+-- -- * a destination frame (in the SVG reference)
+-- -- * a 'Shape' whose anchoring point is assumed to be bound by the starting frame
+-- --
+-- -- compose the affine transformations required to move the 'Shape' from starting to destination frame.
+-- --
+-- -- NB : this should be the /only/ function dedicated to transforming point coordinates
+-- frameToFrameB :: (Bifunctor p, MatrixGroup (DiagMat2 a) v, Fractional a) =>
+--      Frame (V2 a) -> Frame (V2 a) -> p v (V2 a) -> p v (V2 a)
+-- frameToFrameB from to = toFrameBimap to . second flipUD . fromFrameBimap from where
+--   flipUD (V2 vx vy) = mkV2 vx (1 - vy)  
 
-fromFrameBimap :: (MatrixGroup (DiagMat2 a) b, Fractional a, Bifunctor p) =>
-     Frame (V2 a) -> p b (V2 a) -> p b (V2 a)
-fromFrameBimap from = bimap f g
-  where
-    (mfrom, vfrom) = frameToAffine from
-    f v = mfrom <\> v
-    g v = mfrom <\> (v ^-^ vfrom)    
+-- fromFrameBimap :: (MatrixGroup (DiagMat2 a) b, Fractional a, Bifunctor p) =>
+--      Frame (V2 a) -> p b (V2 a) -> p b (V2 a)
+-- fromFrameBimap from = bimap f g
+--   where
+--     (mfrom, vfrom) = frameToAffine from
+--     f v = mfrom <\> v
+--     g v = mfrom <\> (v ^-^ vfrom)    
 
-toFrameBimap :: (Num a, LinearMap (DiagMat2 a) b, Bifunctor p) =>
-     Frame (V2 a) -> p b (V2 a) -> p b (V2 a)
-toFrameBimap to = bimap f g
-  where
-    (mto, vto) = frameToAffine to
-    f v = mto #> v
-    g v = (mto #> v) ^+^ vto
+-- toFrameBimap :: (Num a, LinearMap (DiagMat2 a) b, Bifunctor p) =>
+--      Frame (V2 a) -> p b (V2 a) -> p b (V2 a)
+-- toFrameBimap to = bimap f g
+--   where
+--     (mto, vto) = frameToAffine to
+--     f v = mto #> v
+--     g v = (mto #> v) ^+^ vto
 
 
 

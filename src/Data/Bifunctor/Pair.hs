@@ -1,10 +1,13 @@
-module Data.Bifunctor.Pair (Pair(..), Mix2(..))where
+module Data.Bifunctor.Pair (Pair(..), mkPair, Mix2(..))where
 
 import Data.Bifunctor
 
 
 -- | === Pair 
 data Pair a b = P a b deriving (Eq, Show)
+
+mkPair :: a -> b -> Pair a b
+mkPair = P
 
 instance (Monoid a, Monoid b) => Monoid (Pair a b) where
   mempty = P mempty mempty
