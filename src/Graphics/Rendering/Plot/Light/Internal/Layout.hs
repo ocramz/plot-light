@@ -48,45 +48,32 @@ data PlotTy a =
   deriving (Eq, Show)
 
 
+-- | Anchored shapes
+-- 
+-- | Left  := Centered shapes
+-- | Right := Non-centered shapes
+newtype E a = E { unE :: Either a a } deriving (Eq, Show)
 
--- --
-
-newtype E a = E { unE :: Either (ShC a) (ShNC a) } deriving (Eq, Show)
 instance Functor E where
-  fmap = bothE
+  fmap f (E ei) = E (bimap f f ei)
 
-bimapE :: (a -> b) -> (a -> b) -> E a -> E b
-bimapE f g (E ei) = E (bimap (f <$>) (g <$>) ei)
+eitherE :: (a -> b) -> (a -> b) -> E a -> b
+eitherE f g ee = either f g $ unE ee
 
-mapShC :: (b -> b) -> E b -> E b
-mapShC f = bimapE f id
+firstE, secondE :: (a -> a) -> E a -> E a
+firstE f (E ei) = E $ first f ei
+secondE g (E ei) = E $ second g ei
 
-mapShNC :: (b -> b) -> E b -> E b
-mapShNC g = bimapE id g
-
-bothE :: (a -> b) -> E a -> E b
-bothE f = bimapE f f
-
--- | Extract/interpret
+-- * Extract/interpret
 interpretE :: (a -> x) -> E a -> x
-interpretE f ee = either (f . unC) (f . unNC) $ unE ee
+interpretE f = eitherE f f 
 
--- mkHull :: (AdditiveGroup v, Functor f) => Pair (f v) v -> f v
--- mkHull (P vds v) = f <$> vds where
---   f vd = v ^+^ vd
+-- * Constructors
+mkC :: a -> E a
+mkC = E . Left 
 
-
--- | Shapes with centered anchor
-newtype ShC a = C { unC :: a } deriving (Eq, Show, Functor)
-
--- | Shapes with non-centered anchor
-newtype ShNC a = NC { unNC :: a } deriving (Eq, Show, Functor)
-
--- mkC :: ShC a -> E a
-mkC = E . Left . C
-
--- mkNC :: ShNC a -> E a
-mkNC = E . Right . NC
+mkNC :: a -> E a
+mkNC = E . Right 
 
 
 -- | derived combinators
@@ -98,7 +85,9 @@ type Shape1 v = E (Pair v v)
 -- mkRecBL :: a -> a -> Shape1 a -- E (Pair a a)
 -- mkRecBL vd v = mkNC $ RecBL (P vd v) 
 
-
+-- mkHull :: (AdditiveGroup v, Functor f) => Pair (f v) v -> f v
+-- mkHull (P vds v) = f <$> vds where
+--   f vd = v ^+^ vd
 
 
 
@@ -119,50 +108,44 @@ type Shape1 v = E (Pair v v)
 
 
 
-
-
-
-
 -- | --
 
--- repositionE :: (Foldable f, Ord a, Functor f, Fractional a) =>
---                Frame (V2 a)
---             -> f (E (Pair (V2 a) (V2 a)))
---             -> f (E (Pair (V2 a) (V2 a)))
+-- -- repositionE :: (Foldable f, Ord a, Functor f, Fractional a) =>
+-- --                Frame (V2 a)
+-- --             -> f (E (Pair (V2 a) (V2 a)))
+-- --             -> f (E (Pair (V2 a) (V2 a)))
 -- repositionE to shs = reposition1E from to <$> shs where
 --   from = wrappingFrameE shs
 
 -- | Reposition a single shape
-reposition1E :: (Mix2 p, Bifunctor p, Fractional a) =>
-               Frame (V2 a)
-            -> Frame (V2 a)
-            -> E (p (V2 a) (V2 a)) -> E (p (V2 a) (V2 a))
-reposition1E from to = biasE . frameToFrameBE from to 
+reposition1E :: (Mix2 p, Fractional a) =>
+                Frame (V2 a)
+             -> Frame (V2 a)
+             -> E (p (V2 a) (V2 a)) -> E (p (V2 a) (V2 a))
+reposition1E from to = biasE . frameToFrameBE from to
 
--- | Vertical bias applied only to NC shapes (i.e. via `secondE`)
+-- -- | Vertical bias applied only to NC shapes (i.e. via `secondE`)
 biasE :: (Mix2 p, Num a) => E (p (V2 a) (V2 a)) -> E (p (V2 a) (V2 a))
-biasE x = mapShNC (mix2r fbias) x where
+biasE x = secondE (mix2r fbias) x where
   fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
 
-frameToFrameBE :: (Bifunctor p, MatrixGroup (DiagMat2 a) b, Fractional a) =>
-     Frame (V2 a) -> Frame (V2 a) -> E (p b (V2 a)) -> E (p b (V2 a))
-frameToFrameBE from to = toFrameBE to . bothE (second flipUD) . fromFrameBE from
+frameToFrameBE :: (Bifunctor p, Functor f, Fractional a, MatrixGroup (DiagMat2 a) b) =>
+                  Frame (V2 a) -> Frame (V2 a) -> f (p b (V2 a)) -> f (p b (V2 a))
+frameToFrameBE from to = toFrameBE to . fmap (second flipUD) . fromFrameBE from
   where
     flipUD (V2 vx vy) = mkV2 vx (1 - vy)  
     
-
-fromFrameBE :: (MatrixGroup (DiagMat2 a) b, Fractional a, Bifunctor p) =>
-     Frame (V2 a) -> E (p b (V2 a)) -> E (p b (V2 a))
-fromFrameBE from = bothE (bimap f g)
+fromFrameBE :: (MatrixGroup (DiagMat2 a) b, Fractional a, Functor f, Bifunctor p) =>
+               Frame (V2 a) -> f (p b (V2 a)) -> f (p b (V2 a))
+fromFrameBE from = fmap (bimap f g)
   where
     (mfrom, vfrom) = frameToAffine from
     f v = mfrom <\> v
     g v = mfrom <\> (v ^-^ vfrom)        
     
-
-toFrameBE :: (Num a, LinearMap (DiagMat2 a) b, Bifunctor p) =>
-     Frame (V2 a) -> E (p b (V2 a)) -> E (p b (V2 a))
-toFrameBE to = bothE (bimap f g)
+toFrameBE :: (Num a, LinearMap (DiagMat2 a) b, Functor f, Bifunctor p) =>
+             Frame (V2 a) -> f (p b (V2 a)) -> f (p b (V2 a))
+toFrameBE to = fmap (bimap f g)
   where
     (mto, vto) = frameToAffine to
     f v = mto #> v

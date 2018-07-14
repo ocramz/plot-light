@@ -14,7 +14,7 @@ instance Bifunctor Pair where
   bimap f g (P x y) = P (f x) (g y)
 
 -- | Mix2 generalizes Bifunctor because each field is updated with both values  
-class Mix2 p where
+class Bifunctor p => Mix2 p where
   {-# MINIMAL mix2 #-}
   mix2 :: (a -> b -> c) -> (a -> b -> d) -> p a b -> p c d
   mix2l :: (a -> y -> b) -> p a y -> p b y
