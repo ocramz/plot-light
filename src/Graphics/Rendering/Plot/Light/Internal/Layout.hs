@@ -62,11 +62,29 @@ mkShape = Shape
 data PlotElem p a =
    Line a a
  | RectBL (ShapeCol p) a
+ | RectC (ShapeCol p) a
  deriving (Eq, Show, Functor)
 
 mkRectBL :: Num a => a -> a -> ShapeCol p -> V2 a -> PlotElem p (Shape a)
 mkRectBL w h col v = RectBL col $ mkShape $ mkNC (mkPair [vd] v) where
   vd = fromCartesian w h
+
+plotRect :: Real a => ShapeCol a -> E (Pair (V2 a) (V2 a)) -> Svg
+plotRect col ee = rect w h col v where
+    (vd, v) = getVs ee
+    (w, h) = _vxy vd
+
+interpretPE :: Real a => PlotElem a (E (Pair (V2 a) (V2 a))) -> Svg
+interpretPE sh = case sh of
+  RectC col ee -> plotRect col ee
+  RectBL col ee -> plotRect col ee
+
+getVs :: E (Pair a b) -> (a, b)
+getVs = interpretE ff where
+  ff (P vd v) = (vd, v)
+
+
+
 
 
 -- | Anchored shapes
@@ -78,16 +96,13 @@ newtype E a = E { unE :: Either a a } deriving (Eq, Show)
 instance Functor E where
   fmap f (E ei) = E (bimap f f ei)
 
-eitherE :: (a -> b) -> (a -> b) -> E a -> b
-eitherE f g ee = either f g $ unE ee
-
 firstE, secondE :: (a -> a) -> E a -> E a
 firstE f (E ei) = E $ first f ei
 secondE g (E ei) = E $ second g ei
 
 -- * Extract/interpret
 interpretE :: (a -> x) -> E a -> x
-interpretE f = eitherE f f 
+interpretE f ee = either f f (unE ee) 
 
 -- * Constructors
 mkC :: a -> E a
