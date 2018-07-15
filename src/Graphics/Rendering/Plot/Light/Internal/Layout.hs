@@ -98,49 +98,40 @@ plotRect col ee = rect w h col v where
 
 -- | =======
 
-data GSh a =
-    Cir a
-  | Lin a a
+data GSh vd v  =
+    Cir (ExtC vd v)
+  | Lin (Point v) (Point v) deriving (Eq, Show)
 
-mkCir :: Num a => a -> v -> GSh (Sh (V2 a) v)
-mkCir r v = Cir $ mkExtC vd v where vd = r .* e1
-
-mkLin :: v -> v -> GSh (Sh vd v)
-mkLin p1 p2 = Lin (mkPoint p1) (mkPoint p2)
+newtype Point v = Point v deriving (Eq, Show)
+newtype ExtC vd v = ExtC (Pair vd v) deriving (Eq, Show)
+newtype ExtNC vd v = ExtNC (Pair vd v) deriving (Eq, Show)
 
 
-data Sh vd v =
-    Point v
-  | ExtC vd v
-  | ExtNC vd v deriving (Eq, Show)
 
--- | Constructors
-mkPoint :: v -> Sh vd v
-mkPoint = Point
+-- instance Bifunctor Sh where
+--   bimap f g sh = case sh of
+--     Point c -> Point (g c)
+--     ExtC vd v -> ExtC (f vd) (g v)
+--     ExtNC vd v -> ExtNC (f vd) (g v)
 
-mkExtC, mkExtNC :: vd -> v -> Sh vd v
-mkExtC = ExtC
-mkExtNC = ExtNC
+-- -- | Like 'either'
+-- -- interpretSh :: (b -> x) -> (a -> b -> x) -> Sh a b -> x
+-- -- interpretSh f g sh = case sh of
+-- --   Point v     -> f v
+-- --   ExtC vd v   -> g vd v
+-- --   ExtNC vd v  -> g vd v
 
-instance Bifunctor Sh where
-  bimap f g sh = case sh of
-    Point c -> Point (g c)
-    ExtC vd v -> ExtC (f vd) (g v)
-    ExtNC vd v -> ExtNC (f vd) (g v)
+-- interpretSh f g sh = case sh of
+--   Point v     -> f v
+--   ExtC vd v   -> g vd v
+--   ExtNC vd v  -> g vd v
 
--- | Like 'either'
-interpretSh :: (b -> x) -> (a -> b -> x) -> Sh a b -> x
-interpretSh f g sh = case sh of
-  Point v     -> f v
-  ExtC vd v   -> g vd v
-  ExtNC vd v  -> g vd v
-
--- | Like 'mix2r'
-biasSh :: (vd -> v -> v) -> Sh vd v -> Sh vd v
-biasSh f sh = case sh of
-  ExtC vd v -> ExtC vd (f vd v)
-  ExtNC vd v -> ExtNC vd (f vd v)
-  c -> c
+-- -- | Like 'mix2r'
+-- biasSh :: (vd -> v -> v) -> Sh vd v -> Sh vd v
+-- biasSh f sh = case sh of
+--   ExtC vd v -> ExtC vd (f vd v)
+--   ExtNC vd v -> ExtNC vd (f vd v)
+--   c -> c
 
 
 
@@ -238,8 +229,8 @@ getVs = interpretE ff where
 
 -- | Modify the position component of a pair using both size and position parameters.
 -- This only applies to non-centered shapes (i.e. via `secondE`)
-biasEWith :: Mix2 p => (x -> a -> a) -> E (p x a) -> E (p x a)
-biasEWith fbias = secondE (mix2r fbias)
+-- biasEWith :: Mix2 p => (x -> a -> a) -> E (p x a) -> E (p x a)
+-- biasEWith fbias = secondE (mix2r fbias)
 
 frameToFrameBE from to = toFrameBE to . second flipUD . fromFrameBE from
   where
