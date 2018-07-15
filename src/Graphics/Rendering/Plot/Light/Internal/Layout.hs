@@ -61,30 +61,92 @@ mkShape = Shape
 
 data PlotElem p a =
    Line a a
+ | Circle (ShapeCol p) a 
  | RectBL (ShapeCol p) a
  | RectC (ShapeCol p) a
  deriving (Eq, Show, Functor)
 
-mkRectBL :: Num a => a -> a -> ShapeCol p -> V2 a -> PlotElem p (Shape a)
-mkRectBL w h col v = RectBL col $ mkShape $ mkNC (mkPair [vd] v) where
-  vd = fromCartesian w h
+-- mkRectBL :: Num a => a -> a -> ShapeCol p -> V2 a -> PlotElem p (Shape a)
+-- mkRectBL w h col v = RectBL col $ mkShape $ mkNC (mkPair [vd] v) where
+--   vd = fromCartesian w h
 
 plotRect :: Real a => ShapeCol a -> E (Pair (V2 a) (V2 a)) -> Svg
 plotRect col ee = rect w h col v where
     (vd, v) = getVs ee
     (w, h) = _vxy vd
 
-interpretPE :: Real a => PlotElem a (E (Pair (V2 a) (V2 a))) -> Svg
-interpretPE sh = case sh of
-  RectC col ee -> plotRect col ee
-  RectBL col ee -> plotRect col ee
+-- withVs ff f pe = case pe of
+--   Line p1 p2 -> ff (f p1) (f p2)
 
-getVs :: E (Pair a b) -> (a, b)
-getVs = interpretE ff where
-  ff (P vd v) = (vd, v)
+-- -- interpretPE :: Real a => PlotElem a (E (Pair (V2 a) (V2 a))) -> Svg
+-- interpretPE sh = case sh of
+--   Line p1 p2 -> line v1 v2 sw lst col where
+--     v1 = snd $ getVs p1
+--     v2 = snd $ getVs p2    
+--   Circle col ee -> circle r col v where
+--     (vd, v) = getVs ee
+--     r = norm2 vd
+--   RectC col ee -> plotRect col ee
+--   RectBL col ee -> plotRect col ee
 
 
 
+ 
+
+
+
+
+-- | =======
+
+data GSh a =
+    Cir a
+  | Lin a a
+
+mkCir :: Num a => a -> v -> GSh (Sh (V2 a) v)
+mkCir r v = Cir $ mkExtC vd v where vd = r .* e1
+
+mkLin :: v -> v -> GSh (Sh vd v)
+mkLin p1 p2 = Lin (mkPoint p1) (mkPoint p2)
+
+
+data Sh vd v =
+    Point v
+  | ExtC vd v
+  | ExtNC vd v deriving (Eq, Show)
+
+-- | Constructors
+mkPoint :: v -> Sh vd v
+mkPoint = Point
+
+mkExtC, mkExtNC :: vd -> v -> Sh vd v
+mkExtC = ExtC
+mkExtNC = ExtNC
+
+instance Bifunctor Sh where
+  bimap f g sh = case sh of
+    Point c -> Point (g c)
+    ExtC vd v -> ExtC (f vd) (g v)
+    ExtNC vd v -> ExtNC (f vd) (g v)
+
+-- | Like 'either'
+interpretSh :: (b -> x) -> (a -> b -> x) -> Sh a b -> x
+interpretSh f g sh = case sh of
+  Point v     -> f v
+  ExtC vd v   -> g vd v
+  ExtNC vd v  -> g vd v
+
+-- | Like 'mix2r'
+biasSh :: (vd -> v -> v) -> Sh vd v -> Sh vd v
+biasSh f sh = case sh of
+  ExtC vd v -> ExtC vd (f vd v)
+  ExtNC vd v -> ExtNC vd (f vd v)
+  c -> c
+
+
+
+
+-- | =======
+    
 
 
 -- | Anchored shapes
@@ -113,6 +175,15 @@ mkNC = E . Right
 
 
 -- | derived combinators
+
+getVs :: E (Pair a b) -> (a, b)
+getVs = interpretE ff where
+  ff (P vd v) = (vd, v)
+
+
+
+
+
 
 -- type Shape p v = E (p v v)
 -- type Shape1 v = E (Pair v v)
@@ -170,23 +241,21 @@ mkNC = E . Right
 biasEWith :: Mix2 p => (x -> a -> a) -> E (p x a) -> E (p x a)
 biasEWith fbias = secondE (mix2r fbias)
 
-frameToFrameBE :: (Bifunctor p, Functor f, Fractional a, MatrixGroup (DiagMat2 a) b) =>
-                  Frame (V2 a) -> Frame (V2 a) -> f (p b (V2 a)) -> f (p b (V2 a))
-frameToFrameBE from to = toFrameBE to . fmap (second flipUD) . fromFrameBE from
+frameToFrameBE from to = toFrameBE to . second flipUD . fromFrameBE from
   where
     flipUD (V2 vx vy) = mkV2 vx (1 - vy)  
     
-fromFrameBE :: (MatrixGroup (DiagMat2 a) b, Fractional a, Functor f, Bifunctor p) =>
-               Frame (V2 a) -> f (p b (V2 a)) -> f (p b (V2 a))
-fromFrameBE from = fmap (bimap f g)
+fromFrameBE :: (MatrixGroup (DiagMat2 a) b, Fractional a, Bifunctor p) =>
+               Frame (V2 a) -> p b (V2 a) -> p b (V2 a)
+fromFrameBE from = bimap f g
   where
     (mfrom, vfrom) = frameToAffine from
     f v = mfrom <\> v
     g v = mfrom <\> (v ^-^ vfrom)        
     
-toFrameBE :: (Num a, LinearMap (DiagMat2 a) b, Functor f, Bifunctor p) =>
-             Frame (V2 a) -> f (p b (V2 a)) -> f (p b (V2 a))
-toFrameBE to = fmap (bimap f g)
+toFrameBE :: (Num a, LinearMap (DiagMat2 a) b, Bifunctor p) =>
+             Frame (V2 a) -> p b (V2 a) -> p b (V2 a)
+toFrameBE to = bimap f g
   where
     (mto, vto) = frameToAffine to
     f v = mto #> v
