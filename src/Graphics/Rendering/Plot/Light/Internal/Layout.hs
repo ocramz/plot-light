@@ -59,12 +59,12 @@ mkShape = Shape
 --   | PolyLine [a]
 --   deriving (Eq, Show)
 
-data PlotElem p a =
-   Line a a
- | Circle (ShapeCol p) a 
- | RectBL (ShapeCol p) a
- | RectC (ShapeCol p) a
- deriving (Eq, Show, Functor)
+-- data PlotElem p a =
+--    Line a a
+--  | Circle (ShapeCol p) a 
+--  | RectBL (ShapeCol p) a
+--  | RectC (ShapeCol p) a
+--  deriving (Eq, Show, Functor)
 
 -- mkRectBL :: Num a => a -> a -> ShapeCol p -> V2 a -> PlotElem p (Shape a)
 -- mkRectBL w h col v = RectBL col $ mkShape $ mkNC (mkPair [vd] v) where
@@ -100,7 +100,20 @@ plotRect col ee = rect w h col v where
 
 data GSh vd v  =
     Cir (ExtC vd v)
-  | Lin (Point v) (Point v) deriving (Eq, Show)
+  | RectBL (ExtNC vd v)
+  | Lin (Point v) (Point v)
+  | PLyn [(Point v)] deriving (Eq, Show)
+
+interpGSh :: (ExtC vd v -> p)
+          -> (ExtNC vd v -> p)
+          -> ([Point v] -> p)
+          -> GSh vd v
+          -> p
+interpGSh fc fnc fp sh = case sh of
+  Cir ec -> fc ec
+  RectBL enc -> fnc enc
+  Lin p1 p2 -> fp [p1, p2]
+  PLyn ps -> fp ps
 
 newtype Point v = Point v deriving (Eq, Show)
 newtype ExtC vd v = ExtC (Pair vd v) deriving (Eq, Show)
