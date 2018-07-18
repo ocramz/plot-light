@@ -6,6 +6,9 @@ import Data.Semigroup
 -- | === Pair 
 data Pair a b = P a b deriving (Eq, Show)
 
+instance Functor (Pair a) where
+  fmap f (P x a) = P x (f a)
+
 mkPair :: a -> b -> Pair a b
 mkPair = P
 

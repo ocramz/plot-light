@@ -1,4 +1,5 @@
 {-# language TypeFamilies, DeriveFunctor, FlexibleContexts #-}
+{-# language GeneralizedNewtypeDeriving #-}
 module Graphics.Rendering.Plot.Light.Internal.Layout where
 
 import Data.Bifunctor
@@ -47,10 +48,9 @@ instance (Applicative g, Applicative f) => Applicative (Compose f g) where
 --
 -- * Anchored either at its center or not
 -- * Has an anchor point (= position vector) and zero or more size vectors (e.g. a rectangle has only one size vector (i.e. is uniquely defined by its position vector and its size vector), a general N-polygon has N)
-newtype Shape a = Shape { unShape :: E (Pair [V2 a] (V2 a)) } deriving (Eq, Show)
 
-mkShape :: E (Pair [V2 a] (V2 a)) -> Shape a
-mkShape = Shape
+
+
 
  
 
@@ -59,39 +59,6 @@ mkShape = Shape
 --   | PolyLine [a]
 --   deriving (Eq, Show)
 
--- data PlotElem p a =
---    Line a a
---  | Circle (ShapeCol p) a 
---  | RectBL (ShapeCol p) a
---  | RectC (ShapeCol p) a
---  deriving (Eq, Show, Functor)
-
--- mkRectBL :: Num a => a -> a -> ShapeCol p -> V2 a -> PlotElem p (Shape a)
--- mkRectBL w h col v = RectBL col $ mkShape $ mkNC (mkPair [vd] v) where
---   vd = fromCartesian w h
-
-plotRect :: Real a => ShapeCol a -> E (Pair (V2 a) (V2 a)) -> Svg
-plotRect col ee = rect w h col v where
-    (vd, v) = getVs ee
-    (w, h) = _vxy vd
-
--- withVs ff f pe = case pe of
---   Line p1 p2 -> ff (f p1) (f p2)
-
--- -- interpretPE :: Real a => PlotElem a (E (Pair (V2 a) (V2 a))) -> Svg
--- interpretPE sh = case sh of
---   Line p1 p2 -> line v1 v2 sw lst col where
---     v1 = snd $ getVs p1
---     v2 = snd $ getVs p2    
---   Circle col ee -> circle r col v where
---     (vd, v) = getVs ee
---     r = norm2 vd
---   RectC col ee -> plotRect col ee
---   RectBL col ee -> plotRect col ee
-
-
-
- 
 
 
 
@@ -102,37 +69,43 @@ data GSh vd v  =
     Cir (ExtC vd v)
   | RectBL (ExtNC vd v)
   | Lin (Point v) (Point v)
-  | PLyn [(Point v)] deriving (Eq, Show)
+  | PolyLin [Point v]
+  deriving (Eq, Show, Functor)
 
-interpGSh :: (ExtC vd v -> p)
-          -> (ExtNC vd v -> p)
-          -> ([Point v] -> p)
-          -> GSh vd v
-          -> p
-interpGSh fc fnc fp sh = case sh of
-  Cir ec -> fc ec
-  RectBL enc -> fnc enc
-  Lin p1 p2 -> fp [p1, p2]
-  PLyn ps -> fp ps
+instance Bifunctor GSh where
+  bimap f g sh = case sh of
+    Cir p -> Cir $ bimap f g p
+    RectBL p -> RectBL $ bimap f g p
+    Lin p1 p2 -> Lin (g <$> p1) (g <$> p2)
+    PolyLin ps -> PolyLin (map (g <$>) ps)
 
-newtype Point v = Point v deriving (Eq, Show)
-newtype ExtC vd v = ExtC (Pair vd v) deriving (Eq, Show)
-newtype ExtNC vd v = ExtNC (Pair vd v) deriving (Eq, Show)
+-- -- interpGShPartial f sh = case sh of
+-- --   Cir ec -> Cir $ f ec
+-- --   x -> x
+
+renderGSh col sh = case sh of
+  Cir (ExtC vd v) -> circle r col v where
+    r = norm2 vd
+  RectBL (ExtNC vd v) -> rect w h col v where
+    (w, h) = _vxy vd
+  -- Lin (Point v) (Point v2) -> line v v2 -- ...
+
+
+newtype Point v = Point v deriving (Eq, Show, Functor)
+data ExtC vd v = ExtC vd v deriving (Eq, Show, Functor)
+data ExtNC vd v = ExtNC vd v deriving (Eq, Show, Functor)
+instance Bifunctor ExtC where
+  bimap f g (ExtC vd v) = ExtC (f vd) (g v)
+instance Bifunctor ExtNC where
+  bimap f g (ExtNC vd v) = ExtNC (f vd) (g v)  
+instance Mix2 ExtNC where
+  mix2 f g (ExtNC vd v) = ExtNC (f vd v) (g vd v)
+
+
+  
 
 
 
--- instance Bifunctor Sh where
---   bimap f g sh = case sh of
---     Point c -> Point (g c)
---     ExtC vd v -> ExtC (f vd) (g v)
---     ExtNC vd v -> ExtNC (f vd) (g v)
-
--- -- | Like 'either'
--- -- interpretSh :: (b -> x) -> (a -> b -> x) -> Sh a b -> x
--- -- interpretSh f g sh = case sh of
--- --   Point v     -> f v
--- --   ExtC vd v   -> g vd v
--- --   ExtNC vd v  -> g vd v
 
 -- interpretSh f g sh = case sh of
 --   Point v     -> f v
@@ -149,52 +122,8 @@ newtype ExtNC vd v = ExtNC (Pair vd v) deriving (Eq, Show)
 
 
 
--- | =======
-    
 
 
--- | Anchored shapes
--- 
--- | Left  := Centered shapes
--- | Right := Non-centered shapes
-newtype E a = E { unE :: Either a a } deriving (Eq, Show)
-
-instance Functor E where
-  fmap f (E ei) = E (bimap f f ei)
-
-firstE, secondE :: (a -> a) -> E a -> E a
-firstE f (E ei) = E $ first f ei
-secondE g (E ei) = E $ second g ei
-
--- * Extract/interpret
-interpretE :: (a -> x) -> E a -> x
-interpretE f ee = either f f (unE ee) 
-
--- * Constructors
-mkC :: a -> E a
-mkC = E . Left 
-
-mkNC :: a -> E a
-mkNC = E . Right 
-
-
--- | derived combinators
-
-getVs :: E (Pair a b) -> (a, b)
-getVs = interpretE ff where
-  ff (P vd v) = (vd, v)
-
-
-
-
-
-
--- type Shape p v = E (p v v)
--- type Shape1 v = E (Pair v v)
-
-
--- mkRecBL :: a -> a -> Shape1 a -- E (Pair a a)
--- mkRecBL vd v = mkNC $ RecBL (P vd v) 
 
 -- mkHull :: (AdditiveGroup v, Functor f) => Pair (f v) v -> f v
 -- mkHull (P vds v) = f <$> vds where
