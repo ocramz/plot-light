@@ -60,6 +60,37 @@ instance (Applicative g, Applicative f) => Applicative (Compose f g) where
 --   deriving (Eq, Show)
 
 
+-- -- 
+
+-- data Sh s =
+--     Circ s
+--   | Rect s
+--   | Line s s deriving (Eq, Show, Functor)
+
+-- mkRectBL w h v = Rect $ BL vd v where vd = fromCartesian w h
+
+-- -- renderSh sh = case sh of
+--   -- Rect
+
+-- data ShTy vd v = PP v | C vd v | BL vd v | BC vd v deriving (Eq, Show, Functor)
+-- instance Bifunctor ShTy where
+--   bimap f g sh = case sh of
+--     PP v -> PP (g v)
+--     C vd v -> C (f vd) (g v)
+--     BL vd v -> BL (f vd) (g v)
+--     BC vd v -> BC (f vd) (g v)        
+
+-- biasShTy :: (vd -> v -> v) -> ShTy vd v -> ShTy vd v
+-- biasShTy fbias sh = case sh of
+--   BL vd v -> BL vd (fbias vd v)
+--   BC vd v -> BC vd (fbias vd v)
+--   x -> x
+
+
+-- --
+
+  
+
 
 
 
