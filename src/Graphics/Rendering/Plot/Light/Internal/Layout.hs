@@ -60,101 +60,8 @@ instance (Applicative g, Applicative f) => Applicative (Compose f g) where
 --   deriving (Eq, Show)
 
 
--- -- 
-
--- data Sh s =
---     Circ s
---   | Rect s
---   | Line s s deriving (Eq, Show, Functor)
-
--- mkRectBL w h v = Rect $ BL vd v where vd = fromCartesian w h
-
--- -- renderSh sh = case sh of
---   -- Rect
-
--- data ShTy vd v = PP v | C vd v | BL vd v | BC vd v deriving (Eq, Show, Functor)
--- instance Bifunctor ShTy where
---   bimap f g sh = case sh of
---     PP v -> PP (g v)
---     C vd v -> C (f vd) (g v)
---     BL vd v -> BL (f vd) (g v)
---     BC vd v -> BC (f vd) (g v)        
-
--- biasShTy :: (vd -> v -> v) -> ShTy vd v -> ShTy vd v
--- biasShTy fbias sh = case sh of
---   BL vd v -> BL vd (fbias vd v)
---   BC vd v -> BC vd (fbias vd v)
---   x -> x
-
-
--- --
-
-  
-
-
-
 
 -- | =======
-
-data GSh vd v  =
-    Cir (ExtC vd v)
-  | RectBL (ExtNC vd v)
-  | Lin (Point v) (Point v)
-  | PolyLin [Point v]
-  deriving (Eq, Show, Functor)
-
-instance Bifunctor GSh where
-  bimap f g sh = case sh of
-    Cir p -> Cir $ bimap f g p
-    RectBL p -> RectBL $ bimap f g p
-    Lin p1 p2 -> Lin (g <$> p1) (g <$> p2)
-    PolyLin ps -> PolyLin (map (g <$>) ps)
-
--- -- interpGShPartial f sh = case sh of
--- --   Cir ec -> Cir $ f ec
--- --   x -> x
-
-renderGSh col sh = case sh of
-  Cir (ExtC vd v) -> circle r col v where
-    r = norm2 vd
-  RectBL (ExtNC vd v) -> rect w h col v where
-    (w, h) = _vxy vd
-  -- Lin (Point v) (Point v2) -> line v v2 -- ...
-
-
-newtype Point v = Point v deriving (Eq, Show, Functor)
-data ExtC vd v = ExtC vd v deriving (Eq, Show, Functor)
-data ExtNC vd v = ExtNC vd v deriving (Eq, Show, Functor)
-instance Bifunctor ExtC where
-  bimap f g (ExtC vd v) = ExtC (f vd) (g v)
-instance Bifunctor ExtNC where
-  bimap f g (ExtNC vd v) = ExtNC (f vd) (g v)  
-instance Mix2 ExtNC where
-  mix2 f g (ExtNC vd v) = ExtNC (f vd v) (g vd v)
-
-
-  
-
-
-
-
--- interpretSh f g sh = case sh of
---   Point v     -> f v
---   ExtC vd v   -> g vd v
---   ExtNC vd v  -> g vd v
-
--- -- | Like 'mix2r'
--- biasSh :: (vd -> v -> v) -> Sh vd v -> Sh vd v
--- biasSh f sh = case sh of
---   ExtC vd v -> ExtC vd (f vd v)
---   ExtNC vd v -> ExtNC vd (f vd v)
---   c -> c
-
-
-
-
-
-
 
 -- mkHull :: (AdditiveGroup v, Functor f) => Pair (f v) v -> f v
 -- mkHull (P vds v) = f <$> vds where
@@ -195,16 +102,21 @@ instance Mix2 ExtNC where
 --              -> E (p (V2 a) (V2 a)) -> E (p (V2 a) (V2 a))
 -- reposition1E from to = biasE . frameToFrameBE from to
 
--- | Vertical bias applied only to NC shapes (i.e. via `secondE`)
--- biasE :: (Mix2 p, Num a) => E (p (V2 a) (V2 a)) -> E (p (V2 a) (V2 a))
--- biasE x = secondE (mix2r fbias) x where
---   fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
+-- | Vertical bias (to be applied only to non-centered shapes)
+biasE :: (Mix2 p, Num a) => p (V2 a) (V2 a) -> p (V2 a) (V2 a)
+biasE x = mix2r fbias x where
+  fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
 
 -- | Modify the position component of a pair using both size and position parameters.
 -- This only applies to non-centered shapes (i.e. via `secondE`)
 -- biasEWith :: Mix2 p => (x -> a -> a) -> E (p x a) -> E (p x a)
 -- biasEWith fbias = secondE (mix2r fbias)
 
+frameToFrameBE :: (Bifunctor p, MatrixGroup (DiagMat2 a) b, Fractional a) =>
+                  Frame (V2 a)
+               -> Frame (V2 a)
+               -> p b (V2 a)
+               -> p b (V2 a)
 frameToFrameBE from to = toFrameBE to . second flipUD . fromFrameBE from
   where
     flipUD (V2 vx vy) = mkV2 vx (1 - vy)  
@@ -235,29 +147,26 @@ toFrameBE to = bimap f g
 
 
 
-
-
-
 -- | =============
 -- | A DSL for geometrical shapes
 
--- data Shp p vd v =
---     Circle (ShapeCol p) vd v  -- ^ Circle
---   | RectBL (ShapeCol p) vd v  -- ^ Rectangle, anchored bottom-left
---   | RectC (ShapeCol p) vd v  -- ^ Rectangle, anchored center
---   deriving (Eq, Show)
+data Shp p vd v =
+    Circle (ShapeCol p) vd v  -- ^ Circle
+  | RectBL (ShapeCol p) vd v  -- ^ Rectangle, anchored bottom-left
+  | RectC (ShapeCol p) vd v  -- ^ Rectangle, anchored center
+  deriving (Eq, Show)
 
--- instance Bifunctor (Shp p) where
---   bimap f g sh = case sh of
---     Circle k vd v -> Circle k (f vd) (g v)
---     RectBL k vd v -> RectBL k (f vd) (g v)
---     RectC k vd v -> RectC k (f vd) (g v)    
+instance Bifunctor (Shp p) where
+  bimap f g sh = case sh of
+    Circle k vd v -> Circle k (f vd) (g v)
+    RectBL k vd v -> RectBL k (f vd) (g v)
+    RectC k vd v -> RectC k (f vd) (g v)    
 
--- instance Mix2 (Shp p) where
---   mix2 f g sh = case sh of
---     Circle k vd v -> Circle k (f vd v) (g vd v)
---     RectBL k vd v -> RectBL k (f vd v) (g vd v) 
---     RectC k vd v -> RectC k (f vd v) (g vd v)   
+instance Mix2 (Shp p) where
+  mix2 f g sh = case sh of
+    Circle k vd v -> Circle k (f vd v) (g vd v)
+    RectBL k vd v -> RectBL k (f vd v) (g vd v) 
+    RectC k vd v -> RectC k (f vd v) (g vd v)   
 
 -- renderShape :: (Floating a, Real a) => Shp a (V2 a) (V2 a) -> Svg
 -- renderShape sh = case sh of
