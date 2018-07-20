@@ -91,34 +91,64 @@ newtype E a = E { unE :: Either a a} deriving (Eq, Show)
 -- blaei :: (p vd1 v1 -> q vd2 v2)
 --       -> (p vd1 v1 -> q vd2 v2)
 --       -> E p vd1 v1 -> E q vd2 v2
-blaei f g (E ei) = E y where
+blaei fl fr (E ei) = E y where
   y = case ei of
-    Left l -> Left (f l)
-    Right r -> Right (g r)
+    Left l -> Left (fl l)
+    Right r -> Right (fr r)
 
 
 -- blaei' :: (p vd v -> c) -> (p vd v -> c) -> E p vd v -> c
 blaei' f g (E ei) = either f g ei
 
+extract :: E c -> c
 extract (E ei) = either id id ei 
 
 
 
--- | --
 
--- -- repositionE :: (Foldable f, Ord a, Functor f, Fractional a) =>
--- --                Frame (V2 a)
--- --             -> f (E (Pair (V2 a) (V2 a)))
--- --             -> f (E (Pair (V2 a) (V2 a)))
--- repositionE to shs = reposition1E from to <$> shs where
---   from = wrappingFrameE shs
+-- | =============
+-- | A DSL for geometrical shapes
 
--- | Reposition a single shape
--- reposition1E :: (Mix2 p, Fractional a) =>
---                 Frame (V2 a)
---              -> Frame (V2 a)
---              -> E (p (V2 a) (V2 a)) -> E (p (V2 a) (V2 a))
--- reposition1E from to = biasE . frameToFrameBE from to
+
+data Shape p vd v =
+    Cir (ShapeCol p) vd v  -- ^ Circle
+  | Rec (ShapeCol p) vd v  -- ^ Rectangle
+  | Lin (LineOptions p) v v -- ^ Line
+  | PLin (LineOptions p) [v]
+  deriving (Eq, Show)
+
+instance Bifunctor (Shape p) where
+  bimap f g sh = case sh of
+    Cir k vd v -> Cir k (f vd) (g v)
+    Rec k vd v -> Rec k (f vd) (g v)
+    Lin o v1 v2 -> Lin o (g v1) (g v2)
+
+-- mkRectBL
+--   :: Fractional a =>
+--      a -> a -> ShapeCol p -> V2 a -> E (Shape p (V2 a) (V2 a))
+mkRectBL w h col v = E $ Left $ Rec col vd v' where
+  vd = fromCartesian w h
+  v' = v ^-^ (vd ./ 2)
+
+mkLin col p1 p2 = E $ Right $ Lin col p1 p2
+
+
+
+
+
+ 
+-- renderShape sh = case sh of
+--   Circle col vd v -> circle r col v where r = norm2 vd
+--   RectBL col vd v -> rect w h col v where (w, h) = _vxy vd
+--   -- RectC col vd v -> rect w h col v where (w, h) = _vxy vd
+  
+
+-- reposition to shs = reposition1 from to <$> shs where
+--   from = wrappingFrame shs
+
+
+-- reposition1 from to = bias . frameToFrameB from to 
+
 
 -- | Vertical bias (to be applied only to non-centered shapes)
 bias :: (Mix2 p, Num a) => p (V2 a) (V2 a) -> p (V2 a) (V2 a)
@@ -154,84 +184,6 @@ toFrameB to = bimap f g
     (mto, vto) = frameToAffine to
     f v = mto #> v
     g v = (mto #> v) ^+^ vto
-
-
-
--- | -- --
-
-
-
--- | =============
--- | A DSL for geometrical shapes
-
-
-data Shape p vd v =
-    Cir (ShapeCol p) vd v  -- ^ Circle
-  | Rec (ShapeCol p) vd v  -- ^ Rectangle
-  | Lin (LineOptions p) v v -- ^ Line
-  | PLin (LineOptions p) [v]
-  deriving (Eq, Show)
-
-instance Bifunctor (Shape p) where
-  bimap f g sh = case sh of
-    Cir k vd v -> Cir k (f vd) (g v)
-    Rec k vd v -> Rec k (f vd) (g v)
-    Lin o v1 v2 -> Lin o (g v1) (g v2)
-
--- mkRectBL
---   :: Fractional a =>
---      a -> a -> ShapeCol p -> V2 a -> E (Shape p (V2 a) (V2 a))
-mkRectBL w h col v = E $ Left $ Rec col vd v' where
-  vd = fromCartesian w h
-  v' = v ^-^ (vd ./ 2)
-
-mkLin col p1 p2 = E $ Right $ Lin col p1 p2
-
-
-
-
-
--- | =============
--- | A DSL for geometrical shapes
-
-data Shp p vd v =
-    Circle (ShapeCol p) vd v  -- ^ Circle
-  | RectBL (ShapeCol p) vd v  -- ^ Rectangle, anchored bottom-left
-  | RectC (ShapeCol p) vd v  -- ^ Rectangle, anchored center
-  deriving (Eq, Show)
-
-instance Bifunctor (Shp p) where
-  bimap f g sh = case sh of
-    Circle k vd v -> Circle k (f vd) (g v)
-    RectBL k vd v -> RectBL k (f vd) (g v)
-    RectC k vd v -> RectC k (f vd) (g v)    
- 
-
--- renderShape :: (Floating a, Real a) => Shp a (V2 a) (V2 a) -> Svg
--- renderShape sh = case sh of
---   Circle col vd v -> circle r col v where r = norm2 vd
---   RectBL col vd v -> rect w h col v where (w, h) = _vxy vd
---   -- RectC col vd v -> rect w h col v where (w, h) = _vxy vd
-  
-
--- reposition :: (Foldable f, Ord a, Functor f, Fractional a) =>
---      Frame (V2 a) -> f (Shp p (V2 a) (V2 a)) -> f (Shp p (V2 a) (V2 a))
--- reposition to shs = reposition1 from to <$> shs where
---   from = wrappingFrame shs
-
--- reposition1 :: Fractional a =>
---                Frame (V2 a)
---             -> Frame (V2 a)
---             -> Shp p (V2 a) (V2 a)
---             -> Shp p (V2 a) (V2 a)
--- reposition1 from to = bias . frameToFrameB from to 
-
-
--- bias :: Num a => Shp p (V2 a) (V2 a) -> Shp p (V2 a) (V2 a)
--- bias sh = case sh of
---   r@RectBL{} -> mix2r fbias r where
---     fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
---   x@_ -> x
 
 
 
