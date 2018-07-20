@@ -23,12 +23,12 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** Matrices
   Mat2(..), DiagMat2(..), diagMat2, rotMtx,
   -- ** Primitive elements
-  origin, oneOne, e1, e2,
+  origin, oneOne, e1, e2, 
   -- ** Vector norm operations 
   norm2, normalize2,
-  -- ** Vector construction
+  -- ** Vector projection
+  projX, projY, 
   -- ** Operations on points
-  -- moveLabeledPointBwFrames,
   pointRange, 
   -- ** Operations on vectors
   frameToFrame, frameToFrameValue, fromFrame, toFrame,
@@ -621,6 +621,10 @@ e1 = V2 1 0
 -- | Y-aligned unit vector
 e2 :: Num a => V2 a
 e2 = V2 0 1
+
+projX, projY :: Num a => V2 a -> V2 a
+projX v = (v <.> e1) .* e1
+projY v = (v <.> e2) .* e2
 
 
 

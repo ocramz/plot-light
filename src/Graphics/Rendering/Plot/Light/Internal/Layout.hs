@@ -34,26 +34,6 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 
 
--- | =======
-
-newtype E a = E { unE :: Either a a} deriving (Eq, Show)
-
-mkEL, mkER :: a -> E a
-mkER = E . Right
-mkEL = E . Left
-
-bimapE :: (t -> a) -> (t -> a) -> E t -> E a
-bimapE fl fr (E ei) = E y where
-  y = case ei of
-    Left l -> Left (fl l)
-    Right r -> Right (fr r)
-
-eitherE :: (b -> c) -> (b -> c) -> E b -> c
-eitherE f g ee = either f g (unE ee)    
-
-extractWith :: (a -> b) -> E a -> b
-extractWith f = eitherE f f
-
 
 
 
@@ -65,55 +45,83 @@ extractWith f = eitherE f f
 -- * Anchored either at its center or not
 -- * Has an anchor point (= position vector) and zero or more size vectors (e.g. a rectangle has only one size vector (i.e. is uniquely defined by its position vector and its size vector), a general N-polygon has N)
 
+
+
 data Sh p vd v =
-    Cir (ShapeCol p) vd v  -- ^ Circle
-  | Rec (ShapeCol p) vd v  -- ^ Rectangle
-  | Lin (LineOptions p) v v -- ^ Line
-  | PLin (LineOptions p) [v] -- ^ PolyLine
-  deriving (Eq, Show)
+    Circle (ShapeCol p) vd v
+  | Rect (ShapeCol p) vd (Align v) deriving (Eq, Show)
+
+data Align v = BL v | BC v | C v deriving (Eq, Show, Functor)
 
 instance Bifunctor (Sh p) where
   bimap f g sh = case sh of
-    Cir k vd v -> Cir k (f vd) (g v)
-    Rec k vd v -> Rec k (f vd) (g v)
-    Lin o v1 v2 -> Lin o (g v1) (g v2)
-    PLin o vs -> PLin o (g <$> vs)    
+    Circle k vd v -> Circle k (f vd) (g v)
+    Rect k vd alv -> Rect k (f vd) (g <$> alv)
 
-type Shape a = E (Sh a (V2 a) (V2 a))
+mkRectBL w h col v = Rect col vd (BL v) where vd = fromCartesian w h
 
-mkRectBL :: Num a => a -> a -> ShapeCol a -> V2 a -> Shape a
-mkRectBL w h col v = mkEL $ Rec col vd v where
-  vd = fromCartesian w h
-
-mkRectC w h col v = mkER $ Rec col vd v' where
+mkRectC w h col v = Rect col vd (C v') where
   vd = fromCartesian w h
   v' = v ^-^ (vd ./ 2)
 
--- mkLin col p1 p2 = mkER $ Lin col p1 p2
+mkRectBC w h col v = Rect col vd (C v') where
+  vd = fromCartesian w h
+  v' = v ^-^ (projX vd ./ 2)
+
+-- | retrieve the starting point.
+--
+-- NB inverts the function applied at construction time
+getOriginalP sh = case sh of
+  Circle _ _ v -> v
+  Rect _ vd alv -> case alv of
+    BL v -> v
+    BC v -> v ^+^ (projX vd ./ 2)
+    C v -> v ^+^ (vd ./ 2)
 
 
 
+-- type Shape a = E (Sh a (V2 a) (V2 a))
 
 
- 
--- renderShape sh = case sh of
+-- * Constructors
+
+-- -- -- mkRectBL :: Num a => a -> a -> ShapeCol a -> V2 a -> Shape a
+-- mkRectBL w h col v = Rect col (BL vd v) where
+--   vd = fromCartesian w h
+
+-- mkRectC w h col v = Rect col (C vd v) where
+--   vd = fromCartesian w h
+--   v' = v ^-^ (vd ./ 2)
+
+-- -- mkLin col p1 p2 = mkER $ Lin col p1 p2
+
+-- getOriginalPoint sh = case sh of
+--   Circle _ _ v -> v
+--   Rect _ al -> case al of
+--     BL vd v -> v ^+^ (0.5 .* vd)
+--     BC vd v -> v ^+^ (0.5 .* projY vd)
+--     C _ v  -> v 
+
+
+-- -- 
+
+-- -- | Render SVG markup from a Shape
+-- shapeToSvg :: (Floating a, Show a, RealFrac a) => Sh a (V2 a) (V2 a) -> Svg 
+-- shapeToSvg sh = case sh of
 --   Circle col vd v -> circle r col v where r = norm2 vd
---   RectBL col vd v -> rect w h col v where (w, h) = _vxy vd
---   -- RectC col vd v -> rect w h col v where (w, h) = _vxy vd
-  
+--   Rect col vd v -> rect w h col v where (w, h) = _vxy vd
+--   Line opts v1 v2 -> line' v1 v2 opts
+--   PLine opts slj vs -> polyline' opts slj vs
+
+
+
 
 -- reposition to shs = reposition1 from to <$> shs where
 --   from = wrappingFrame shs
 
 
--- reposition1 from to = bias . frameToFrameB from to 
 
 
--- | Modify the position component of a pair using both size and position parameters.
--- This only applies to non-centered shapes 
-bias :: (Mix2 p, Num a) => p (V2 a) (V2 a) -> p (V2 a) (V2 a)
-bias x = mix2r fbias x where
-  fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
 
 
 -- | Given :
@@ -124,7 +132,30 @@ bias x = mix2r fbias x where
 --
 -- compose the affine transformations required to move the 'Shape' from starting to destination frame.
 --
--- NB : this should be the /only/ function dedicated to transforming point coordinate
+-- NB : this should be the /only/ function dedicated to transforming point coordinates.
+
+-- reposition1 :: Fractional a =>
+--                Frame (V2 a)
+--             -> Frame (V2 a)
+--             -> E (Sh p (V2 a) (V2 a))
+--             -> Sh p (V2 a) (V2 a)
+-- reposition1 from to = eitherE (biasY . f2f) f2f where
+--   f2f = frameToFrameB from to
+
+
+-- -- | Modify the Y position component of a pair using both size and position parameters.
+-- -- This only applies to non-centered shapes (such as the rectangle, which in SVG is anchored at its bottom-left corner)
+biasY :: Num a => Sh p (V2 a) (V2 a) -> Sh p (V2 a) (V2 a)
+biasY sh = case sh of
+  Rect k vd alv -> Rect k vd (fbias vd alv)
+  x -> x
+  where
+    fbias vd alv = case alv of
+      BL v -> BL (v ^-^ fromCartesian 0 (_vy vd))
+      BC v -> BC (v ^-^ fromCartesian 0 (_vy vd))
+      c -> c
+
+
 frameToFrameB :: (Bifunctor p, MatrixGroup (DiagMat2 a) b, Fractional a) =>
                   Frame (V2 a)
                -> Frame (V2 a)
@@ -158,30 +189,21 @@ toFrameB to = bimap f g
 
 -- | --
 
--- -- | Constructs a Frame from a shape, using the second parameter only (position vectors)
--- mkFrameE :: Ord a => E (Pair x a) -> Frame a
--- mkFrameE = interpretE (frameFromPointsWith f) where
---   f (P _ v) = v
 
--- wrappingFrameE :: (Foldable t, Ord v, Monoid v) => t (E (Pair v1 v)) -> Frame v
--- wrappingFrameE shs = foldr insf fzero ssh where
---   (sh:ssh) = F.toList shs
---   fzero = mkFrameE sh
---   insf s acc = mkFrameE s `mappend` acc
-
-
-
--- wrappingFrame :: (Foldable t, AdditiveGroup v, Ord v) => t (Shp p v v) -> Frame v
+-- wrappingFrame :: (Foldable t, AdditiveGroup v, Ord v) => t (E (Sh p v v)) -> Frame v
 -- wrappingFrame shs = foldr insf fzero ssh where
 --   (sh:ssh) = F.toList shs
---   fzero = mkFrameShp sh
---   insf s acc = mkFrameShp s `mappend` acc
+--   fzero = mkFrameSh sh
+--   insf s acc = mkFrameSh s `mappend` acc
 
--- mkFrameShp :: AdditiveGroup v => Shp p v v -> Frame v
--- mkFrameShp s = case s of
+-- mkFrameSh :: (AdditiveGroup v, Ord v) => E (Sh p v v) -> Frame v
+-- mkFrameSh ee = extractWith ff ee where
+--   ff s = case s of
 --     Circle _ vd v -> mkFrame v (v ^+^ vd)
---     RectBL _ vd v -> mkFrame v (v ^+^ vd)
---     RectC _ vd v  -> mkFrame v (v ^+^ vd)    
+--     Rect _ vd v -> mkFrame v (v ^+^ vd)
+--     Line _ v1 v2 -> mkFrame v1 v2
+--     PLine _ _ vs -> frameFromPoints vs
+
 
   
 

@@ -32,7 +32,7 @@ module Graphics.Rendering.Plot.Light.Internal
     line, line', tick, ticks, LineOptions(..),
     -- axis,
     -- ** Polylines
-    polyline, filledPolyline,
+    polyline, polyline', filledPolyline,
     -- filledBand,
     strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..),
     -- ** Text
