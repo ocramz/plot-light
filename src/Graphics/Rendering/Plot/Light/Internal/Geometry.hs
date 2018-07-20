@@ -33,7 +33,9 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   -- ** Operations on vectors
   frameToFrame, frameToFrameValue, fromFrame, toFrame,
   -- ** Typeclasses
-  AdditiveGroup(..), negateAG, VectorSpace(..), (./), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..), Eps(..),
+  AdditiveGroup(..), negateAG, VectorSpace(..), (./), Hermitian(..), LinearMap(..), MultiplicativeSemigroup(..), MatrixGroup(..),
+  -- *** Numerical precision
+  Eps(..), nearZero, 
   -- ** Utilities
   meshGrid, subdivSegment, interpolateBilinear
   )
@@ -279,7 +281,7 @@ midPoint u v = centerOfMass [u, v]
 
 centerOfMass :: (Foldable t, VectorSpace v, Fractional (Scalar v), Semigroup v, Monoid v) =>
      t v -> v
-centerOfMass vs = (foldr ins mempty vs) ./ n where
+centerOfMass vs = foldr ins mempty vs ./ n where
   ins a b = a <> b
   n = fromIntegral $ length vs
 
@@ -645,7 +647,8 @@ instance Eps (V2 Double) where
 instance Eps (V2 Float) where
   v1 ~= v2 = norm2 (v1 ^-^ v2) <= 1e-2
 
-
+nearZero :: (Num a, Eps a) => a -> Bool
+nearZero x = x ~= 0
 
 
 

@@ -7,6 +7,7 @@ import Data.Bifunctor.Pair
 import qualified Data.Foldable as F (toList)
 import qualified Data.IntMap as IM
 import qualified Data.List.NonEmpty as NE
+import Control.Arrow ((***), (&&&))
 import Control.Monad (ap)
 
 import Graphics.Rendering.Plot.Light.Internal.Geometry
@@ -49,14 +50,43 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 data Sh p vd v =
     Circle (ShapeCol p) vd v
-  | Rect (ShapeCol p) vd (Align v) deriving (Eq, Show)
+  | Rect (ShapeCol p) vd (Align v)
+  | Line (LineOptions p) v v
+  deriving (Eq, Show)
 
 data Align v = BL v | BC v | C v deriving (Eq, Show, Functor)
+
+withSh f1 f2 f3 sh = case sh of
+  Circle _ vd v -> f1 vd v
+  Rect _ vd alv -> f2 vd (getAlignAnchor alv)
+  Line _ v1 v2 -> f3 v1 v2
+
+getAnchor :: Sh p vd v -> v
+getAnchor = withSh seq seq seq
+
+getSize = withSh const const const
+
+-- withAlign :: (t -> p) -> (t -> p) -> Align t -> p
+withAlign f g h al = case al of
+  BL v -> f v  
+  BC v -> g v
+  C v -> h v
+
+getAlignAnchor :: Align p -> p
+getAlignAnchor al = case al of
+  BL v -> v
+  BC v -> v
+  C v -> v
+
+
+  
 
 instance Bifunctor (Sh p) where
   bimap f g sh = case sh of
     Circle k vd v -> Circle k (f vd) (g v)
     Rect k vd alv -> Rect k (f vd) (g <$> alv)
+
+-- * Constructors
 
 mkRectBL w h col v = Rect col vd (BL v) where vd = fromCartesian w h
 
@@ -73,34 +103,43 @@ mkRectBC w h col v = Rect col vd (C v') where
 -- NB inverts the function applied at construction time
 getOriginalP sh = case sh of
   Circle _ _ v -> v
-  Rect _ vd alv -> case alv of
-    BL v -> v
-    BC v -> v ^+^ (projX vd ./ 2)
-    C v -> v ^+^ (vd ./ 2)
+  Rect _ vd alv -> withAlign id fbc fc alv where
+    fbc v = v ^+^ (projX vd ./ 2)
+    fc v = v ^+^ (vd ./ 2)
+
+-- | Computing an enveloping Frame from a set of Shapes
+--
+-- NB : if all Shape anchor points are either X- or Y-collinear,
+-- the frame will be degenerate (i.e. shrink into a line).
+-- Therefore we need to catch those cases and symmetrically inflate the
+-- frame around the degenerate axis.
+
+
+enlargedFrame h0 w0 xs = undefined
+  where
+    pc = centerOfMass xs
+
+-- | get the dimensions of a Shape
+getDs :: Num a => Sh p (V2 a) (V2 a) -> (a, a)
+getDs sh = case sh of
+  Circle _ vd _ -> _vxy vd
+  Rect _ vd _ -> _vxy vd
+  Line _ v1 v2 -> (abs *** abs) . _vxy $ v1 ^-^ v2 
+    
+
+-- axisAligned h0 w0 x1 x2 = mkFrame (pc ^-^ v ./ 2) (pc ^+^ v ./ 2)  where  
+--   (dx, dy) = _vxy $ x1 ^-^ x2
+--   pc = midPoint x1 x2
+--   v = fromCartesian (w/2) (h/2)
+--   h | nearZero dy = h0
+--     | otherwise = dy
+--   w | nearZero dx = w0
+--     | otherwise = dx
 
 
 
--- type Shape a = E (Sh a (V2 a) (V2 a))
 
 
--- * Constructors
-
--- -- -- mkRectBL :: Num a => a -> a -> ShapeCol a -> V2 a -> Shape a
--- mkRectBL w h col v = Rect col (BL vd v) where
---   vd = fromCartesian w h
-
--- mkRectC w h col v = Rect col (C vd v) where
---   vd = fromCartesian w h
---   v' = v ^-^ (vd ./ 2)
-
--- -- mkLin col p1 p2 = mkER $ Lin col p1 p2
-
--- getOriginalPoint sh = case sh of
---   Circle _ _ v -> v
---   Rect _ al -> case al of
---     BL vd v -> v ^+^ (0.5 .* vd)
---     BC vd v -> v ^+^ (0.5 .* projY vd)
---     C _ v  -> v 
 
 
 -- -- 
