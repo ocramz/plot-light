@@ -29,7 +29,7 @@ module Graphics.Rendering.Plot.Light.Internal
     -- ** Circle
     circle,
     -- ** Lines
-    line, line', tick, ticks,
+    line, line', tick, ticks, LineOptions(..),
     -- axis,
     -- ** Polylines
     polyline, filledPolyline,

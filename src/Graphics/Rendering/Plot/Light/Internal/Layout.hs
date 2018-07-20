@@ -84,6 +84,24 @@ instance (Applicative g, Applicative f) => Applicative (Compose f g) where
 --   insf s acc = mkFrameE s `mappend` acc
 
 
+newtype E a = E { unE :: Either a a} deriving (Eq, Show)
+-- instance Bifunctor E where
+--   bimap f g (E ee) = E $ bimap f g ee
+
+-- blaei :: (p vd1 v1 -> q vd2 v2)
+--       -> (p vd1 v1 -> q vd2 v2)
+--       -> E p vd1 v1 -> E q vd2 v2
+blaei f g (E ei) = E y where
+  y = case ei of
+    Left l -> Left (f l)
+    Right r -> Right (g r)
+
+
+-- blaei' :: (p vd v -> c) -> (p vd v -> c) -> E p vd v -> c
+blaei' f g (E ei) = either f g ei
+
+extract (E ei) = either id id ei 
+
 
 
 -- | --
@@ -103,8 +121,8 @@ instance (Applicative g, Applicative f) => Applicative (Compose f g) where
 -- reposition1E from to = biasE . frameToFrameBE from to
 
 -- | Vertical bias (to be applied only to non-centered shapes)
-biasE :: (Mix2 p, Num a) => p (V2 a) (V2 a) -> p (V2 a) (V2 a)
-biasE x = mix2r fbias x where
+bias :: (Mix2 p, Num a) => p (V2 a) (V2 a) -> p (V2 a) (V2 a)
+bias x = mix2r fbias x where
   fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
 
 -- | Modify the position component of a pair using both size and position parameters.
@@ -112,26 +130,26 @@ biasE x = mix2r fbias x where
 -- biasEWith :: Mix2 p => (x -> a -> a) -> E (p x a) -> E (p x a)
 -- biasEWith fbias = secondE (mix2r fbias)
 
-frameToFrameBE :: (Bifunctor p, MatrixGroup (DiagMat2 a) b, Fractional a) =>
+frameToFrameB :: (Bifunctor p, MatrixGroup (DiagMat2 a) b, Fractional a) =>
                   Frame (V2 a)
                -> Frame (V2 a)
                -> p b (V2 a)
                -> p b (V2 a)
-frameToFrameBE from to = toFrameBE to . second flipUD . fromFrameBE from
+frameToFrameB from to = toFrameB to . second flipUD . fromFrameB from
   where
     flipUD (V2 vx vy) = mkV2 vx (1 - vy)  
     
-fromFrameBE :: (MatrixGroup (DiagMat2 a) b, Fractional a, Bifunctor p) =>
+fromFrameB :: (MatrixGroup (DiagMat2 a) b, Fractional a, Bifunctor p) =>
                Frame (V2 a) -> p b (V2 a) -> p b (V2 a)
-fromFrameBE from = bimap f g
+fromFrameB from = bimap f g
   where
     (mfrom, vfrom) = frameToAffine from
     f v = mfrom <\> v
     g v = mfrom <\> (v ^-^ vfrom)        
     
-toFrameBE :: (Num a, LinearMap (DiagMat2 a) b, Bifunctor p) =>
+toFrameB :: (Num a, LinearMap (DiagMat2 a) b, Bifunctor p) =>
              Frame (V2 a) -> p b (V2 a) -> p b (V2 a)
-toFrameBE to = bimap f g
+toFrameB to = bimap f g
   where
     (mto, vto) = frameToAffine to
     f v = mto #> v
@@ -142,6 +160,32 @@ toFrameBE to = bimap f g
 -- | -- --
 
 
+
+-- | =============
+-- | A DSL for geometrical shapes
+
+
+data Shape p vd v =
+    Cir (ShapeCol p) vd v  -- ^ Circle
+  | Rec (ShapeCol p) vd v  -- ^ Rectangle
+  | Lin (LineOptions p) v v -- ^ Line
+  | PLin (LineOptions p) [v]
+  deriving (Eq, Show)
+
+instance Bifunctor (Shape p) where
+  bimap f g sh = case sh of
+    Cir k vd v -> Cir k (f vd) (g v)
+    Rec k vd v -> Rec k (f vd) (g v)
+    Lin o v1 v2 -> Lin o (g v1) (g v2)
+
+-- mkRectBL
+--   :: Fractional a =>
+--      a -> a -> ShapeCol p -> V2 a -> E (Shape p (V2 a) (V2 a))
+mkRectBL w h col v = E $ Left $ Rec col vd v' where
+  vd = fromCartesian w h
+  v' = v ^-^ (vd ./ 2)
+
+mkLin col p1 p2 = E $ Right $ Lin col p1 p2
 
 
 
@@ -161,12 +205,7 @@ instance Bifunctor (Shp p) where
     Circle k vd v -> Circle k (f vd) (g v)
     RectBL k vd v -> RectBL k (f vd) (g v)
     RectC k vd v -> RectC k (f vd) (g v)    
-
-instance Mix2 (Shp p) where
-  mix2 f g sh = case sh of
-    Circle k vd v -> Circle k (f vd v) (g vd v)
-    RectBL k vd v -> RectBL k (f vd v) (g vd v) 
-    RectC k vd v -> RectC k (f vd v) (g vd v)   
+ 
 
 -- renderShape :: (Floating a, Real a) => Shp a (V2 a) (V2 a) -> Svg
 -- renderShape sh = case sh of
@@ -217,27 +256,13 @@ instance Mix2 (Shp p) where
 -- --
 -- -- compose the affine transformations required to move the 'Shape' from starting to destination frame.
 -- --
--- -- NB : this should be the /only/ function dedicated to transforming point coordinates
--- frameToFrameB :: (Bifunctor p, MatrixGroup (DiagMat2 a) v, Fractional a) =>
---      Frame (V2 a) -> Frame (V2 a) -> p v (V2 a) -> p v (V2 a)
--- frameToFrameB from to = toFrameBimap to . second flipUD . fromFrameBimap from where
---   flipUD (V2 vx vy) = mkV2 vx (1 - vy)  
+-- -- NB : this should be the /only/ function dedicated to transforming point coordinate
 
--- fromFrameBimap :: (MatrixGroup (DiagMat2 a) b, Fractional a, Bifunctor p) =>
---      Frame (V2 a) -> p b (V2 a) -> p b (V2 a)
--- fromFrameBimap from = bimap f g
---   where
---     (mfrom, vfrom) = frameToAffine from
---     f v = mfrom <\> v
---     g v = mfrom <\> (v ^-^ vfrom)    
 
--- toFrameBimap :: (Num a, LinearMap (DiagMat2 a) b, Bifunctor p) =>
---      Frame (V2 a) -> p b (V2 a) -> p b (V2 a)
--- toFrameBimap to = bimap f g
---   where
---     (mto, vto) = frameToAffine to
---     f v = mto #> v
---     g v = (mto #> v) ^+^ vto
+
+
+
+
 
 
 
