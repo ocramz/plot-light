@@ -27,10 +27,6 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 -- | ========= 
 
-
-
- 
-
 -- data PlotTy a =
 --     Scatter [a]
 --   | PolyLine [a]
@@ -46,23 +42,17 @@ mkEL, mkER :: a -> E a
 mkER = E . Right
 mkEL = E . Left
 
--- instance Bifunctor E where
---   bimap f g (E ee) = E $ bimap f g ee
-
--- blaei :: (p vd1 v1 -> q vd2 v2)
---       -> (p vd1 v1 -> q vd2 v2)
---       -> E p vd1 v1 -> E q vd2 v2
-blaei fl fr (E ei) = E y where
+bimapE :: (t -> a) -> (t -> a) -> E t -> E a
+bimapE fl fr (E ei) = E y where
   y = case ei of
     Left l -> Left (fl l)
     Right r -> Right (fr r)
 
-
--- blaei' :: (p vd v -> c) -> (p vd v -> c) -> E p vd v -> c
-blaei' f g (E ei) = either f g ei
+eitherE :: (b -> c) -> (b -> c) -> E b -> c
+eitherE f g ee = either f g (unE ee)    
 
 extractWith :: (a -> b) -> E a -> b
-extractWith f (E ei) = either f f ei
+extractWith f = eitherE f f
 
 
 
@@ -75,23 +65,23 @@ extractWith f (E ei) = either f f ei
 -- * Anchored either at its center or not
 -- * Has an anchor point (= position vector) and zero or more size vectors (e.g. a rectangle has only one size vector (i.e. is uniquely defined by its position vector and its size vector), a general N-polygon has N)
 
-data Shape p vd v =
+data Sh p vd v =
     Cir (ShapeCol p) vd v  -- ^ Circle
   | Rec (ShapeCol p) vd v  -- ^ Rectangle
   | Lin (LineOptions p) v v -- ^ Line
-  | PLin (LineOptions p) [v]
+  | PLin (LineOptions p) [v] -- ^ PolyLine
   deriving (Eq, Show)
 
-instance Bifunctor (Shape p) where
+instance Bifunctor (Sh p) where
   bimap f g sh = case sh of
     Cir k vd v -> Cir k (f vd) (g v)
     Rec k vd v -> Rec k (f vd) (g v)
     Lin o v1 v2 -> Lin o (g v1) (g v2)
+    PLin o vs -> PLin o (g <$> vs)    
 
--- mkRectBL
---   :: Fractional a =>
---      a -> a -> ShapeCol p -> V2 a -> E (Shape p (V2 a) (V2 a))
+type Shape a = E (Sh a (V2 a) (V2 a))
 
+mkRectBL :: Num a => a -> a -> ShapeCol a -> V2 a -> Shape a
 mkRectBL w h col v = mkEL $ Rec col vd v where
   vd = fromCartesian w h
 
@@ -99,7 +89,7 @@ mkRectC w h col v = mkER $ Rec col vd v' where
   vd = fromCartesian w h
   v' = v ^-^ (vd ./ 2)
 
-mkLin col p1 p2 = mkER $ Lin col p1 p2
+-- mkLin col p1 p2 = mkER $ Lin col p1 p2
 
 
 
@@ -217,20 +207,7 @@ toFrameB to = bimap f g
 -- -- mkR :: Num a => a -> a -> ShapeCol p -> v -> Shp p (V2 a) v
 -- mkR w h col v = RectBL col vd v where vd = fromCartesian w h
 
--- -- mkRBC w h col v = RectBL col vs v where
--- --   vs = fromCartesian (w/2) h
--- --   v' = v ^-^ fromCartesian 0 (w/2)
 
--- mkReC w h col v = RectC col vs v' where
---   vs = 0.5 .* fromCartesian w h  
---   v' = v ^-^ (0.5 .* vs)  
-  
--- -- mkReC w h col v = R col vs v' where
--- --   vs = fromCartesian w h
--- --   v' = v ^-^ (0.5 .* vs)  
-
--- -- mkSqrC :: Fractional a => a -> ShapeCol p -> V2 a -> Shp p (V2 a) (V2 a)
--- -- mkSqrC w col v = mkReC w w col v  
 
 -- c4 = mkC 1 (shapeColNoBorder C.blue 0.6) (mkV2 30 15 )
 -- c3 = mkC 1 (shapeColNoBorder C.blue 1) (mkV2 0 0)
