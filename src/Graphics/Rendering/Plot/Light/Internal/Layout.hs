@@ -25,30 +25,7 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 
 
-newtype Compose f g a = Compose { unCompose :: f (g a) }
-
-instance (Functor g, Functor f) => Functor (Compose f g) where
-  fmap f = Compose . fmap (fmap f) . unCompose
-  -- fmap f (Compose fga) = Compose ((fmap . fmap ) f fga)
-
-instance (Applicative g, Applicative f) => Applicative (Compose f g) where
-  pure = Compose . pure . pure
-  -- -- (<*>) :: Compose f g (a -> b) -> Compose f g a -> Compose f g b
-  Compose f <*> Compose k = Compose $ (<*>) <$> f <*> k
-  -- Compose f <*> Compose k = Compose $ liftedAp <*> k where
-  --   liftedAp = fmap (<*>) f 
-
--- instance Foldable (Compose f g) where
---   foldr = _
-
-
 -- | ========= 
-
--- | A shape is :
---
--- * Anchored either at its center or not
--- * Has an anchor point (= position vector) and zero or more size vectors (e.g. a rectangle has only one size vector (i.e. is uniquely defined by its position vector and its size vector), a general N-polygon has N)
-
 
 
 
@@ -63,28 +40,12 @@ instance (Applicative g, Applicative f) => Applicative (Compose f g) where
 
 -- | =======
 
--- mkHull :: (AdditiveGroup v, Functor f) => Pair (f v) v -> f v
--- mkHull (P vds v) = f <$> vds where
---   f vd = v ^+^ vd
-
-
-
-
--- | --
-
--- -- | Constructs a Frame from a shape, using the second parameter only (position vectors)
--- mkFrameE :: Ord a => E (Pair x a) -> Frame a
--- mkFrameE = interpretE (frameFromPointsWith f) where
---   f (P _ v) = v
-
--- wrappingFrameE :: (Foldable t, Ord v, Monoid v) => t (E (Pair v1 v)) -> Frame v
--- wrappingFrameE shs = foldr insf fzero ssh where
---   (sh:ssh) = F.toList shs
---   fzero = mkFrameE sh
---   insf s acc = mkFrameE s `mappend` acc
-
-
 newtype E a = E { unE :: Either a a} deriving (Eq, Show)
+
+mkEL, mkER :: a -> E a
+mkER = E . Right
+mkEL = E . Left
+
 -- instance Bifunctor E where
 --   bimap f g (E ee) = E $ bimap f g ee
 
@@ -100,15 +61,19 @@ blaei fl fr (E ei) = E y where
 -- blaei' :: (p vd v -> c) -> (p vd v -> c) -> E p vd v -> c
 blaei' f g (E ei) = either f g ei
 
-extract :: E c -> c
-extract (E ei) = either id id ei 
+extractWith :: (a -> b) -> E a -> b
+extractWith f (E ei) = either f f ei
 
 
 
 
 -- | =============
 -- | A DSL for geometrical shapes
-
+--
+-- | A shape is :
+--
+-- * Anchored either at its center or not
+-- * Has an anchor point (= position vector) and zero or more size vectors (e.g. a rectangle has only one size vector (i.e. is uniquely defined by its position vector and its size vector), a general N-polygon has N)
 
 data Shape p vd v =
     Cir (ShapeCol p) vd v  -- ^ Circle
@@ -126,11 +91,15 @@ instance Bifunctor (Shape p) where
 -- mkRectBL
 --   :: Fractional a =>
 --      a -> a -> ShapeCol p -> V2 a -> E (Shape p (V2 a) (V2 a))
-mkRectBL w h col v = E $ Left $ Rec col vd v' where
+
+mkRectBL w h col v = mkEL $ Rec col vd v where
+  vd = fromCartesian w h
+
+mkRectC w h col v = mkER $ Rec col vd v' where
   vd = fromCartesian w h
   v' = v ^-^ (vd ./ 2)
 
-mkLin col p1 p2 = E $ Right $ Lin col p1 p2
+mkLin col p1 p2 = mkER $ Lin col p1 p2
 
 
 
@@ -150,16 +119,22 @@ mkLin col p1 p2 = E $ Right $ Lin col p1 p2
 -- reposition1 from to = bias . frameToFrameB from to 
 
 
--- | Vertical bias (to be applied only to non-centered shapes)
+-- | Modify the position component of a pair using both size and position parameters.
+-- This only applies to non-centered shapes 
 bias :: (Mix2 p, Num a) => p (V2 a) (V2 a) -> p (V2 a) (V2 a)
 bias x = mix2r fbias x where
   fbias vd v = v ^-^ fromCartesian 0 (_vy vd)
 
--- | Modify the position component of a pair using both size and position parameters.
--- This only applies to non-centered shapes (i.e. via `secondE`)
--- biasEWith :: Mix2 p => (x -> a -> a) -> E (p x a) -> E (p x a)
--- biasEWith fbias = secondE (mix2r fbias)
 
+-- | Given :
+--
+-- * a starting frame (in the screen reference)
+-- * a destination frame (in the SVG reference)
+-- * a 'Shape' whose anchoring point is assumed to be bound by the starting frame
+--
+-- compose the affine transformations required to move the 'Shape' from starting to destination frame.
+--
+-- NB : this should be the /only/ function dedicated to transforming point coordinate
 frameToFrameB :: (Bifunctor p, MatrixGroup (DiagMat2 a) b, Fractional a) =>
                   Frame (V2 a)
                -> Frame (V2 a)
@@ -186,6 +161,25 @@ toFrameB to = bimap f g
     g v = (mto #> v) ^+^ vto
 
 
+-- mkHull :: (AdditiveGroup v, Functor f) => Pair (f v) v -> f v
+-- mkHull (P vds v) = f <$> vds where
+--   f vd = v ^+^ vd
+
+
+-- | --
+
+-- -- | Constructs a Frame from a shape, using the second parameter only (position vectors)
+-- mkFrameE :: Ord a => E (Pair x a) -> Frame a
+-- mkFrameE = interpretE (frameFromPointsWith f) where
+--   f (P _ v) = v
+
+-- wrappingFrameE :: (Foldable t, Ord v, Monoid v) => t (E (Pair v1 v)) -> Frame v
+-- wrappingFrameE shs = foldr insf fzero ssh where
+--   (sh:ssh) = F.toList shs
+--   fzero = mkFrameE sh
+--   insf s acc = mkFrameE s `mappend` acc
+
+
 
 -- wrappingFrame :: (Foldable t, AdditiveGroup v, Ord v) => t (Shp p v v) -> Frame v
 -- wrappingFrame shs = foldr insf fzero ssh where
@@ -200,15 +194,6 @@ toFrameB to = bimap f g
 --     RectC _ vd v  -> mkFrame v (v ^+^ vd)    
 
   
--- -- | Given :
--- --
--- -- * a starting frame (in the screen reference)
--- -- * a destination frame (in the SVG reference)
--- -- * a 'Shape' whose anchoring point is assumed to be bound by the starting frame
--- --
--- -- compose the affine transformations required to move the 'Shape' from starting to destination frame.
--- --
--- -- NB : this should be the /only/ function dedicated to transforming point coordinate
 
 
 
