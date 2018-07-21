@@ -110,10 +110,13 @@ mkHull shs = foldr insf zh0 (tail zl) where
   zh0 = mkFr $ head zl
   mkFr s = frameDirac (getAnchor s)
   insf sh fr
-    | nearZero (width fr0) = growFrameX (2 * dx) fr0
-    | nearZero (height fr0) = growFrameY (2 * dy) fr0
+    | qx && qy = growFrame (mkV2 (2 * dx) (2 * dy)) fr0
+    | qx = growFrameX (2 * dx) fr0
+    | qy = growFrameY (2 * dy) fr0
     | otherwise = fr0
     where
+      qx = nearZero (width fr0)
+      qy = nearZero (height fr0)
       fr0 = mkFr sh <> fr
       (dx, dy) = getDs sh
   
