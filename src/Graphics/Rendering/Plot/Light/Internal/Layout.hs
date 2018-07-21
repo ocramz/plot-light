@@ -62,10 +62,17 @@ instance Bifunctor (Sh p) where
     Rect k vd alv -> Rect k (f vd) (g <$> alv)
     Line o v1 v2 -> Line o (g v1) (g v2)
 
+type Shape a = Sh a (V2 a) (V2 a)    
+
 -- * Constructors
 
+mkCircle :: Num a => a -> ShapeCol a -> V2 a -> Shape a
+mkCircle r col v = Circle col vd v where vd = r .* e1
+
+mkRectBL :: Num a => a -> a -> ShapeCol a -> V2 a -> Shape a
 mkRectBL w h col v = Rect col vd (BL v) where vd = fromCartesian w h
 
+mkRectC, mkRectBC :: Fractional a => a -> a -> ShapeCol a -> V2 a -> Shape a
 mkRectC w h col v = Rect col vd (C v') where
   vd = fromCartesian w h
   v' = v ^-^ (vd ./ 2)
@@ -136,14 +143,7 @@ growFrame vd (Frame v1 v2) = mkFrame v1' v2' where
   v2' = v2 ^+^ vd
     
 
--- axisAligned h0 w0 x1 x2 = mkFrame (pc ^-^ v ./ 2) (pc ^+^ v ./ 2)  where  
---   (dx, dy) = _vxy $ x1 ^-^ x2
---   pc = midPoint x1 x2
---   v = fromCartesian (w/2) (h/2)
---   h | nearZero dy = h0
---     | otherwise = dy
---   w | nearZero dx = w0
---     | otherwise = dx
+
 
 
 getAnchor :: Sh p vd v -> v
@@ -241,27 +241,9 @@ toFrameB to = bimap f g
     g v = (mto #> v) ^+^ vto
 
 
--- mkHull :: (AdditiveGroup v, Functor f) => Pair (f v) v -> f v
--- mkHull (P vds v) = f <$> vds where
---   f vd = v ^+^ vd
 
 
 -- | --
-
-
--- wrappingFrame :: (Foldable t, AdditiveGroup v, Ord v) => t (E (Sh p v v)) -> Frame v
--- wrappingFrame shs = foldr insf fzero ssh where
---   (sh:ssh) = F.toList shs
---   fzero = mkFrameSh sh
---   insf s acc = mkFrameSh s `mappend` acc
-
--- mkFrameSh :: (AdditiveGroup v, Ord v) => E (Sh p v v) -> Frame v
--- mkFrameSh ee = extractWith ff ee where
---   ff s = case s of
---     Circle _ vd v -> mkFrame v (v ^+^ vd)
---     Rect _ vd v -> mkFrame v (v ^+^ vd)
---     Line _ v1 v2 -> mkFrame v1 v2
---     PLine _ _ vs -> frameFromPoints vs
 
 
   
@@ -269,29 +251,11 @@ toFrameB to = bimap f g
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 -- | example smart constructors
 
--- -- mkC :: Num a => a -> ShapeCol p -> v -> Shp p (V2 a) v
--- mkC r col v = Circle col vd v where vd = r .* e1
-
--- -- mkR :: Num a => a -> a -> ShapeCol p -> v -> Shp p (V2 a) v
--- mkR w h col v = RectBL col vd v where vd = fromCartesian w h
-
-
-
--- c4 = mkC 1 (shapeColNoBorder C.blue 0.6) (mkV2 30 15 )
--- c3 = mkC 1 (shapeColNoBorder C.blue 1) (mkV2 0 0)
+c3, c4 :: Shape Double
+c4 = mkCircle 1.0 (shapeColNoBorder C.blue 0.6) (mkV2 10 15 )
+c3 = mkCircle 2.0 (shapeColNoBorder C.blue 1) (mkV2 10 20)
 
 -- -- r0 = mkR 5 5 (shapeColNoBorder C.red 1) (mkV2 20 20)
 -- -- r1 = mkR 5 5 (shapeColNoBorder C.blue 1) (mkV2 0 0)
