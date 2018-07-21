@@ -56,35 +56,11 @@ data Sh p vd v =
 
 data Align v = BL v | BC v | C v deriving (Eq, Show, Functor)
 
-withSh f1 f2 f3 sh = case sh of
-  Circle _ vd v -> f1 vd v
-  Rect _ vd alv -> f2 vd (getAlignAnchor alv)
-  Line _ v1 v2 -> f3 v1 v2
-
-getAnchor :: Sh p vd v -> v
-getAnchor = withSh seq seq seq
-
-getSize = withSh const const const
-
--- withAlign :: (t -> p) -> (t -> p) -> Align t -> p
-withAlign f g h al = case al of
-  BL v -> f v  
-  BC v -> g v
-  C v -> h v
-
-getAlignAnchor :: Align p -> p
-getAlignAnchor al = case al of
-  BL v -> v
-  BC v -> v
-  C v -> v
-
-
-  
-
 instance Bifunctor (Sh p) where
   bimap f g sh = case sh of
     Circle k vd v -> Circle k (f vd) (g v)
     Rect k vd alv -> Rect k (f vd) (g <$> alv)
+    Line o v1 v2 -> Line o (g v1) (g v2)
 
 -- * Constructors
 
@@ -107,6 +83,12 @@ getOriginalP sh = case sh of
     fbc v = v ^+^ (projX vd ./ 2)
     fc v = v ^+^ (vd ./ 2)
 
+withAlign :: (t -> p) -> (t -> p) -> (t -> p) -> Align t -> p
+withAlign f g h al = case al of
+  BL v -> f v  
+  BC v -> g v
+  C v -> h v    
+
 -- | Computing an enveloping Frame from a set of Shapes
 --
 -- NB : if all Shape anchor points are either X- or Y-collinear,
@@ -114,17 +96,44 @@ getOriginalP sh = case sh of
 -- Therefore we need to catch those cases and symmetrically inflate the
 -- frame around the degenerate axis.
 
+mkHull :: (Foldable t, Ord a, Eps a, Fractional a) =>
+          t (Sh p2 (V2 a) (V2 a))
+       -> Frame (V2 a)
+mkHull shs = foldr (<>) zh0 (tail zl) where
+  sl = F.toList shs
+  zl = zipWith mkHull2 sl (tail sl)
+  zh0 = head zl  
 
-enlargedFrame h0 w0 xs = undefined
+mkHull2 :: (Ord a, Eps a, Fractional a) =>
+           Sh p1 (V2 a) (V2 a)
+        -> Sh p2 (V2 a) (V2 a)
+        -> Frame (V2 a)
+mkHull2 s1 s2
+  | nearZero (width fr) = growFrameX (2 * max dx1 dx2) fr
+  | nearZero (height fr) = growFrameY (2 * max dy1 dy2) fr
+  | otherwise = fr
   where
-    pc = centerOfMass xs
+    fsh = getAnchor &&& getDs
+    (v1, (dx1, dy1)) = fsh s1
+    (v2, (dx2, dy2)) = fsh s2
+    fr = mkFrame (min v1 v2) (max v1 v2)
 
--- | get the dimensions of a Shape
+-- | get the (x, y) extent of a Shape
 getDs :: Num a => Sh p (V2 a) (V2 a) -> (a, a)
 getDs sh = case sh of
   Circle _ vd _ -> _vxy vd
   Rect _ vd _ -> _vxy vd
-  Line _ v1 v2 -> (abs *** abs) . _vxy $ v1 ^-^ v2 
+  Line _ v1 v2 -> (abs *** abs) . _vxy $ v1 ^-^ v2    
+
+growFrameX, growFrameY :: Fractional a => a -> Frame (V2 a) -> Frame (V2 a)
+growFrameX w = growFrame (fromCartesian (w / 2) 0)
+growFrameY w = growFrame (fromCartesian 0 (w / 2))
+
+-- | Grow a frame symmetrically along a vector
+growFrame :: AdditiveGroup v => v -> Frame v -> Frame v
+growFrame vd (Frame v1 v2) = mkFrame v1' v2' where
+  v1' = v1 ^-^ vd
+  v2' = v2 ^+^ vd
     
 
 -- axisAligned h0 w0 x1 x2 = mkFrame (pc ^-^ v ./ 2) (pc ^+^ v ./ 2)  where  
@@ -137,8 +146,19 @@ getDs sh = case sh of
 --     | otherwise = dx
 
 
+getAnchor :: Sh p vd v -> v
+getAnchor = withSh seq seq seq
 
+withSh f1 f2 f3 sh = case sh of
+  Circle _ vd v -> f1 vd v
+  Rect _ vd alv -> f2 vd (getAlignAnchor alv)
+  Line _ v1 v2 -> f3 v1 v2
 
+getAlignAnchor :: Align v -> v
+getAlignAnchor al = case al of
+  BL v -> v
+  BC v -> v
+  C v -> v
 
 
 

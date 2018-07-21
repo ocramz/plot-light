@@ -54,7 +54,7 @@ import Data.Bifunctor
 
 
 -- | V2 is a vector in R^2
-data V2 a = V2 {_vx :: a, _vy :: a} deriving (Eq, Ord)
+data V2 a = V2 {_vx :: a, _vy :: a} deriving (Eq, Ord, Functor)
 
 _vxy :: V2 a -> (a, a)
 _vxy p = (_vx p, _vy p)
