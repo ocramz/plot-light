@@ -103,30 +103,23 @@ withAlign f g h al = case al of
 -- Therefore we need to catch those cases and symmetrically inflate the
 -- frame around the degenerate axis.
 
--- mkHull :: (Foldable t, Ord a, Eps a, Fractional a) =>
---           t (Sh p2 (V2 a) (V2 a))
---        -> Frame (V2 a)
-mkHull shs = foldr (<>) zh0 (tail zl) where
-  sl = F.toList shs
-  zl = zipWith mkHull2 sl (tail sl)
-  zh0 = head zl  
-
--- mkHull2 :: (Ord a, Eps a, Fractional a) =>
---            Sh p1 (V2 a) (V2 a)
---         -> Sh p2 (V2 a) (V2 a)
---         -> Frame (V2 a)
-mkHull2 s1 s2
-  | nearZero (width fr) = growFrameX (2 * max dx1 dx2) fr
-  | nearZero (height fr) = growFrameY (2 * max dy1 dy2) fr
-  | otherwise = fr
-  where
-    fsh = getAnchor &&& getDs
-    (v1, (dx1, dy1)) = fsh s1
-    (v2, (dx2, dy2)) = fsh s2
-    fr = mkFrame (min v1 v2) (max v1 v2)
+mkHull :: (Foldable t, RealFloat a, Eps a) =>
+          t (Sh p (V2 a) (V2 a)) -> Frame (V2 a)
+mkHull shs = foldr insf zh0 (tail zl) where
+  zl = F.toList shs
+  zh0 = mkFr $ head zl
+  mkFr s = frameDirac (getAnchor s)
+  insf sh fr
+    | nearZero (width fr0) = growFrameX (2 * dx) fr0
+    | nearZero (height fr0) = growFrameY (2 * dy) fr0
+    | otherwise = fr0
+    where
+      fr0 = mkFr sh <> fr
+      (dx, dy) = getDs sh
+  
 
 -- | get the (x, y) extent of a Shape
--- getDs :: Num a => Sh p (V2 a) (V2 a) -> (a, a)
+getDs :: RealFloat a => Sh p (V2 a) (V2 a) -> (a, a)
 getDs sh = case sh of
   Circle _ vd _ -> (r', r') where
     r' = ceilD $ 0.5 * sqrt 2 * norm2 vd
