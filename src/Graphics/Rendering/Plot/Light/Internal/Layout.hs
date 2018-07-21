@@ -103,18 +103,18 @@ withAlign f g h al = case al of
 -- Therefore we need to catch those cases and symmetrically inflate the
 -- frame around the degenerate axis.
 
-mkHull :: (Foldable t, Ord a, Eps a, Fractional a) =>
-          t (Sh p2 (V2 a) (V2 a))
-       -> Frame (V2 a)
+-- mkHull :: (Foldable t, Ord a, Eps a, Fractional a) =>
+--           t (Sh p2 (V2 a) (V2 a))
+--        -> Frame (V2 a)
 mkHull shs = foldr (<>) zh0 (tail zl) where
   sl = F.toList shs
   zl = zipWith mkHull2 sl (tail sl)
   zh0 = head zl  
 
-mkHull2 :: (Ord a, Eps a, Fractional a) =>
-           Sh p1 (V2 a) (V2 a)
-        -> Sh p2 (V2 a) (V2 a)
-        -> Frame (V2 a)
+-- mkHull2 :: (Ord a, Eps a, Fractional a) =>
+--            Sh p1 (V2 a) (V2 a)
+--         -> Sh p2 (V2 a) (V2 a)
+--         -> Frame (V2 a)
 mkHull2 s1 s2
   | nearZero (width fr) = growFrameX (2 * max dx1 dx2) fr
   | nearZero (height fr) = growFrameY (2 * max dy1 dy2) fr
@@ -126,9 +126,10 @@ mkHull2 s1 s2
     fr = mkFrame (min v1 v2) (max v1 v2)
 
 -- | get the (x, y) extent of a Shape
-getDs :: Num a => Sh p (V2 a) (V2 a) -> (a, a)
+-- getDs :: Num a => Sh p (V2 a) (V2 a) -> (a, a)
 getDs sh = case sh of
-  Circle _ vd _ -> _vxy vd
+  Circle _ vd _ -> (r', r') where
+    r' = ceilD $ 0.5 * sqrt 2 * norm2 vd
   Rect _ vd _ -> _vxy vd
   Line _ v1 v2 -> (abs *** abs) . _vxy $ v1 ^-^ v2    
 
@@ -143,6 +144,8 @@ growFrame vd (Frame v1 v2) = mkFrame v1' v2' where
   v2' = v2 ^+^ vd
     
 
+ceilD :: (RealFloat a, RealFloat b) => a -> b
+ceilD = fromIntegral . ceiling
 
 
 
@@ -254,8 +257,8 @@ toFrameB to = bimap f g
 -- | example smart constructors
 
 c3, c4 :: Shape Double
-c4 = mkCircle 1.0 (shapeColNoBorder C.blue 0.6) (mkV2 10 15 )
-c3 = mkCircle 2.0 (shapeColNoBorder C.blue 1) (mkV2 10 20)
+c4 = mkCircle 1.0 (shapeColNoBorder C.blue 0.6) (mkV2 20 0 )
+c3 = mkCircle 2.0 (shapeColNoBorder C.blue 1) (mkV2 10 0)
 
 -- -- r0 = mkR 5 5 (shapeColNoBorder C.red 1) (mkV2 20 20)
 -- -- r1 = mkR 5 5 (shapeColNoBorder C.blue 1) (mkV2 0 0)
@@ -366,33 +369,7 @@ data Plot =
 
 
 
--- | =======
--- | HasFrame typeclass, a generic way to create a bounding Frame from something (e.g. a shape) that has a spatial extension
 
-class HasFrame m where
-  type FrameTy m :: *
-  frame :: m -> Frame (FrameTy m)
-
-instance HasFrame (V2 a) where
-  type FrameTy (V2 a) = V2 a
-  frame = frameDirac
-
-instance HasFrame (Frame a) where
-  type FrameTy (Frame a) = a
-  frame = id
-
--- instance AdditiveGroup v => HasFrame (Shp p v v) where
---   type FrameTy (Shp p v v) = v
---   frame = mkFrameShp
-
-
--- -- a generic `wrappingFrame`
--- -- wrappingFrameG :: (Foldable t, HasFrame m, Ord (FrameTy m), Monoid (FrameTy m)) =>
--- --      t m -> Frame (FrameTy m)
--- wrappingFrameG shs = foldr insf fzero ssh where
---   (sh:ssh) = F.toList shs
---   fzero = frame sh
---   insf s acc = frame s `mappend` acc
 
 
 -- | A thing of type 'sh' in a 'Frame'
@@ -431,22 +408,6 @@ mkVScreen = V Screen
 
 mkVSvg :: V2 a -> V SVG a
 mkVSvg = V SVG
-
-
-
-
-
-
--- | A composite collection type that carries stuff and a 'Frame' that delimits it
-
--- data Bag a x = Bag a (Frame x) deriving (Eq, Show)
-
--- instance (Monoid a, Monoid x, Ord x) => Monoid (Bag a x) where
---   mempty = Bag mempty mempty
-
--- (&) :: (Monoid a, Monoid x, Ord x) => Bag a x -> Bag a x -> Bag a x
--- (Bag f1 fr1) & (Bag f2 fr2) =
---   Bag (f1 `mappend` f2) (fr1 `mappend` fr2)
 
 
 
