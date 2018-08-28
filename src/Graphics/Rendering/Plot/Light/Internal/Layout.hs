@@ -38,6 +38,8 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 
 
+
+
 -- | =============
 -- | A DSL for geometrical shapes
 --
@@ -46,12 +48,11 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 -- * Anchored either at its center or not
 -- * Has an anchor point (= position vector) and zero or more size vectors (e.g. a rectangle has only one size vector (i.e. is uniquely defined by its position vector and its size vector), a general N-polygon has N)
 
-
-
 data Sh p vd v =
     Circle (ShapeCol p) vd v
   | Rect (ShapeCol p) vd (Align v)
   | Line (LineOptions p) v v
+  | PLine [v]
   deriving (Eq, Show)
 
 data Align v = BL v | BC v | C v deriving (Eq, Show, Functor)
@@ -61,6 +62,7 @@ instance Bifunctor (Sh p) where
     Circle k vd v -> Circle k (f vd) (g v)
     Rect k vd alv -> Rect k (f vd) (g <$> alv)
     Line o v1 v2 -> Line o (g v1) (g v2)
+    PLine vs -> PLine (g <$> vs) 
 
 type Shape a = Sh a (V2 a) (V2 a)    
 
@@ -81,7 +83,7 @@ mkRectBC w h col v = Rect col vd (C v') where
   vd = fromCartesian w h
   v' = v ^-^ (projX vd ./ 2)
 
--- | retrieve the starting point.
+-- | retrieve the starting point. In the case of Centered (C) shapes, this is the anchor point.
 --
 -- NB inverts the function applied at construction time
 getOriginalP sh = case sh of
@@ -158,6 +160,10 @@ getAlignAnchor al = case al of
   BL v -> v
   BC v -> v
   C v -> v
+
+
+
+
 
 
 
