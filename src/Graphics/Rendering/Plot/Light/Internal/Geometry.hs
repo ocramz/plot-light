@@ -21,7 +21,7 @@ module Graphics.Rendering.Plot.Light.Internal.Geometry
   V2(..), mkV2, fromCartesian, _vxy, 
   -- pointFromV2,
   -- ** Matrices
-  Mat2(..), DiagMat2(..), diagMat2, rotMtx,
+  Mat2(..), DiagMat2(..), diagMat2, constDiagMat2, rotMtx, rescaleIso, 
   -- ** Primitive elements
   origin, oneOne, e1, e2, 
   -- ** Vector norm operations 
@@ -171,29 +171,6 @@ instance Num a => LinearMap (Mat2 a) (V2 a) where
 
 
 
--- | Things which have a determinant 
-class Det m where
-  det :: Num a => m a -> a
-
-instance Det Mat2 where
-  det (Mat2 a00 a01 a10 a11) = a00 * a11 - a10 * a01
-
-instance Det DiagMat2 where
-  det (DMat2 a00 a11) = a00 * a11
-
--- rescaleIso :: (VectorSpace v, Det m, Num (Scalar v)) => m (Scalar v) -> v -> v
--- rescaleIso m v = det m .* v
-
-
-
-
-
--- -- -- rescaleIso :: (DetTy m ~ Scalar v, VectorSpace v, Det m) => m -> v -> v
--- -- -- rescaleIso m v = det m .* v
-
-
-
-
 
 -- | Diagonal matrices in R2 behave as scaling transformations
 data DiagMat2 a = DMat2 a a deriving (Eq, Show)
@@ -220,6 +197,10 @@ diagMat2 = DMat2
 
 constDiagMat2 :: Num a => a -> DiagMat2 a
 constDiagMat2 r = diagMat2 r r
+
+rescaleIso :: (LinearMap (DiagMat2 a) v, Num a) => a -> v -> v
+rescaleIso r v = constDiagMat2 r #> v
+
 
 -- | Rotation matrix
 rotMtx :: Floating a => a -> Mat2 a
