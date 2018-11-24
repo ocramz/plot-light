@@ -168,18 +168,25 @@ instance Num a => LinearMap (Mat2 a) (V2 a) where
   (Mat2 a00 a01 a10 a11) #> (V2 vx vy) = V2 (a00 * vx + a01 * vy) (a10 * vx + a11 * vy)
 
 
--- -- | Things which have a determinant -- not sure it's a good idea
--- class Det m where
---   type DetTy m :: *
---   det :: m -> DetTy m
 
--- instance Num a => Det (Mat2 a) where
---   type DetTy (Mat2 a) = a
---   det (Mat2 a00 a01 a10 a11) = a00 * a11 - a10 * a01
 
--- instance Num a => Det (DiagMat2 a) where
---   type DetTy (DiagMat2 a) = a
---   det (DMat2 a00 a11) = a00 * a11
+
+-- | Things which have a determinant 
+class Det m where
+  det :: Num a => m a -> a
+
+instance Det Mat2 where
+  det (Mat2 a00 a01 a10 a11) = a00 * a11 - a10 * a01
+
+instance Det DiagMat2 where
+  det (DMat2 a00 a11) = a00 * a11
+
+-- rescaleIso :: (VectorSpace v, Det m, Num (Scalar v)) => m (Scalar v) -> v -> v
+-- rescaleIso m v = det m .* v
+
+
+
+
 
 -- -- -- rescaleIso :: (DetTy m ~ Scalar v, VectorSpace v, Det m) => m -> v -> v
 -- -- -- rescaleIso m v = det m .* v
@@ -211,6 +218,8 @@ instance Num a => Monoid (Mat2 a) where
 diagMat2 :: Num a => a -> a -> DiagMat2 a
 diagMat2 = DMat2
 
+constDiagMat2 :: Num a => a -> DiagMat2 a
+constDiagMat2 r = diagMat2 r r
 
 -- | Rotation matrix
 rotMtx :: Floating a => a -> Mat2 a

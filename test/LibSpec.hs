@@ -18,7 +18,7 @@ spec = do
     it "correctly converts between `Tick`s and `Fractional`s" $ do
       let t0 = 57957.475
       fromTick (toTick t0) `shouldBe` t0
-  describe "Graphics.Rendering.Plot.Light" $ do
+  describe "Graphics.Rendering.Plot.Light.Internal.Geometry" $ do
     prop "V2 : additive group [Float]" $ \(v :: V2r Float) ->
       prop_V2_additiveGroup v `shouldBe` True
     prop "V2 : additive group [Double]" $ \(v :: V2 Double) ->

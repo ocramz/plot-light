@@ -34,8 +34,17 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 --   deriving (Eq, Show)
 
 
+-- data Size a =
+--   WH a (Maybe a) deriving (Eq, Show, Functor)
+
+-- scale :: LinearMap m v => m -> Size v -> Size v
+-- scale m s@WH{} = fmap (m #>) s
 
 
+
+-- data Sz a =
+--     SzIso a
+--   | SzAnIso a a
 
 
 
@@ -220,25 +229,25 @@ biasY sh = case sh of
       c -> c
 
 
-frameToFrameB :: (Bifunctor p, MatrixGroup (DiagMat2 a) b, Fractional a) =>
+frameToFrameB :: (Bifunctor p, MatrixGroup (DiagMat2 a) v, Fractional a) =>
                   Frame (V2 a)
                -> Frame (V2 a)
-               -> p b (V2 a)
-               -> p b (V2 a)
+               -> p v (V2 a)
+               -> p v (V2 a)
 frameToFrameB from to = toFrameB to . second flipUD . fromFrameB from
   where
     flipUD (V2 vx vy) = mkV2 vx (1 - vy)  
     
-fromFrameB :: (MatrixGroup (DiagMat2 a) b, Fractional a, Bifunctor p) =>
-               Frame (V2 a) -> p b (V2 a) -> p b (V2 a)
+fromFrameB :: (MatrixGroup (DiagMat2 a) v, Fractional a, Bifunctor p) =>
+               Frame (V2 a) -> p v (V2 a) -> p v (V2 a)
 fromFrameB from = bimap f g
   where
     (mfrom, vfrom) = frameToAffine from
     f v = mfrom <\> v
     g v = mfrom <\> (v ^-^ vfrom)        
     
-toFrameB :: (Num a, LinearMap (DiagMat2 a) b, Bifunctor p) =>
-             Frame (V2 a) -> p b (V2 a) -> p b (V2 a)
+toFrameB :: (Num a, LinearMap (DiagMat2 a) v, Bifunctor p) =>
+             Frame (V2 a) -> p v (V2 a) -> p v (V2 a)
 toFrameB to = bimap f g
   where
     (mto, vto) = frameToAffine to
