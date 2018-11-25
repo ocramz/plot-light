@@ -333,12 +333,6 @@ mkFrameOrigin w h = mkFrame origin (mkV2 w h)
 
 
 
-
-
-
-
-
-
  
 
 -- | Frame corner coordinates

@@ -4,6 +4,7 @@ module Graphics.Rendering.Plot.Light.Internal.Layout where
 
 import Data.Bifunctor
 import Data.Bifunctor.Pair
+import Data.Function ( (&) )
 import qualified Data.Foldable as F (toList)
 import qualified Data.IntMap as IM
 import qualified Data.List.NonEmpty as NE
@@ -28,48 +29,45 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 -- | ========= 
 
--- data PlotTy a =
---     Scatter [a]
---   | PolyLine [a]
---   deriving (Eq, Show)
+mkCir :: Num a => ShapeCol p -> a -> V2 a -> Sh p (V2 a)
+mkCir col r pc = Sh fr (Cir col) where
+  fr = Frame pc (pc ^+^ fromCartesian 0 r)
+
+data ShapeType p v =
+    Cir (ShapeCol p)
+  | RecBL (ShapeCol p)
+  -- | RecBC (ShapeCol p)  
+  | Line (LineOptions p)
+  | PLine (LineOptions p) [v]
+  deriving (Eq, Show, Functor)
+
+data Sh p v = Sh {
+    shFrame :: Frame v  -- ^ A geometrical shape is always defined by at least two points in the plane (i.e. a 'Frame')
+  , shType :: ShapeType p v
+  } deriving (Eq, Show, Functor)
 
 
--- data Sh p v =
---     Circle (ShapeCol p) v v
---   | Rect (ShapeCol p) v v
---   | Line (LineOptions p) v v
---   | PLine [v]
---   deriving (Eq, Show, Functor)
 
--- data Sh p v =
---   Circle (ShapeCol p) (Frame v)
+-- | Transforms the Shape coordinates into the SVG reference frame
+frameToFrameSh :: Fractional a =>
+                  Frame (V2 a) -> Frame (V2 a) -> Sh p (V2 a) -> Sh p (V2 a)
+frameToFrameSh from to =
+  postprocessSh . toFrameSh to . midprocessSh . fromFrameSh from 
 
--- data Sh p v =
---     Circle (ShapeCol p) (Frame v)
---   | Rect (ShapeCol p) (Frame v)
---   | Line (LineOptions p) (Frame v)
---   | PLine (Frame v) [v]
+midprocessSh :: (Functor f, Num a) => f (V2 a) -> f (V2 a)
+midprocessSh = fmap flipNormY where
+  flipNormY (V2 x y) = V2 x (1 - y)
 
-data ShapeType v = Cir | Rec | Line | PLine [v] deriving (Eq, Show, Functor)
+postprocessSh :: Num a => Sh p (V2 a) -> Sh p (V2 a)
+postprocessSh sh = case shType sh of
+  RecBL _ -> sh{ shFrame = f (shFrame sh)}
+    where
+      f fr@(Frame v1 v2) = Frame (v1 ^-^ vh) (v2 ^+^ vh)
+        where
+          h = height fr
+          vh = fromCartesian 0 h  
+  _ -> sh 
 
-data Sh p v = Sh { shFrame :: Frame v, shType :: ShapeType v } deriving (Eq, Show, Functor)
-
-flipNormY :: Num a => V2 a -> V2 a
-flipNormY (V2 x y) = V2 x (1 - y)
-
--- frameToFrameSh :: (Num a, MatrixGroup (DiagMat2 a) (V2 a)) =>
---                   Frame (V2 a) -> Frame (V2 a)
---                -> Sh p (V2 a) -> Sh p (V2 a)
--- frameToFrameSh from to = toFrameSh to . flipShY . fromFrameSh from
-
--- -- | Flip a rectangle shape endpoints wrt its Y mirror plane
--- flipShY :: Num a => Sh p (V2 a) -> Sh p (V2 a)
--- flipShY s = case s of
---   (Rect p v1 v2) -> Rect p (v1 ^+^ vh) (v2 ^-^ vh) where
---     h = height $ mkFrame v1 v2
---     vh = mkV2 0 h
---   x -> x  -- | Fixme : y' = 1 - y
-  
 
 fromFrameSh :: (Num a, MatrixGroup (DiagMat2 a) v, Functor f) =>
                Frame (V2 a) -> f v -> f v
