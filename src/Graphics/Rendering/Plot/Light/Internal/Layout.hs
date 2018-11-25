@@ -34,25 +34,41 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 --   deriving (Eq, Show)
 
 
-data Sh p v =
-    Circle (ShapeCol p) v v
-  | Rect (ShapeCol p) v v
-  | Line (LineOptions p) v v
-  | PLine [v]
-  deriving (Eq, Show, Functor)
+-- data Sh p v =
+--     Circle (ShapeCol p) v v
+--   | Rect (ShapeCol p) v v
+--   | Line (LineOptions p) v v
+--   | PLine [v]
+--   deriving (Eq, Show, Functor)
 
-frameToFrameSh :: (Num a, MatrixGroup (DiagMat2 a) (V2 a)) =>
-                  Frame (V2 a) -> Frame (V2 a)
-               -> Sh p (V2 a) -> Sh p (V2 a)
-frameToFrameSh from to = toFrameSh to . flipShY . fromFrameSh from
+-- data Sh p v =
+--   Circle (ShapeCol p) (Frame v)
 
--- | Flip a rectangle shape endpoints wrt its Y mirror plane
-flipShY :: Num a => Sh p (V2 a) -> Sh p (V2 a)
-flipShY s = case s of
-  (Rect p v1 v2) -> Rect p (v1 ^+^ vh) (v2 ^-^ vh) where
-    h = height $ mkFrame v1 v2
-    vh = mkV2 0 h
-  x -> x  -- | Fixme : y' = 1 - y
+-- data Sh p v =
+--     Circle (ShapeCol p) (Frame v)
+--   | Rect (ShapeCol p) (Frame v)
+--   | Line (LineOptions p) (Frame v)
+--   | PLine (Frame v) [v]
+
+data ShapeType v = Cir | Rec | Line | PLine [v] deriving (Eq, Show, Functor)
+
+data Sh p v = Sh { shFrame :: Frame v, shType :: ShapeType v } deriving (Eq, Show, Functor)
+
+flipNormY :: Num a => V2 a -> V2 a
+flipNormY (V2 x y) = V2 x (1 - y)
+
+-- frameToFrameSh :: (Num a, MatrixGroup (DiagMat2 a) (V2 a)) =>
+--                   Frame (V2 a) -> Frame (V2 a)
+--                -> Sh p (V2 a) -> Sh p (V2 a)
+-- frameToFrameSh from to = toFrameSh to . flipShY . fromFrameSh from
+
+-- -- | Flip a rectangle shape endpoints wrt its Y mirror plane
+-- flipShY :: Num a => Sh p (V2 a) -> Sh p (V2 a)
+-- flipShY s = case s of
+--   (Rect p v1 v2) -> Rect p (v1 ^+^ vh) (v2 ^-^ vh) where
+--     h = height $ mkFrame v1 v2
+--     vh = mkV2 0 h
+--   x -> x  -- | Fixme : y' = 1 - y
   
 
 fromFrameSh :: (Num a, MatrixGroup (DiagMat2 a) v, Functor f) =>
@@ -66,6 +82,8 @@ toFrameSh :: (Num a, LinearMap (DiagMat2 a) v, Functor f) =>
 toFrameSh to = fmap f where
     (mto, _) = frameToAffine to
     f v = mto #> v
+
+
 
 -- | =============
 -- | A DSL for geometrical shapes

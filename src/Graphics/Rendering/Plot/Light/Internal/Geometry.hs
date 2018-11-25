@@ -278,7 +278,7 @@ centerOfMass vs = foldr ins mempty vs ./ n where
 
 
 -- | A Frame is really just a pair of things
-data Frame a = Frame {_fpmin :: a, _fpmax :: a} deriving (Eq, Show, Generic)
+data Frame a = Frame {_fpmin :: a, _fpmax :: a} deriving (Eq, Show, Functor, Generic)
 
 mkFrame :: a -> a -> Frame a
 mkFrame = Frame
