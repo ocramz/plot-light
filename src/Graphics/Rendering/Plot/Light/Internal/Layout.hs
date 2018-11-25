@@ -26,17 +26,25 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 
 
-
--- | ========= 
-
 mkCir :: Num a => ShapeCol p -> a -> V2 a -> Sh p (V2 a)
 mkCir col r pc = Sh fr (Cir col) where
   fr = Frame pc (pc ^+^ fromCartesian 0 r)
 
+mkRectC :: Fractional a => ShapeCol p -> a -> a -> V2 a -> Sh p (V2 a)
+mkRectC col w h pc = Sh fr (Rect AnchorC col) where
+  fr = Frame pc (pc ^+^ fromCartesian (w / 2) (h / 2))
+
+mkRectBC :: Fractional a => ShapeCol p -> a -> a -> V2 a -> Sh p (V2 a)
+mkRectBC col w h pc = Sh fr (Rect AnchorBC col) where
+  fr = Frame pc (pc ^+^ fromCartesian (w / 2) h)
+
+-- | ========= 
+
+data Anchor = AnchorBL | AnchorBC | AnchorC deriving (Eq, Show)
+
 data ShapeType p v =
     Cir (ShapeCol p)
-  | RecBL (ShapeCol p)
-  -- | RecBC (ShapeCol p)  
+  | Rect Anchor (ShapeCol p)
   | Line (LineOptions p)
   | PLine (LineOptions p) [v]
   deriving (Eq, Show, Functor)
@@ -60,13 +68,20 @@ midprocessSh = fmap flipNormY where
 
 postprocessSh :: Num a => Sh p (V2 a) -> Sh p (V2 a)
 postprocessSh sh = case shType sh of
-  RecBL _ -> sh{ shFrame = f (shFrame sh)}
+  Rect anc _ -> sh{ shFrame = f (shFrame sh)}
     where
-      f fr@(Frame v1 v2) = Frame (v1 ^-^ vh) (v2 ^+^ vh)
-        where
-          h = height fr
-          vh = fromCartesian 0 h  
+      f = postRectSh anc 
   _ -> sh 
+
+postRectSh :: Num a => Anchor -> Frame (V2 a) -> Frame (V2 a)
+postRectSh anc fr@(Frame v1 v2)
+  | anc == AnchorBL = Frame (v1 ^-^ vh) (v2 ^+^ vh)
+  | anc == AnchorBL = Frame (v1 ^-^ vh ^-^ vw) (v2 ^+^ vh)
+  | anc == AnchorC  = Frame (v1 ^-^ vh ^-^ vw) (v2 ^+^ (2 .* vh))
+  where
+    (h, w) = (height fr, width fr)
+    vh = fromCartesian 0 h
+    vw = fromCartesian w 0    
 
 
 fromFrameSh :: (Num a, MatrixGroup (DiagMat2 a) v, Functor f) =>
@@ -91,55 +106,7 @@ toFrameSh to = fmap f where
 -- * Anchored either at its center or not
 -- * Has an anchor point (= position vector) and zero or more size vectors (e.g. a rectangle has only one size vector (i.e. is uniquely defined by its position vector and its size vector), a general N-polygon has N)
 
--- data Sh p vd v =
---     Circle (ShapeCol p) vd v
---   | Rect (ShapeCol p) vd (Align v)
---   | Line (LineOptions p) v v
---   | PLine [v]
---   deriving (Eq, Show)
 
--- data Align v = BL v | BC v | C v deriving (Eq, Show, Functor)
-
--- instance Bifunctor (Sh p) where
---   bimap f g sh = case sh of
---     Circle k vd v -> Circle k (f vd) (g v)
---     Rect k vd alv -> Rect k (f vd) (g <$> alv)
---     Line o v1 v2 -> Line o (g v1) (g v2)
---     PLine vs -> PLine (g <$> vs) 
-
--- type Shape a = Sh a (V2 a) (V2 a)    
-
--- -- * Constructors
-
--- mkCircle :: Num a => a -> ShapeCol a -> V2 a -> Shape a
--- mkCircle r col v = Circle col vd v where vd = r .* e1
-
--- mkRectBL :: Num a => a -> a -> ShapeCol a -> V2 a -> Shape a
--- mkRectBL w h col v = Rect col vd (BL v) where vd = fromCartesian w h
-
--- mkRectC, mkRectBC :: Fractional a => a -> a -> ShapeCol a -> V2 a -> Shape a
--- mkRectC w h col v = Rect col vd (C v') where
---   vd = fromCartesian w h
---   v' = v ^-^ (vd ./ 2)
-
--- mkRectBC w h col v = Rect col vd (C v') where
---   vd = fromCartesian w h
---   v' = v ^-^ (projX vd ./ 2)
-
--- -- | retrieve the starting point. In the case of Centered (C) shapes, this is the anchor point.
--- --
--- -- NB inverts the function applied at construction time
--- getOriginalP sh = case sh of
---   Circle _ _ v -> v
---   Rect _ vd alv -> withAlign id fbc fc alv where
---     fbc v = v ^+^ (projX vd ./ 2)
---     fc v = v ^+^ (vd ./ 2)
-
--- withAlign :: (t -> p) -> (t -> p) -> (t -> p) -> Align t -> p
--- withAlign f g h al = case al of
---   BL v -> f v  
---   BC v -> g v
---   C v -> h v    
 
 -- -- | Computing an enveloping Frame from a set of Shapes
 -- --
@@ -148,8 +115,8 @@ toFrameSh to = fmap f where
 -- -- Therefore we need to catch those cases and symmetrically inflate the
 -- -- frame around the degenerate axis.
 
--- mkHull :: (Foldable t, RealFloat a, Eps a) =>
---           t (Sh p (V2 a) (V2 a)) -> Frame (V2 a)
+-- -- mkHull :: (Foldable t, RealFloat a, Eps a) =>
+-- --           t (Sh p (V2 a) (V2 a)) -> Frame (V2 a)
 -- mkHull shs = foldr insf zh0 (tail zl) where
 --   zl = F.toList shs
 --   zh0 = mkFr $ head zl
@@ -166,13 +133,13 @@ toFrameSh to = fmap f where
 --       (dx, dy) = getDs sh
   
 
--- -- | get the (x, y) extent of a Shape
--- getDs :: RealFloat a => Sh p (V2 a) (V2 a) -> (a, a)
--- getDs sh = case sh of
---   Circle _ vd _ -> (r', r') where
---     r' = ceilD $ 0.5 * sqrt 2 * norm2 vd
---   Rect _ vd _ -> _vxy vd
---   Line _ v1 v2 -> (abs *** abs) . _vxy $ v1 ^-^ v2    
+-- -- -- | get the (x, y) extent of a Shape
+-- -- getDs :: RealFloat a => Sh p (V2 a) (V2 a) -> (a, a)
+-- -- getDs sh = case sh of
+-- --   Circle _ vd _ -> (r', r') where
+-- --     r' = ceilD $ 0.5 * sqrt 2 * norm2 vd
+-- --   Rect _ vd _ -> _vxy vd
+-- --   Line _ v1 v2 -> (abs *** abs) . _vxy $ v1 ^-^ v2    
 
 -- growFrameX, growFrameY :: Fractional a => a -> Frame (V2 a) -> Frame (V2 a)
 -- growFrameX w = growFrame (fromCartesian (w / 2) 0)
@@ -187,27 +154,6 @@ toFrameSh to = fmap f where
 
 -- ceilD :: (RealFloat a, RealFloat b) => a -> b
 -- ceilD = fromIntegral . ceiling
-
-
-
--- getAnchor :: Sh p vd v -> v
--- getAnchor = withSh seq seq seq
-
--- withSh f1 f2 f3 sh = case sh of
---   Circle _ vd v -> f1 vd v
---   Rect _ vd alv -> f2 vd (getAlignAnchor alv)
---   Line _ v1 v2 -> f3 v1 v2
-
--- getAlignAnchor :: Align v -> v
--- getAlignAnchor al = case al of
---   BL v -> v
---   BC v -> v
---   C v -> v
-
-
-
-
-
 
 
 -- -- 
@@ -290,15 +236,6 @@ toFrameB to = bimap f g
 
 
 
-
-
--- -- do we really need a Bifunctor representation?
-
--- fromFrameBMV :: (MatrixGroup m v, MatrixGroup m vd, Bifunctor p) =>
---                 m -> v -> p vd v -> p vd v
--- fromFrameBMV mfrom vfrom = bimap f g where
---   f v = mfrom <\> v
---   g v = mfrom <\> (v ^-^ vfrom)
 
 
 -- | --
