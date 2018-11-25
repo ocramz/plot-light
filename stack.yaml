@@ -9,6 +9,7 @@ packages:
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps: []
+# - histogram-fill-0.8.5.0
 # - attoparsec-time-1
 # - ghc-8.2.1
 
