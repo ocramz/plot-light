@@ -558,11 +558,6 @@ frameToFrame fromf tof = toFrame tof . flipUD . fromFrame fromf
     flipUD (V2 vx vy) = V2 vx (1 - vy)         
 
 
-flipLR01, flipUD01 :: Num a => V2 a -> V2 a
-flipLR01 (V2 a b) = V2 (1 - a) b
-flipUD01 (V2 a b) = V2 a (1 - b)
-
-
 -- -- | Map function values across frames
 -- frameToFrameValue :: Fractional t =>
 --       Frame t  -- ^ Initial frame

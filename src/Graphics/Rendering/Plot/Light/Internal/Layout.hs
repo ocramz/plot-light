@@ -26,75 +26,114 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 
 
-mkCir :: Num a => ShapeCol p -> a -> V2 a -> Sh p (V2 a)
-mkCir col r pc = Sh fr (Cir col) where
-  fr = Frame pc (pc ^+^ fromCartesian 0 r)
+data Anchor v = AnchorBL v | AnchorBC v | AnchorC v deriving (Eq, Show, Functor)
 
-mkRectC :: Fractional a => ShapeCol p -> a -> a -> V2 a -> Sh p (V2 a)
-mkRectC col w h pc = Sh fr (Rect AnchorC col) where
-  fr = Frame pc (pc ^+^ fromCartesian (w / 2) (h / 2))
-
-mkRectBC :: Fractional a => ShapeCol p -> a -> a -> V2 a -> Sh p (V2 a)
-mkRectBC col w h pc = Sh fr (Rect AnchorBC col) where
-  fr = Frame pc (pc ^+^ fromCartesian (w / 2) h)
-
--- | ========= 
-
-data Anchor = AnchorBL | AnchorBC | AnchorC deriving (Eq, Show)
-
-data ShapeType p v =
-    Cir (ShapeCol p)
-  | Rect Anchor (ShapeCol p)
-  | Line (LineOptions p)
+data Sh p w v =
+    Cir (ShapeCol p) w v
+  | Rect (ShapeCol p) (Anchor v) w w v
+  | Line (LineOptions p) v v
   | PLine (LineOptions p) [v]
   deriving (Eq, Show, Functor)
 
-data Sh p v = Sh {
-    shFrame :: Frame v  -- ^ A geometrical shape is always defined by at least two points in the plane (i.e. a 'Frame')
-  , shType :: ShapeType p v
-  } deriving (Eq, Show, Functor)
+frameToFrameSh :: (Functor f, Fractional a) =>
+                  Frame (V2 a) -> Frame (V2 a) -> f (V2 a) -> f (V2 a)
+frameToFrameSh from to = toFrameSh to . flipSh . fromFrameSh from
 
-
-
--- | Transforms the Shape coordinates into the SVG reference frame
-frameToFrameSh :: Fractional a =>
-                  Frame (V2 a) -> Frame (V2 a) -> Sh p (V2 a) -> Sh p (V2 a)
-frameToFrameSh from to =
-  postprocessSh . toFrameSh to . midprocessSh . fromFrameSh from 
-
-midprocessSh :: (Functor f, Num a) => f (V2 a) -> f (V2 a)
-midprocessSh = fmap flipNormY where
-  flipNormY (V2 x y) = V2 x (1 - y)
-
-postprocessSh :: Num a => Sh p (V2 a) -> Sh p (V2 a)
-postprocessSh sh = case shType sh of
-  Rect anc _ -> sh{ shFrame = f (shFrame sh)}
-    where
-      f = postRectSh anc 
-  _ -> sh 
-
-postRectSh :: Num a => Anchor -> Frame (V2 a) -> Frame (V2 a)
-postRectSh anc fr@(Frame v1 v2)
-  | anc == AnchorBL = Frame (v1 ^-^ vh) (v2 ^+^ vh)
-  | anc == AnchorBL = Frame (v1 ^-^ vh ^-^ vw) (v2 ^+^ vh)
-  | anc == AnchorC  = Frame (v1 ^-^ vh ^-^ vw) (v2 ^+^ (2 .* vh))
-  where
-    (h, w) = (height fr, width fr)
-    vh = fromCartesian 0 h
-    vw = fromCartesian w 0    
-
-
-fromFrameSh :: (Num a, MatrixGroup (DiagMat2 a) v, Functor f) =>
-               Frame (V2 a) -> f v -> f v
+fromFrameSh :: (Fractional a, Functor f) =>
+               Frame (V2 a) -> f (V2 a) -> f (V2 a)
 fromFrameSh from = fmap f where
-  (mfrom, _) = frameToAffine from
-  f v = mfrom <\> v
+  (mfrom, vfrom) = frameToAffine from
+  f v = mfrom <\> (v ^-^ vfrom)
 
-toFrameSh :: (Num a, LinearMap (DiagMat2 a) v, Functor f) =>
-             Frame (V2 a) -> f v -> f v
+flipSh :: (Functor f, Num a) => f (V2 a) -> f (V2 a)
+flipSh = fmap (\(V2 vx vy) -> V2 vx (1 - vy))
+
+toFrameSh :: (Num a, Functor f) =>
+             Frame (V2 a) -> f (V2 a) -> f (V2 a)
 toFrameSh to = fmap f where
-    (mto, _) = frameToAffine to
-    f v = mto #> v
+    (mto, vto) = frameToAffine to
+    f v = (mto #> v) ^+^ vto
+
+
+
+-- mkCir :: Num a => ShapeCol p -> a -> V2 a -> Sh p (V2 a)
+-- mkCir col r pc = Sh fr (Cir col) where
+--   fr = Frame pc (pc ^+^ fromCartesian 0 r)
+
+-- mkRectC :: Fractional a => ShapeCol p -> a -> a -> V2 a -> Sh p (V2 a)
+-- mkRectC col w h pc = Sh fr (Rect AnchorC col) where
+--   fr = Frame pc (pc ^+^ fromCartesian (w / 2) (h / 2))
+
+-- mkRectBC :: Fractional a => ShapeCol p -> a -> a -> V2 a -> Sh p (V2 a)
+-- mkRectBC col w h pc = Sh fr (Rect AnchorBC col) where
+--   fr = Frame pc (pc ^+^ fromCartesian (w / 2) h)
+
+-- -- | ========= 
+
+-- data Anchor = AnchorBL | AnchorBC | AnchorC deriving (Eq, Show)
+
+-- data ShapeType p v =
+--     Cir (ShapeCol p)
+--   | Rect Anchor (ShapeCol p)
+--   | Line (LineOptions p)
+--   | PLine (LineOptions p) [v]
+--   deriving (Eq, Show, Functor)
+
+-- data Sh p v = Sh {
+--     shFrame :: Frame v  -- ^ A geometrical shape is always defined by at least two points in the plane (i.e. a 'Frame')
+--   , shType :: ShapeType p v
+--   } deriving (Eq, Show, Functor)
+
+
+
+-- -- | Transforms the Shape coordinates into the SVG reference frame
+-- frameToFrameSh :: Fractional a =>
+--                   Frame (V2 a) -> Frame (V2 a) -> Sh p (V2 a) -> Sh p (V2 a)
+-- frameToFrameSh from to =
+--   postprocessSh . toFrameSh to . midprocessSh . fromFrameSh from 
+
+-- midprocessSh :: (Functor f, Num a) => f (V2 a) -> f (V2 a)
+-- midprocessSh = fmap flipNormY where
+--   flipNormY (V2 x y) = V2 x (1 - y)
+
+-- postprocessSh :: Num a => Sh p (V2 a) -> Sh p (V2 a)
+-- postprocessSh sh = case shType sh of
+--   Rect anc _ -> sh{ shFrame = f (shFrame sh)}
+--     where
+--       f = postRectSh anc 
+--   _ -> sh 
+
+-- postRectSh :: Num a => Anchor -> Frame (V2 a) -> Frame (V2 a)
+-- postRectSh anc fr@(Frame v1 v2)
+--   | anc == AnchorBL = Frame (v1 ^-^ vh) (v2 ^+^ vh)
+--   | anc == AnchorBL = Frame (v1 ^-^ vh ^-^ vw) (v2 ^+^ vh)
+--   | anc == AnchorC  = Frame (v1 ^-^ vh ^-^ vw) (v2 ^+^ (2 .* vh))
+--   where
+--     (h, w) = (height fr, width fr)
+--     vh = fromCartesian 0 h
+--     vw = fromCartesian w 0    
+
+
+-- fromFrameSh :: (Num a, MatrixGroup (DiagMat2 a) v, Functor f) =>
+--                Frame (V2 a) -> f v -> f v
+-- fromFrameSh from = fmap f where
+--   (mfrom, _) = frameToAffine from
+--   f v = mfrom <\> v
+
+-- toFrameSh :: (Num a, LinearMap (DiagMat2 a) v, Functor f) =>
+--              Frame (V2 a) -> f v -> f v
+-- toFrameSh to = fmap f where
+--     (mto, _) = frameToAffine to
+--     f v = mto #> v
+
+
+
+
+
+
+
+
+
 
 
 
