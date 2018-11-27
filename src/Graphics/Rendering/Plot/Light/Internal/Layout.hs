@@ -26,7 +26,7 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 
 
-data Anchor v = AnchorBL v | AnchorBC v | AnchorC v deriving (Eq, Show, Functor)
+
 
 -- plotting function (sketch)
 plot fd (Cir col r cp) = circle r' col cp where
@@ -36,7 +36,14 @@ plot fd (Cir col r cp) = circle r' col cp where
 rescaleToFigureData fd (Cir col r cp) = Cir col r' cp where
   r' = r * min (figWidth fd) (figHeight fd)
 
+data Dim da dr = DimAbs da | DimRel dr deriving (Eq, Show)
+instance Bifunctor Dim where
+  bimap f g dd = case dd of
+    DimAbs da -> DimAbs (f da)
+    DimRel dr -> DimRel (g dr)
 
+
+data Anchor v = AnchorBL v | AnchorBC v | AnchorC v deriving (Eq, Show, Functor)
 
 data Sh p w v =
     Cir (ShapeCol p) w v
