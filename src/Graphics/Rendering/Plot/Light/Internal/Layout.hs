@@ -28,6 +28,12 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 data Anchor v = AnchorBL v | AnchorBC v | AnchorC v deriving (Eq, Show, Functor)
 
+-- plotting function (sketch)
+plot fd (Cir col r cp) = circle r' col cp where
+  r' = r * figWidth fd
+
+
+
 data Sh p w v =
     Cir (ShapeCol p) w v
   | Rect (ShapeCol p) (Anchor v) w w v
