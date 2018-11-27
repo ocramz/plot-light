@@ -32,6 +32,10 @@ data Anchor v = AnchorBL v | AnchorBC v | AnchorC v deriving (Eq, Show, Functor)
 plot fd (Cir col r cp) = circle r' col cp where
   r' = r * figWidth fd
 
+-- HP : 0 < r < 1 
+rescaleToFigureData fd (Cir col r cp) = Cir col r' cp where
+  r' = r * min (figWidth fd) (figHeight fd)
+
 
 
 data Sh p w v =
