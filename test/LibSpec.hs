@@ -125,8 +125,8 @@ genDiagMat2 = DMat2 <$> arbitrary <*> arbitrary
 
 genDiagMat2nz :: (Num a, Arbitrary a, Ord a) => Gen (DiagMat2 a)
 genDiagMat2nz = do
-  d1 <- arbitrary `suchThat` (> 0)
-  d2 <- arbitrary `suchThat` (> 0)  
+  d1 <- arbitrary `suchThat` (/= 0)
+  d2 <- arbitrary `suchThat` (/= 0)  
   pure (DMat2 d1 d2)
 
 genMat2 :: (Arbitrary a, Num a) => Gen (Mat2 a)

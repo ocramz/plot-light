@@ -1,5 +1,6 @@
 {-# language TypeFamilies, DeriveFunctor, FlexibleContexts #-}
 {-# language GeneralizedNewtypeDeriving #-}
+{-# language LambdaCase #-}
 module Graphics.Rendering.Plot.Light.Internal.Layout where
 
 import Data.Bifunctor
@@ -29,14 +30,24 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 
 -- plotting function (sketch)
-plot fd (Cir col r cp) = circle r' col cp where
-  r' = r * figWidth fd
+plot :: (Real a1, Real a, Real p) => FigureData a -> Sh p a (V2 a1) -> Svg
+plot fd = \case
+  (Cir col r cp) -> circle r' col cp
+    where
+      r' = r * figWidth fd
 
--- HP : 0 < r < 1 
-rescaleToFigureData fd (Cir col r cp) = Cir col r' cp where
-  r' = r * min (figWidth fd) (figHeight fd)
+-- rescaling before rendering
+-- HP : 0 < r < 1
+rescaleToFigureData :: (Num w, Ord w) => FigureData w -> Sh p w v -> Sh p w v
+rescaleToFigureData fd = \case
+  (Cir col r cp) -> Cir col r' cp
+    where
+      r' = r * min (figWidth fd) (figHeight fd)
 
-data Dim da dr = DimAbs da | DimRel dr deriving (Eq, Show)
+-- Figure dimension annotation
+data Dim da dr = DimAbs da -- ^ Absolute 
+  | DimRel dr              -- ^ Relative
+  deriving (Eq, Show)
 instance Bifunctor Dim where
   bimap f g dd = case dd of
     DimAbs da -> DimAbs (f da)

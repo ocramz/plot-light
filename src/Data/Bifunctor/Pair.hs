@@ -15,7 +15,7 @@ mkPair = P
 instance (Semigroup a, Semigroup b) => Semigroup (Pair a b) where
   (P u1 v1) <> (P u2 v2) = P (u1 <> u2) (v1 <> v2)  
   
-instance (Monoid a, Monoid b) => Monoid (Pair a b) where
+instance (Semigroup a, Semigroup b, Monoid a, Monoid b) => Monoid (Pair a b) where
   mempty = P mempty mempty
   mappend = (<>)
 

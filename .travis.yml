@@ -14,9 +14,8 @@ addons:
 # change flags or use --stack-yaml to point to a different file.
 env:
 # - ARGS=""
-# - ARGS="--resolver lts-9.0"
-# - ARGS="--resolver lts-11.0"
-# - ARGS="--resolver lts-11.7"
+- ARGS="--resolver lts-9.0"
+- ARGS="--resolver lts-11.0"
 - ARGS="--resolver lts-12.0"
 - ARGS="--resolver nightly-2018-05-01"
 
