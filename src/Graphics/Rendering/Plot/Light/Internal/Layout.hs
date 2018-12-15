@@ -29,10 +29,11 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 
 
+
 -- plotting function (sketch)
 plot :: (Real a1, Real a, Real p) => FigureData a -> Sh p a (V2 a1) -> Svg
 plot fd = \case
-  (Cir col r cp) -> circle r' col cp
+  Cir col r cp -> circle r' col cp
     where
       r' = r * figWidth fd
 
@@ -40,25 +41,23 @@ plot fd = \case
 -- HP : 0 < r < 1
 rescaleToFigureData :: (Num w, Ord w) => FigureData w -> Sh p w v -> Sh p w v
 rescaleToFigureData fd = \case
-  (Cir col r cp) -> Cir col r' cp
+  Cir col r cp -> Cir col r' cp
     where
       r' = r * min (figWidth fd) (figHeight fd)
 
--- Figure dimension annotation
-data Dim da dr = DimAbs da -- ^ Absolute 
-  | DimRel dr              -- ^ Relative
-  deriving (Eq, Show)
-instance Bifunctor Dim where
-  bimap f g dd = case dd of
-    DimAbs da -> DimAbs (f da)
-    DimRel dr -> DimRel (g dr)
+-- transform = \case
+--   Rect col w h v -> Rect col
+
+-- -- Figure dimension annotation (either absolute or relative dimensions)
+-- newtype Dim dr da = Dim (Either dr da) deriving (Eq, Show, Functor, Bifunctor)
+
 
 
 data Anchor v = AnchorBL v | AnchorBC v | AnchorC v deriving (Eq, Show, Functor)
 
 data Sh p w v =
     Cir (ShapeCol p) w v
-  | Rect (ShapeCol p) (Anchor v) w w v
+  | Rect (ShapeCol p) w w (Anchor v) 
   | Line (LineOptions p) v v
   | PLine (LineOptions p) [v]
   deriving (Eq, Show, Functor)
@@ -448,6 +447,7 @@ data Screen = Screen deriving (Show)
 -- | SVG reference system (origin is top-left screen corner)
 data SVG = SVG deriving (Show)
 
+data UnitSquare = UnitSquare deriving (Show)
 
 -- wrtScreen :: Frame a -> sh -> Wrt Screen a sh
 -- wrtScreen = Wrt Screen
