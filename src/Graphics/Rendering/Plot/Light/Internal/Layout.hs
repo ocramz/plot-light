@@ -52,12 +52,16 @@ rescaleToFigureData fd = \case
 -- newtype Dim dr da = Dim (Either dr da) deriving (Eq, Show, Functor, Bifunctor)
 
 
-
-data Anchor v = AnchorBL v | AnchorBC v | AnchorC v deriving (Eq, Show, Functor)
+-- | Types of shape anchoring
+data Anchor v =
+    AnchorBL v  -- ^ Bottom left
+  | AnchorBC v  -- ^ Bottom center
+  | AnchorC v   -- ^ Center
+  deriving (Eq, Show, Functor)
 
 data Sh p w v =
     Cir (ShapeCol p) w v
-  | Rect (ShapeCol p) w w (Anchor v) 
+  | Rect (ShapeCol p) w w v (Anchor v)
   | Line (LineOptions p) v v
   | PLine (LineOptions p) [v]
   deriving (Eq, Show, Functor)
