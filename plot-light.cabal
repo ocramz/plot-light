@@ -44,6 +44,7 @@ library
                      , containers >= 0.5.7.1
                      , histogram-fill >= 0.8.5.0
                      , exceptions
+                     , microlens >= 0.4.8
                      , mtl
                      , scientific >= 0.3.5.1
                      , text >= 1.2.2.2
