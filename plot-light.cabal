@@ -25,10 +25,10 @@ library
   hs-source-dirs:      src
   exposed-modules:     Graphics.Rendering.Plot.Light
                        Graphics.Rendering.Plot.Light.Internal.Geometry
+                       Graphics.Rendering.Plot.Light.Internal.Layout                       
   other-modules:       Graphics.Rendering.Plot.Light.Internal
                        Graphics.Rendering.Plot.Light.PlotTypes                       
-                       Graphics.Rendering.Plot.Light.Internal.Layout
-                       Graphics.Rendering.Plot.Light.PlotTypes.Plot1D                       
+                       Graphics.Rendering.Plot.Light.PlotTypes.Plot1D
                        Graphics.Rendering.Plot.Light.PlotTypes.Heatmap
                        Graphics.Rendering.Plot.Light.PlotTypes.Scatter
                        Graphics.Rendering.Plot.Light.PlotTypes.Histogram

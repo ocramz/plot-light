@@ -36,7 +36,7 @@ module Graphics.Rendering.Plot.Light.Internal
     -- filledBand,
     strokeLineJoin, LineStroke_(..), StrokeLineJoin_(..),
     -- ** Text
-    text, TextAnchor_(..), 
+    text, TextAnchor_(..), TextOptions(..),
     -- ** Specialized plot elements
     pixel, pixel', plusGlyph, crossGlyph,
     -- candlestick,
@@ -662,6 +662,14 @@ textAnchor TAStart = SA.textAnchor (vs "start")
 textAnchor TAMiddle = SA.textAnchor (vs "middle")
 textAnchor TAEnd = SA.textAnchor (vs "end")
 
+
+
+data TextOptions a =
+  TextOptions { toRot :: a   -- ^ Rotation angle
+              , toFontSize :: Int -- ^ Font size
+              , toColor :: C.Colour Double  -- ^ Font colour
+              , toAnchor :: TextAnchor_  -- ^ Tech anchoring (start, middle, end)
+              } deriving (Eq, Show)
 
 
 

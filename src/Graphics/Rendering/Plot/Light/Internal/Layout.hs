@@ -12,6 +12,8 @@ import qualified Data.List.NonEmpty as NE
 import Control.Arrow ((***), (&&&))
 import Control.Monad (ap)
 
+import GHC.Generics
+
 import Graphics.Rendering.Plot.Light.Internal.Geometry
 import Graphics.Rendering.Plot.Light.Internal
 
@@ -30,8 +32,24 @@ import Text.Blaze.Svg.Renderer.String (renderSvg)
 
 
 
+{- | Layered Grammar of Graphics : http://vita.had.co.nz/papers/layered-grammar.pdf
+
+0. data table
+1. extract dataset to be plotted (== list of labelled points )
+2. transform coordinates of " to plotting frame
+3. apply aesthetics to "
+
+-}
+
+
+
+
+
+
+
+
 -- plotting function (sketch)
-plot :: (Real a1, Real a, Real p) => FigureData a -> Sh p a (V2 a1) -> Svg
+-- plot :: (Real a1, Real a, Real p) => FigureData a -> Sh p a (V2 a1) -> Svg
 plot fd = \case
   Cir col r cp -> circle r' col cp
     where
@@ -39,32 +57,32 @@ plot fd = \case
 
 -- rescaling before rendering
 -- HP : 0 < r < 1
-rescaleToFigureData :: (Num w, Ord w) => FigureData w -> Sh p w v -> Sh p w v
+-- rescaleToFigureData :: (Num w, Ord w) => FigureData w -> Sh p w v -> Sh p w v
 rescaleToFigureData fd = \case
   Cir col r cp -> Cir col r' cp
     where
       r' = r * min (figWidth fd) (figHeight fd)
 
--- transform = \case
---   Rect col w h v -> Rect col
-
--- -- Figure dimension annotation (either absolute or relative dimensions)
--- newtype Dim dr da = Dim (Either dr da) deriving (Eq, Show, Functor, Bifunctor)
 
 
--- | Types of shape anchoring
-data Anchor v =
-    AnchorBL v  -- ^ Bottom left
-  | AnchorBC v  -- ^ Bottom center
-  | AnchorC v   -- ^ Center
+data Sh c l v =
+    Cir (ShapeCol c) l v
+  | RectC (ShapeCol c) l l v  -- ^ Rectangle, anchored at its center
+  | RectBL (ShapeCol c) l l v -- ^ Rectangle, anchored at its bottom left corner
+  | Line (LineOptions c) v v  -- ^ Straight line
+  | PLine (LineOptions c) (NE.NonEmpty v)  -- ^ Polygon
+  | Text (TextOptions c) T.Text   -- ^ Text label
   deriving (Eq, Show, Functor)
 
-data Sh p w v =
-    Cir (ShapeCol p) w v
-  | Rect (ShapeCol p) w w v (Anchor v)
-  | Line (LineOptions p) v v
-  | PLine (LineOptions p) [v]
-  deriving (Eq, Show, Functor)
+instance Bifunctor (Sh c) where
+  bimap f g = \case
+    Cir col l v -> Cir col (f l) (g v)
+    RectC col w h v -> RectC col (f w) (f h) (g v)
+    RectBL col w h v -> RectBL col (f w) (f h) (g v)
+    Line o v1 v2 -> Line o (g v1) (g v2)
+    PLine o vs -> PLine o (g <$> vs)
+    Text to t -> Text to t
+
 
 frameToFrameSh :: (Functor f, Fractional a) =>
                   Frame (V2 a) -> Frame (V2 a) -> f (V2 a) -> f (V2 a)
@@ -84,83 +102,6 @@ toFrameSh :: (Num a, Functor f) =>
 toFrameSh to = fmap f where
     (mto, vto) = frameToAffine to
     f v = (mto #> v) ^+^ vto
-
-
-
--- mkCir :: Num a => ShapeCol p -> a -> V2 a -> Sh p (V2 a)
--- mkCir col r pc = Sh fr (Cir col) where
---   fr = Frame pc (pc ^+^ fromCartesian 0 r)
-
--- mkRectC :: Fractional a => ShapeCol p -> a -> a -> V2 a -> Sh p (V2 a)
--- mkRectC col w h pc = Sh fr (Rect AnchorC col) where
---   fr = Frame pc (pc ^+^ fromCartesian (w / 2) (h / 2))
-
--- mkRectBC :: Fractional a => ShapeCol p -> a -> a -> V2 a -> Sh p (V2 a)
--- mkRectBC col w h pc = Sh fr (Rect AnchorBC col) where
---   fr = Frame pc (pc ^+^ fromCartesian (w / 2) h)
-
--- -- | ========= 
-
--- data Anchor = AnchorBL | AnchorBC | AnchorC deriving (Eq, Show)
-
--- data ShapeType p v =
---     Cir (ShapeCol p)
---   | Rect Anchor (ShapeCol p)
---   | Line (LineOptions p)
---   | PLine (LineOptions p) [v]
---   deriving (Eq, Show, Functor)
-
--- data Sh p v = Sh {
---     shFrame :: Frame v  -- ^ A geometrical shape is always defined by at least two points in the plane (i.e. a 'Frame')
---   , shType :: ShapeType p v
---   } deriving (Eq, Show, Functor)
-
-
-
--- -- | Transforms the Shape coordinates into the SVG reference frame
--- frameToFrameSh :: Fractional a =>
---                   Frame (V2 a) -> Frame (V2 a) -> Sh p (V2 a) -> Sh p (V2 a)
--- frameToFrameSh from to =
---   postprocessSh . toFrameSh to . midprocessSh . fromFrameSh from 
-
--- midprocessSh :: (Functor f, Num a) => f (V2 a) -> f (V2 a)
--- midprocessSh = fmap flipNormY where
---   flipNormY (V2 x y) = V2 x (1 - y)
-
--- postprocessSh :: Num a => Sh p (V2 a) -> Sh p (V2 a)
--- postprocessSh sh = case shType sh of
---   Rect anc _ -> sh{ shFrame = f (shFrame sh)}
---     where
---       f = postRectSh anc 
---   _ -> sh 
-
--- postRectSh :: Num a => Anchor -> Frame (V2 a) -> Frame (V2 a)
--- postRectSh anc fr@(Frame v1 v2)
---   | anc == AnchorBL = Frame (v1 ^-^ vh) (v2 ^+^ vh)
---   | anc == AnchorBL = Frame (v1 ^-^ vh ^-^ vw) (v2 ^+^ vh)
---   | anc == AnchorC  = Frame (v1 ^-^ vh ^-^ vw) (v2 ^+^ (2 .* vh))
---   where
---     (h, w) = (height fr, width fr)
---     vh = fromCartesian 0 h
---     vw = fromCartesian w 0    
-
-
--- fromFrameSh :: (Num a, MatrixGroup (DiagMat2 a) v, Functor f) =>
---                Frame (V2 a) -> f v -> f v
--- fromFrameSh from = fmap f where
---   (mfrom, _) = frameToAffine from
---   f v = mfrom <\> v
-
--- toFrameSh :: (Num a, LinearMap (DiagMat2 a) v, Functor f) =>
---              Frame (V2 a) -> f v -> f v
--- toFrameSh to = fmap f where
---     (mto, _) = frameToAffine to
---     f v = mto #> v
-
-
-
-
-
 
 
 
@@ -257,26 +198,6 @@ toFrameSh to = fmap f where
 --
 -- NB : this should be the /only/ function dedicated to transforming point coordinates.
 
--- reposition1 :: Fractional a =>
---                Frame (V2 a)
---             -> Frame (V2 a)
---             -> E (Sh p (V2 a) (V2 a))
---             -> Sh p (V2 a) (V2 a)
--- reposition1 from to = eitherE (biasY . f2f) f2f where
---   f2f = frameToFrameB from to
-
-
--- -- | Modify the Y position component of a pair using both size and position parameters.
--- -- -- This only applies to non-centered shapes (such as the rectangle, which in SVG is anchored at its bottom-left corner)
--- biasY :: Num a => Sh p (V2 a) (V2 a) -> Sh p (V2 a) (V2 a)
--- biasY sh = case sh of
---   Rect k vd alv -> Rect k vd (fbias vd alv)
---   x -> x
---   where
---     fbias vd alv = case alv of
---       BL v -> BL (v ^-^ fromCartesian 0 (_vy vd))
---       BC v -> BC (v ^-^ fromCartesian 0 (_vy vd))
---       c -> c
 
 
 frameToFrameB :: (Bifunctor p, MatrixGroup (DiagMat2 a) v, Fractional a) =>
@@ -558,18 +479,3 @@ bounded01 x = 0 <= x && x <= 1
 -- addPlot w rf = liftF (AddPlot w rf id)
 
 
--- * Free
-
-
--- liftF :: Functor f => f r -> Free f r
--- liftF x = Free (fmap Pure x)
-
--- data Free f r = Free (f (Free f r)) | Pure r deriving Functor
-
--- instance Functor f => Applicative (Free f) where
---   pure = Pure
-
--- instance (Functor f) => Monad (Free f) where
---     return = pure
---     (Free x) >>= f = Free (fmap (>>= f) x)
---     (Pure r) >>= f = f r

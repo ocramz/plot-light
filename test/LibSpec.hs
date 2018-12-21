@@ -7,6 +7,7 @@ import Test.QuickCheck
 
 import Graphics.Rendering.Plot.Light
 import Graphics.Rendering.Plot.Light.Internal.Geometry
+import Graphics.Rendering.Plot.Light.Internal.Layout
 -- import Data.TimeSeries
 
 main :: IO ()
